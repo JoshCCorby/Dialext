@@ -1,0 +1,7 @@
+#!/bin/sh
+# swift-rs expects SwiftPM's native output layout, not Xcode 27's new default.
+if [ "$1" = "build" ]; then
+  shift
+  exec /usr/bin/xcrun swift build --build-system native "$@"
+fi
+exec /usr/bin/xcrun swift "$@"

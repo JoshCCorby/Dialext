@@ -1,0 +1,85 @@
+/* Texture intensity — ONE ladder for the whole system. Every treatment,
+   bitmap or generated, resolves to one of these five steps.
+     controls    0
+     reading     1.2%  (maximum on reading surfaces)
+     surface     2.5%
+     ambient     5%
+     expressive  11–14%
+   Generated noise (--texture-grain) is a FALLBACK for a missing asset
+   texture, not an additional default layer. Do not stack generated grain
+   and a bitmap texture unless a specific treatment explicitly requires it. */
+:root{
+  --texture-none: 0; /* @kind other */
+  --texture-controls: 0; /* @kind other */
+  --texture-reading: 0.012; /* @kind other */
+  --texture-surface: 0.025; /* @kind other */
+  --texture-ambient: 0.05; /* @kind other */
+  --texture-expressive: 0.11; /* @kind other */
+  --texture-expressive-max: 0.14; /* @kind other */
+
+  /* generated fallback layers (used only when no asset texture is available) */
+  --texture-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E"); /* @kind other */
+  --texture-halftone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='1.5' cy='1.5' r='1' fill='%23163D54'/%3E%3C/svg%3E"); /* @kind other */
+
+  /* editorial rule, drawn as a graphic rather than a fractional border */
+  --rule-editorial-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='3' preserveAspectRatio='none'%3E%3Cpath d='M0 1.6 C 20 0.7, 40 2.3, 60 1.4 S 100 0.8, 120 1.7' stroke='%2328312F' stroke-width='1.6' fill='none'/%3E%3C/svg%3E"); /* @kind other */
+
+  /* legacy aliases — resolve to the single ladder above, no separate scale */
+  --grain-control: var(--texture-controls); /* @kind other */
+  --grain-reading: var(--texture-reading); /* @kind other */
+  --grain-surface: var(--texture-surface); /* @kind other */
+  --grain-brand: var(--texture-expressive); /* @kind other */
+
+  /* paper wash — warm, uneven base rather than a flat fill.
+     The flat fallback is what a composited surface falls back TO when the
+     material treatment cannot hold WCAG 2.2 AA at its worst local point. */
+  --paper-flat: #F4F2EC; /* @kind color */
+  --paper-flat-ink: #163D54; /* @kind color */
+  --paper-wash: radial-gradient(120% 90% at 8% 0%, #FBF8F1 0%, #F4F2EC 46%, #EDEAE1 100%); /* @kind color */
+  --paper-wash-ink: radial-gradient(120% 100% at 12% 0%, #1D4A63 0%, #163D54 52%, #0E2C3D 100%); /* @kind color */
+
+  /* rules — functional lines are crisp integers; only editorial rules get character */
+  --rule-functional: 1px solid var(--border-subtle); /* @kind other */
+  --rule-editorial: 2px solid var(--brand-peat); /* @kind other */
+  --rule-hair: 1px solid var(--border-subtle); /* @kind other */
+
+  /* hand-set artifacts — editorial only, never on a control or a status */
+  --stamp-rotate: -2.4deg; /* @kind other */
+  --label-rotate: 1.2deg; /* @kind other */
+  --crop-offset: 6px; /* @kind spacing */
+  --crop-offset-compact: 3px; /* @kind spacing */
+  --ink-bleed: 0 1px 0 rgba(22,61,84,0.18); /* @kind shadow */
+
+  /* voices → understanding: staggered origins resolving to a shared baseline */
+  --voice-offset-3: 18px; /* @kind spacing */
+  --voice-offset-2: 10px; /* @kind spacing */
+  --voice-offset-1: 4px; /* @kind spacing */
+  --voice-offset-resolved: 0px; /* @kind spacing */
+  --voice-mark-width: 2px; /* @kind other */
+  --voice-mark-a: var(--brand-cyanotype); /* @kind color */
+  --voice-mark-b: var(--brand-lichen); /* @kind color */
+  --voice-mark-c: var(--brand-oxide); /* @kind color */
+}
+@media (max-width: 720px){
+  :root{
+    --crop-offset: var(--crop-offset-compact); /* @kind spacing */
+    --voice-offset-3: 8px; /* @kind spacing */
+    --voice-offset-2: 5px; /* @kind spacing */
+    --voice-offset-1: 2px; /* @kind spacing */
+  }
+}
+/* Forced-colours and high-contrast: no texture at all, flat fallbacks only. */
+@media (forced-colors: active), (prefers-contrast: more){
+  :root{
+    --texture-reading: 0; /* @kind other */
+    --texture-surface: 0; /* @kind other */
+    --texture-ambient: 0; /* @kind other */
+    --texture-expressive: 0; /* @kind other */
+    --texture-expressive-max: 0; /* @kind other */
+    --grain-reading: 0; /* @kind other */
+    --grain-surface: 0; /* @kind other */
+    --grain-brand: 0; /* @kind other */
+    --paper-wash: var(--paper-flat);
+    --paper-wash-ink: var(--paper-flat-ink);
+  }
+}

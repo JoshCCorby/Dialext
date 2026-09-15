@@ -1,0 +1,50 @@
+/* Material surfaces — the applied layer that puts real texture on real UI.
+   Usage: add a material class and set --mat-base to the surface's own colour.
+     <div class="dlx-mat dlx-mat-panel" style="--mat-base:var(--surface-raised)">
+
+   How it composites: the texture blends with --mat-base (multiply on light
+   grounds so only the tooth and speckle darken it; overlay on inked and
+   saturated grounds so hue is preserved), then a veil of --mat-base at
+   1 − strength pulls it back. The texture sits BENEATH content as a
+   background layer — never an overlay on top of text.
+
+   --mat-strength is the CALIBRATED render value, not the raw ladder number:
+   the source textures are low-contrast high-key greys, so a literal 2.5%
+   composite is invisible. Each class is tuned so its PERCEIVED intensity
+   lands on its ladder step (controls → reading → surface → ambient →
+   expressive). Perceived order is what the ladder governs. */
+.dlx-mat{
+  background-color: var(--mat-base, var(--surface-default));
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--mat-base, var(--surface-default)) calc(100% - var(--mat-strength, 0) * 100%), transparent) 0 100%),
+    var(--mat-tex, none);
+  background-blend-mode: normal, var(--mat-blend, multiply);
+  background-size: auto, var(--mat-scale, 260px);
+  background-repeat: repeat, repeat;
+  background-position: center, var(--mat-pos, center);
+}
+/* reading surfaces — transcripts, notes, long-form (ladder: reading) */
+.dlx-mat-reading{--mat-strength:0.1; /* @kind other */--mat-tex:var(--texture-fibre-soft); /* @kind other */--mat-scale:220px; /* @kind other */}
+/* ordinary surfaces — cards, rows, panels (ladder: surface) */
+.dlx-mat-panel{--mat-strength:0.26; /* @kind other */--mat-tex:var(--texture-fibre-soft); /* @kind other */--mat-scale:200px; /* @kind other */}
+.dlx-mat-fibre{--mat-strength:0.32; /* @kind other */--mat-tex:var(--texture-fibre-soft); /* @kind other */--mat-scale:200px; /* @kind other */}
+.dlx-mat-tooth{--mat-strength:0.34; /* @kind other */--mat-tex:var(--texture-surface-tooth); /* @kind other */--mat-scale:300px; /* @kind other */}
+/* ambient — app canvas, navigation, chrome (ladder: ambient) */
+.dlx-mat-ambient{--mat-strength:0.38; /* @kind other */--mat-tex:var(--texture-fibre-soft); /* @kind other */--mat-scale:240px; /* @kind other */}
+.dlx-mat-strata{--mat-strength:0.34; /* @kind other */--mat-tex:var(--texture-strata-soft); /* @kind other */--mat-scale:cover; /* @kind other */--mat-blend:overlay; /* @kind other */}
+/* inked surfaces — Cyanotype/Deep Atlantic fields, generated content, inverse panels */
+.dlx-mat-ink{--mat-strength:0.5; /* @kind other */--mat-tex:var(--texture-pigment-cloud); /* @kind other */--mat-scale:cover; /* @kind other */--mat-pos:20% 70%; /* @kind other */--mat-blend:overlay; /* @kind other */}
+.dlx-mat-cyanotype{--mat-strength:0.4; /* @kind other */--mat-tex:var(--texture-cyanotype-fibre); /* @kind other */--mat-scale:180px; /* @kind other */--mat-blend:overlay; /* @kind other */}
+/* controls — kept at the reading step so a button never fights its label */
+.dlx-mat-control{--mat-strength:0.22; /* @kind other */--mat-tex:var(--texture-pigment-cloud); /* @kind other */--mat-scale:cover; /* @kind other */--mat-blend:overlay; /* @kind other */}
+/* expressive — covers, onboarding, authentication, campaign (ladder: expressive) */
+.dlx-mat-expressive{--mat-strength:0.6; /* @kind other */--mat-tex:var(--texture-strata-flow); /* @kind other */--mat-scale:cover; /* @kind other */--mat-blend:overlay; /* @kind other */}
+.dlx-mat-halftone{--mat-strength:0.18; /* @kind other */--mat-tex:var(--texture-halftone-open); /* @kind other */--mat-scale:1100px; /* @kind other */--mat-pos:70% 30%; /* @kind other */}
+.dlx-mat-onyx{--mat-strength:0.4; /* @kind other */--mat-tex:var(--texture-onyx-flow); /* @kind other */--mat-scale:cover; /* @kind other */--mat-blend:overlay; /* @kind other */}
+.dlx-mat-sheen{--mat-strength:0.3; /* @kind other */--mat-tex:var(--texture-wet-sheen); /* @kind other */--mat-scale:cover; /* @kind other */--mat-blend:overlay; /* @kind other */}
+.dlx-mat-pigment-fibre{--mat-strength:0.5; /* @kind other */--mat-tex:var(--texture-pigment-fibre); /* @kind other */--mat-scale:300px; /* @kind other */--mat-blend:overlay; /* @kind other */}
+/* no texture at all — focus rings, status fills, forced-colours */
+.dlx-mat-none{--mat-strength:0; /* @kind other */--mat-tex:none; /* @kind other */}
+@media (forced-colors: active), (prefers-contrast: more){
+  .dlx-mat{background-image:none}
+}

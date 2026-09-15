@@ -1,0 +1,24 @@
+:root{
+  --text-display-lg-size: 64px; --text-display-lg-lh: 68px; --text-display-lg-weight: 500; --text-display-lg-family: var(--font-serif);
+  --text-display-md-size: 52px; --text-display-md-lh: 58px; --text-display-md-weight: 500; --text-display-md-family: var(--font-serif);
+  --text-heading-h1-size: 40px; --text-heading-h1-lh: 48px; --text-heading-h1-weight: 600; --text-heading-h1-family: var(--font-sans);
+  --text-heading-h2-size: 32px; --text-heading-h2-lh: 40px; --text-heading-h2-weight: 600; --text-heading-h2-family: var(--font-sans);
+  --text-heading-h3-size: 24px; --text-heading-h3-lh: 32px; --text-heading-h3-weight: 600; --text-heading-h3-family: var(--font-sans);
+  --text-heading-h4-size: 20px; --text-heading-h4-lh: 28px; --text-heading-h4-weight: 600; --text-heading-h4-family: var(--font-sans);
+  --text-body-lg-size: 18px; --text-body-lg-lh: 28px; --text-body-lg-weight: 400; --text-body-lg-family: var(--font-sans);
+  --text-body-md-size: 16px; --text-body-md-lh: 24px; --text-body-md-weight: 400; --text-body-md-family: var(--font-sans);
+  --text-body-sm-size: 14px; --text-body-sm-lh: 20px; --text-body-sm-weight: 400; --text-body-sm-family: var(--font-sans);
+  --text-label-md-size: 14px; --text-label-md-lh: 20px; --text-label-md-weight: 600; --text-label-md-family: var(--font-sans);
+  --text-label-sm-size: 12px; --text-label-sm-lh: 16px; --text-label-sm-weight: 600; --text-label-sm-family: var(--font-sans);
+  --text-caption-size: 12px; --text-caption-lh: 18px; --text-caption-weight: 400; --text-caption-family: var(--font-sans);
+  --text-code-size: 13px; --text-code-lh: 20px; --text-code-weight: 400; --text-code-family: var(--font-mono);
+
+  /* editorial + annotation roles — low-density product moments and brand surfaces.
+     Never on controls, transcript bodies or dense metadata. */
+  --text-title-serif-size: 28px; --text-title-serif-lh: 34px; --text-title-serif-weight: 500; --text-title-serif-family: var(--font-serif);
+  --text-quote-size: 20px; --text-quote-lh: 30px; --text-quote-weight: 400; --text-quote-family: var(--font-serif); --text-quote-style: italic;
+  --text-annotation-size: 13px; --text-annotation-lh: 19px; --text-annotation-weight: 400; --text-annotation-family: var(--font-sans); --text-annotation-style: italic;
+  --text-marginal-size: 12px; --text-marginal-lh: 17px; --text-marginal-weight: 500; --text-marginal-family: var(--font-sans);
+  --text-meta-caps-size: 12px; --text-meta-caps-lh: 17px; --text-meta-caps-weight: 600; --text-meta-caps-family: var(--font-sans); --text-meta-caps-tracking: 0.09em; --text-meta-caps-transform: uppercase;
+  --text-record-num-size: 12px; --text-record-num-lh: 17px; --text-record-num-weight: 400; --text-record-num-family: var(--font-mono); --text-record-num-tracking: 0.04em;
+}

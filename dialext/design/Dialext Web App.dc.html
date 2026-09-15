@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/colors.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/typography.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/shape.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/motion.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/texture.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/materials.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/surfaces.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/tokens/base.css">
+<link rel="stylesheet" href="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/styles.css">
+<script src="_ds/dialext-design-system-62b2d607-7988-476b-8ceb-68bf61918d56/_ds_bundle.js"></script>
+<style>
+  html, body { margin: 0; background: var(--brand-paper); }
+  [hidden] { display: none !important; }
+  a { color: var(--text-link); text-decoration: none; }
+  a:hover { color: var(--action-primary-hover); text-decoration: underline; }
+  ::selection { background: var(--surface-selected); }
+  .dlx-row:hover { background: var(--neutral-100) !important; }
+  .dlx-chip:hover { background: var(--neutral-100) !important; }
+  .dlx-word:hover { background: var(--brand-ochre-wash) !important; }
+  *:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; border-radius: 4px; }
+</style>
+</helmet>
+
+<div class="app-shell dlx-mat dlx-mat-strata" style="--mat-base:var(--brand-paper); --mat-blend:multiply; --mat-strength:0.13; display:flex; height:100vh; min-height:720px; font-family:var(--font-sans); color:var(--text-primary); -webkit-font-smoothing:antialiased">
+
+  <aside class="sidebar dlx-mat dlx-mat-strata" id="sidebar" aria-label="Recordings" style="--mat-base:var(--brand-paper); --mat-tex:var(--texture-pigment-cloud); --mat-blend:multiply; --mat-strength:0.11; --mat-scale:cover; --mat-pos:20% 70%; width:268px; flex:none; display:flex; flex-direction:column; padding:14px 12px 12px; gap:14px">
+
+    <div class="sidebar-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 6px 0">
+      <span class="sidebar-brand" style="font-family:var(--font-serif); font-size:19px; font-weight:600; letter-spacing:-0.01em">Dialext</span>
+      <button type="button" class="btn-new-recording dlx-mat dlx-mat-control" id="btn-new-recording" onClick="{{ onShowUpload }}" style="display:flex; align-items:center; gap:6px; font:600 13px/1 var(--font-sans); color:var(--text-inverse); background:var(--action-primary); border:1px solid var(--action-primary); border-radius:var(--radius-md); padding:8px 11px; cursor:pointer">
+        <span style="display:flex; filter:invert(1)"><x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></span>
+        New
+      </button>
+    </div>
+
+    <div class="sidebar-search" style="padding:0 2px">
+      <label style="display:flex; align-items:center; gap:8px; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:8px 10px; color:var(--text-tertiary)">
+        <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="search" size="15" hint-size="15px,15px"></x-import>
+        <input type="search" id="recording-search" placeholder="Search meetings" aria-label="Search recordings" style="flex:1; min-width:0; border:0; background:none; font:400 14px/20px var(--font-sans); color:var(--text-primary); outline:none">
+      </label>
+    </div>
+
+    <nav class="sidebar-list" aria-label="Recordings list" style="flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:2px">
+      <p class="status visually-hidden" id="list-status" role="status" aria-live="polite"></p>
+
+      <p style="margin:6px 8px 4px; font:var(--text-marginal-weight) var(--text-marginal-size)/var(--text-marginal-lh) var(--font-sans); color:var(--text-secondary)">Today</p>
+      <ul class="job-list" id="job-list" style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px">
+        <li class="job-row">
+          <button type="button" id="row-complete" class="dlx-row" onClick="{{ onSelectComplete }}" style="width:100%; display:flex; align-items:center; gap:10px; text-align:left; padding:8px; border:0; border-radius:var(--radius-md); background:var(--surface-selected); cursor:pointer; font:inherit; color:inherit">
+            <span style="flex:none; width:26px; height:26px; border-radius:var(--radius-sm); background:var(--surface-generated); display:flex; align-items:center; justify-content:center; color:var(--brand-cyanotype)">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="file-text" size="14" hint-size="14px,14px"></x-import>
+            </span>
+            <span style="flex:1; min-width:0">
+              <span class="job-filename" style="display:block; font:500 13.5px/18px var(--font-sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Cruinniú boird — Q3 review</span>
+              <span class="job-stage" style="display:block; font:400 12px/17px var(--font-sans); color:var(--text-secondary)">Ready to read</span>
+            </span>
+            <span style="flex:none; font:400 12px/17px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">10:56</span>
+          </button>
+        </li>
+        <li class="job-row">
+          <button type="button" class="dlx-row" style="width:100%; display:flex; align-items:center; gap:10px; text-align:left; padding:8px; border:0; border-radius:var(--radius-md); background:none; cursor:pointer; font:inherit; color:inherit">
+            <span style="flex:none; width:26px; height:26px; border-radius:var(--radius-sm); background:var(--neutral-100); display:flex; align-items:center; justify-content:center; color:var(--status-information)">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="audio-lines" size="14" hint-size="14px,14px"></x-import>
+            </span>
+            <span style="flex:1; min-width:0">
+              <span class="job-filename" style="display:block; font:500 13.5px/18px var(--font-sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Comhairle Contae planning call</span>
+              <span class="job-stage" style="display:block; font:400 12px/17px var(--font-sans); color:var(--info-strong)">Transcribing</span>
+            </span>
+            <span style="flex:none; font:400 12px/17px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">09:12</span>
+          </button>
+        </li>
+      </ul>
+
+      <p style="margin:14px 8px 4px; font:var(--text-marginal-weight) var(--text-marginal-size)/var(--text-marginal-lh) var(--font-sans); color:var(--text-secondary)">Fri 31 Jul</p>
+      <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px">
+        <li class="job-row">
+          <button type="button" class="dlx-row" style="width:100%; display:flex; align-items:center; gap:10px; text-align:left; padding:8px; border:0; border-radius:var(--radius-md); background:none; cursor:pointer; font:inherit; color:inherit">
+            <span style="flex:none; width:26px; height:26px; border-radius:var(--radius-sm); background:var(--surface-generated); display:flex; align-items:center; justify-content:center; color:var(--brand-cyanotype)">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="file-text" size="14" hint-size="14px,14px"></x-import>
+            </span>
+            <span style="flex:1; min-width:0">
+              <span class="job-filename" style="display:block; font:500 13.5px/18px var(--font-sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Community language grant review</span>
+              <span class="job-stage" style="display:block; font:400 12px/17px var(--font-sans); color:var(--text-secondary)">Ready to read</span>
+            </span>
+            <span style="flex:none; font:400 12px/17px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">15:30</span>
+          </button>
+        </li>
+        <li class="job-row">
+          <button type="button" id="row-failed" class="dlx-row" onClick="{{ onSelectFailed }}" style="width:100%; display:flex; align-items:center; gap:10px; text-align:left; padding:8px; border:0; border-radius:var(--radius-md); background:none; cursor:pointer; font:inherit; color:inherit">
+            <span style="flex:none; width:26px; height:26px; border-radius:var(--radius-sm); background:var(--error-subtle); display:flex; align-items:center; justify-content:center; color:var(--status-error)">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="triangle-alert" size="14" hint-size="14px,14px"></x-import>
+            </span>
+            <span style="flex:1; min-width:0">
+              <span class="job-filename" style="display:block; font:500 13.5px/18px var(--font-sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Údarás partnership call</span>
+              <span class="job-stage" style="display:block; font:400 12px/17px var(--font-sans); color:var(--status-error)">Failed</span>
+            </span>
+            <span style="flex:none; font:400 12px/17px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">11:04</span>
+          </button>
+        </li>
+      </ul>
+      <button type="button" id="load-more" class="btn-load-more dlx-chip" style="margin:10px 0 0; padding:7px; border:0; border-radius:var(--radius-md); background:none; font:500 13px/1 var(--font-sans); color:var(--text-secondary); cursor:pointer">Show more</button>
+    </nav>
+
+    <div style="border-top:var(--rule-functional); padding:10px 8px 2px; display:flex; align-items:center; gap:9px">
+      <span style="width:24px; height:24px; border-radius:var(--radius-full); background:var(--brand-deep-atlantic); color:var(--text-inverse); font:600 11px/24px var(--font-sans); text-align:center">NB</span>
+      <span style="flex:1; font:500 13px/18px var(--font-sans)">Niamh Breathnach</span>
+      <span style="color:var(--text-tertiary); display:flex">
+        <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="settings" size="15" hint-size="15px,15px"></x-import>
+      </span>
+    </div>
+  </aside>
+
+  <main class="workspace dlx-mat dlx-mat-strata" id="workspace" style="--mat-base:var(--brand-clear-white); --mat-blend:multiply; --mat-strength:0.14; flex:1; min-width:0; position:relative; overflow-y:auto; border-left:var(--rule-functional)">
+
+    <div class="workspace-empty" id="workspace-empty" hidden="{{ true }}" style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:40px">
+      <p style="margin:0; font:500 var(--text-title-serif-size)/var(--text-title-serif-lh) var(--font-serif)">No meeting open</p>
+      <p class="workspace-empty-text" style="margin:0; font:400 15px/22px var(--font-sans); color:var(--text-secondary)">Choose a meeting on the left, or record a new one.</p>
+    </div>
+
+    <div class="workspace-upload" id="workspace-upload" hidden="{{ true }}" style="height:100%; display:flex; align-items:center; justify-content:center; padding:40px">
+      <div class="upload-card" style="width:100%; max-width:520px">
+        <h2 class="upload-heading" style="margin:0 0 4px; font:500 var(--text-title-serif-size)/var(--text-title-serif-lh) var(--font-serif)">New recording</h2>
+        <p style="margin:0 0 22px; font:400 15px/22px var(--font-sans); color:var(--text-secondary)">Irish and English are detected automatically.</p>
+        <form id="upload-form">
+          <div class="upload-drop" id="upload-drop" style="display:flex; flex-direction:column; align-items:center; gap:14px; border:1px dashed var(--border-default); border-radius:var(--radius-lg); background:var(--brand-paper); padding:44px 24px">
+            <span style="color:var(--brand-cyanotype); display:flex">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="upload" size="24" hint-size="24px,24px"></x-import>
+            </span>
+            <p class="upload-drop-label" style="margin:0; font:400 15px/22px var(--font-sans); color:var(--text-secondary)">Drop an audio file here</p>
+            <label class="upload-file-label" for="audio-file" style="font:600 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:10px 16px; cursor:pointer">
+              <span>Choose file</span>
+              <input type="file" id="audio-file" accept="audio/*" style="display:none">
+            </label>
+          </div>
+          <p class="upload-file-info" id="upload-file-info" hidden="{{ true }}"></p>
+          <button type="button" id="upload-button" class="dlx-mat dlx-mat-control" onClick="{{ onShowProgress }}" style="width:100%; margin-top:16px; font:600 15px/1 var(--font-sans); color:var(--text-inverse); background:var(--action-primary); border:1px solid var(--action-primary); border-radius:var(--radius-md); padding:13px; cursor:pointer">Upload</button>
+          <p class="status" id="upload-status" role="status" aria-live="polite" style="margin:10px 0 0; min-height:20px; font:400 13px/20px var(--font-sans); color:var(--text-secondary)"></p>
+        </form>
+      </div>
+    </div>
+
+    <div class="workspace-progress" id="workspace-progress" hidden="{{ true }}" style="height:100%; display:flex; align-items:center; justify-content:center; padding:40px">
+      <div class="progress-card" style="width:100%; max-width:560px">
+        <p style="margin:0 0 6px; font:var(--text-meta-caps-weight) var(--text-meta-caps-size)/var(--text-meta-caps-lh) var(--font-sans); letter-spacing:var(--text-meta-caps-tracking); text-transform:uppercase; color:var(--info-strong)">Processing · 4 min 12 s elapsed</p>
+        <h2 class="progress-heading" id="progress-heading" style="margin:0 0 2px; font:500 var(--text-title-serif-size)/var(--text-title-serif-lh) var(--font-serif)">Transcribing</h2>
+        <p class="progress-filename" id="progress-filename" style="margin:0 0 4px; font:400 15px/22px var(--font-sans); color:var(--text-secondary); overflow-wrap:anywhere">comhairle-contae-07-08.m4a · 62 min</p>
+        <p class="status" id="progress-status" role="status" aria-live="polite" style="margin:0 0 22px; font:400 14px/20px var(--font-sans); color:var(--text-secondary)">You can close this window — processing continues.</p>
+
+        <div style="margin:0 0 30px">
+          <span style="display:flex; align-items:flex-end; gap:2px; height:44px; margin-bottom:12px"><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:33px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:35px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:14px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:29px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:39px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:21px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:22px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:36px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:23px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:14px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:19px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:39px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:33px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:31px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:29px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:19px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:33px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:40px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:19px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:22px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:31px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:22px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:23px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:41px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:32px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:28px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:22px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:21px; border-radius:1px; background:var(--audio-played)"></span><span style="flex:1; height:23px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:36px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:40px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:16px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:21px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:24px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:28px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:25px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:42px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:29px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:23px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:28px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:26px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:38px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:37px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:14px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--border-subtle)"></span><span style="flex:1; height:17px; border-radius:1px; background:var(--border-subtle)"></span></span>
+          <div style="display:flex; align-items:baseline; justify-content:space-between; font:400 13px/1 var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">
+            <span>38 of 62 min transcribed</span>
+            <span style="color:var(--text-secondary)">About 3 min left</span>
+          </div>
+        </div>
+
+        <ol class="event-trail" id="event-trail" style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0">
+          <li style="display:flex; gap:14px; align-items:flex-start; padding:0 0 16px; position:relative">
+            <span style="flex:none; width:9px; height:9px; margin-top:6px; border-radius:var(--radius-full); background:var(--status-success)"></span>
+            <span style="position:absolute; left:4px; top:15px; bottom:0; width:1px; background:var(--border-subtle)"></span>
+            <span class="event-stage" style="flex:1; font:400 14px/20px var(--font-sans)">Audio received</span>
+            <span class="event-time" style="font:400 13px/20px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">09:12</span>
+          </li>
+          <li style="display:flex; gap:14px; align-items:flex-start; padding:0 0 16px; position:relative">
+            <span style="flex:none; width:9px; height:9px; margin-top:6px; border-radius:var(--radius-full); background:var(--status-success)"></span>
+            <span style="position:absolute; left:4px; top:15px; bottom:0; width:1px; background:var(--border-subtle)"></span>
+            <span class="event-stage" style="flex:1; font:400 14px/20px var(--font-sans)">Languages detected — Irish and English</span>
+            <span class="event-time" style="font:400 13px/20px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">09:13</span>
+          </li>
+          <li style="display:flex; gap:14px; align-items:flex-start; padding:0 0 16px; position:relative">
+            <span style="flex:none; width:9px; height:9px; margin-top:6px; border-radius:var(--radius-full); background:var(--status-warning)"></span>
+            <span style="position:absolute; left:4px; top:15px; bottom:0; width:1px; background:var(--border-subtle)"></span>
+            <span class="event-stage" style="flex:1; font:400 14px/20px var(--font-sans)">Transcribing stopped, then restarted <span style="color:var(--text-secondary)">— attempt 2 of 3</span></span>
+            <span class="event-time" style="font:400 13px/20px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">09:15</span>
+          </li>
+          <li style="display:flex; gap:14px; align-items:flex-start; position:relative">
+            <span style="flex:none; width:9px; height:9px; margin-top:6px; border-radius:var(--radius-full); background:var(--status-information)"></span>
+            <span class="event-stage" style="flex:1; font:500 14px/20px var(--font-sans)">Transcribing</span>
+            <span class="event-time" style="font:400 13px/20px var(--font-sans); color:var(--text-secondary); font-variant-numeric:tabular-nums">09:16</span>
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="workspace-recording" id="workspace-recording" style="max-width:820px; margin:0 auto; padding:56px 60px 140px">
+
+      <header class="recording-header">
+        <h1 class="recording-title" id="recording-title" style="margin:0; font:500 40px/48px var(--font-serif); letter-spacing:-0.015em; text-wrap:pretty">Cruinniú boird — Q3 review</h1>
+        <div class="recording-meta" style="display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap">
+          <span class="recording-stage" id="recording-stage" style="display:inline-flex; align-items:center; gap:6px; font:500 13px/1 var(--font-sans); color:var(--text-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:7px 10px">
+            <span style="width:6px; height:6px; border-radius:var(--radius-full); background:var(--status-success)"></span>
+            Ready to read
+          </span>
+          <span style="font:400 13px/1 var(--font-sans); color:var(--text-secondary)">Fri 7 Aug · 48 min · Gaeilge and English</span>
+        </div>
+      </header>
+
+      <nav class="recording-tabs" id="recording-tabs" aria-label="Recording sections" style="display:flex; gap:4px; margin:26px 0 34px">
+        <button type="button" class="tab active dlx-chip" data-tab="summary" id="tab-summary" onClick="{{ onTabSummary }}" style="font:600 13.5px/1 var(--font-sans); color:var(--text-primary); background:var(--neutral-100); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:9px 14px; cursor:pointer">Summary</button>
+        <button type="button" class="tab dlx-chip" data-tab="notes" id="tab-notes" onClick="{{ onTabNotes }}" style="font:600 13.5px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid transparent; border-radius:var(--radius-md); padding:9px 14px; cursor:pointer">Notes</button>
+        <button type="button" class="tab dlx-chip" data-tab="transcript" id="tab-transcript" onClick="{{ onTabTranscript }}" style="font:600 13.5px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid transparent; border-radius:var(--radius-md); padding:9px 14px; cursor:pointer">Transcript</button>
+        <button type="button" class="tab dlx-chip" data-tab="downloads" id="tab-downloads" onClick="{{ onTabDownloads }}" style="font:600 13.5px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid transparent; border-radius:var(--radius-md); padding:9px 14px; cursor:pointer">Downloads</button>
+      </nav>
+
+      <section class="tab-panel" id="panel-summary" aria-labelledby="tab-summary">
+        <div class="record-toolbar" id="record-toolbar" style="display:flex; align-items:center; gap:8px; margin:0 0 26px">
+          <button type="button" class="btn-quiet dlx-chip" id="btn-copy-summary" style="display:inline-flex; align-items:center; gap:7px; font:500 13px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:8px 12px; cursor:pointer">
+            <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="copy" size="14" hint-size="14px,14px"></x-import>
+            Copy
+          </button>
+          <button type="button" class="btn-save" id="btn-save-summary" hidden="{{ true }}"></button>
+          <p class="editor-status" id="editor-status" role="status" aria-live="polite" style="margin:0; font:400 13px/1 var(--font-sans); color:var(--text-secondary)">Edited by you · 09:41</p>
+          <span style="flex:1"></span>
+          <button type="button" class="btn-quiet dlx-chip" style="display:inline-flex; align-items:center; gap:7px; font:500 13px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:8px 12px; cursor:pointer">
+            <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="share-2" size="14" hint-size="14px,14px"></x-import>
+            Share
+          </button>
+        </div>
+
+        <div id="record-body" style="display:flex; flex-direction:column; gap:30px">
+
+          <div>
+            <h3 style="display:flex; gap:12px; margin:0 0 12px; font:600 17px/24px var(--font-sans)">
+              <span style="font:400 var(--text-record-num-size)/24px var(--font-mono); color:var(--neutral-400)">#</span>
+              Overview
+            </h3>
+            <ul style="list-style:none; margin:0; padding:0 0 0 26px; display:flex; flex-direction:column; gap:9px">
+              <li class="record-item" style="position:relative; font:400 15.5px/26px var(--font-sans); color:var(--text-secondary); text-wrap:pretty"><span style="position:absolute; left:-14px; color:var(--neutral-400)">•</span>Board approved the Q3 language plan, with two amendments to the community grant strand<button type="button" class="citation-mark" onClick="{{ onCite1 }}" aria-label="Show the passage this came from, at 00:12" title="Show source passage — 00:12" style="font:600 11px/1 var(--font-sans); vertical-align:super; border:0; background:none; color:var(--brand-cyanotype); cursor:pointer; padding:0 2px">1</button></li>
+              <li class="record-item" style="position:relative; font:400 15.5px/26px var(--font-sans); color:var(--text-secondary); text-wrap:pretty"><span style="position:absolute; left:-14px; color:var(--neutral-400)">•</span>Most of the discussion was in Irish; the budget section switched to English</li>
+              <li class="record-item" style="position:relative; font:400 15.5px/26px var(--font-sans); color:var(--text-secondary); text-wrap:pretty"><span style="position:absolute; left:-14px; color:var(--neutral-400)">•</span>Údarás partnership deferred to the September meeting<button type="button" class="citation-mark" onClick="{{ onCite2 }}" aria-label="Show the passage this came from, at 01:16" title="Show source passage — 01:16" style="font:600 11px/1 var(--font-sans); vertical-align:super; border:0; background:none; color:var(--brand-cyanotype); cursor:pointer; padding:0 2px">2</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 style="display:flex; gap:12px; margin:0 0 12px; font:600 17px/24px var(--font-sans)">
+              <span style="font:400 var(--text-record-num-size)/24px var(--font-mono); color:var(--neutral-400)">#</span>
+              Decisions
+            </h3>
+            <ul style="list-style:none; margin:0; padding:0 0 0 26px; display:flex; flex-direction:column; gap:14px">
+              <li class="record-item" style="position:relative"><span style="position:absolute; left:-14px; color:var(--neutral-400)">•</span>
+                <span style="font:400 15.5px/26px var(--font-sans); color:var(--text-secondary)">Grant ceiling raised to €12,000 per applicant<button type="button" class="citation-mark" onClick="{{ onCite3 }}" aria-label="Show the passage this came from, at 01:48" title="Show source passage — 01:48" style="font:600 11px/1 var(--font-sans); vertical-align:super; border:0; background:none; color:var(--brand-cyanotype); cursor:pointer; padding:0 2px">3</button></span>
+                <span class="record-item-attribute" style="display:block; font:400 13px/19px var(--font-sans); color:var(--text-secondary)">Proposed by Máire Ní Dhomhnaill · carried</span>
+              </li>
+              <li class="record-item" style="position:relative"><span style="position:absolute; left:-14px; color:var(--neutral-400)">•</span>
+                <span style="font:400 15.5px/26px var(--font-sans); color:var(--text-secondary)">Quarterly reports to be published bilingually from October</span>
+                <span class="record-item-attribute" style="display:block; font:400 13px/19px var(--font-sans); color:var(--text-secondary)">Carried, one abstention</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 style="display:flex; gap:12px; margin:0 0 12px; font:600 17px/24px var(--font-sans)">
+              <span style="font:400 var(--text-record-num-size)/24px var(--font-mono); color:var(--neutral-400)">#</span>
+              Actions
+            </h3>
+            <ul style="list-style:none; margin:0; padding:0 0 0 26px; display:flex; flex-direction:column; gap:14px">
+              <li class="record-item" style="position:relative"><span style="position:absolute; left:-14px; color:var(--neutral-400)">•</span>
+                <span style="font:400 15.5px/26px var(--font-sans); color:var(--text-secondary)">Circulate the amended grant criteria before 21 August</span>
+                <span class="record-item-attribute" style="display:block; font:400 13px/19px var(--font-sans); color:var(--text-secondary)">Seán Ó Braonáin</span>
+              </li>
+              <li class="record-item" style="position:relative"><span style="position:absolute; left:-14px; color:var(--neutral-400)">•</span>
+                <span style="font:400 15.5px/26px var(--font-sans); color:var(--text-secondary)">Confirm a September slot with Údarás</span>
+                <span class="record-item-attribute" style="display:block; font:400 13px/19px var(--font-sans); color:var(--text-secondary)">Niamh Breathnach</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="tab-panel" id="panel-notes" aria-labelledby="tab-notes" hidden="{{ true }}">
+        <div style="display:flex; align-items:center; gap:10px; margin:0 0 20px">
+          <span style="flex:1"></span>
+          <p id="notes-status" role="status" aria-live="polite" style="margin:0; font:400 13px/1 var(--font-sans); color:var(--text-secondary)">Saved 09:44</p>
+        </div>
+        <textarea id="notes-body" placeholder="Write your own notes" style="display:block; width:100%; min-height:420px; border:0; padding:0; background:none; resize:none; outline:none; font:400 16px/30px var(--font-sans); color:var(--text-primary)">Ask Seán for the 2024 grant figures before the criteria go out.
+
+Máire wants the September agenda circulated in Irish first, English second.</textarea>
+      </section>
+
+      <section class="tab-panel" id="panel-transcript" aria-labelledby="tab-transcript" hidden="{{ true }}">
+        <div style="display:flex; align-items:center; gap:12px; margin:0 0 8px">
+          <div class="transcript-switch" style="display:inline-flex; gap:2px; padding:3px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--neutral-100)">
+            <button type="button" id="lang-ga" class="transcript-switch-option is-selected" onClick="{{ onLangGa }}" style="font:600 13px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:0; border-radius:var(--radius-sm); padding:7px 14px; box-shadow:var(--ink-bleed); cursor:pointer">Gaeilge</button>
+            <button type="button" id="lang-en" class="transcript-switch-option" onClick="{{ onLangEn }}" style="font:600 13px/1 var(--font-sans); color:var(--text-secondary); background:none; border:0; border-radius:var(--radius-sm); padding:7px 14px; cursor:pointer">English</button>
+          </div>
+          <p class="note" id="transcript-note" style="margin:0; font:400 13px/20px var(--font-sans); color:var(--text-secondary)">Select a marked word to hear the original audio.</p>
+        </div>
+        <p class="status" id="transcript-status" role="status" aria-live="polite" aria-atomic="true" style="margin:0 0 20px; min-height:20px; font:400 13px/20px var(--font-sans); color:var(--text-secondary)"></p>
+
+        <audio id="transcript-audio" preload="none"></audio>
+
+        <div class="uncertainty-section dlx-mat dlx-mat-tooth" id="uncertainty-section" style="--mat-base:var(--brand-paper); margin:0 0 26px; padding:14px 16px; border:1px solid var(--border-subtle); border-radius:var(--radius-md)">
+          <button type="button" class="uncertainty-toggle" id="uncertainty-toggle" aria-expanded="false" aria-controls="uncertainties" onClick="{{ onToggleUncertainty }}" style="display:inline-flex; align-items:center; gap:8px; font:500 13.5px/1 var(--font-sans); color:var(--editorial-ink); background:none; border:0; padding:0; cursor:pointer">
+            <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="chevron-right" size="14" hint-size="14px,14px"></x-import>
+            3 passages may need review
+          </button>
+          <ul id="uncertainties" hidden="{{ true }}" style="list-style:none; margin:16px 0 0; padding:0; display:flex; flex-direction:column; gap:14px">
+            <li class="uncertainty-entry">
+              <button type="button" class="dlx-row" onClick="{{ onReview2 }}" style="width:100%; text-align:left; display:block; padding:8px 10px; margin-left:-10px; border:0; border-left:2px solid var(--editorial-ink); border-radius:0 var(--radius-sm) var(--radius-sm) 0; background:none; cursor:pointer; font:inherit; color:inherit">
+                <span class="uncertainty-summary" style="display:block; font:500 14px/20px var(--font-sans)">“an scéim nua” — 00:41</span>
+                <span class="uncertainty-reason" style="display:block; margin-top:2px; font:var(--text-annotation-weight) var(--text-annotation-size)/var(--text-annotation-lh) var(--font-sans); font-style:italic; color:var(--text-secondary)">Two speakers overlapped; the scheme name is unclear.</span>
+              </button>
+            </li>
+            <li class="uncertainty-entry">
+              <button type="button" class="dlx-row" onClick="{{ onReview3 }}" style="width:100%; text-align:left; display:block; padding:8px 10px; margin-left:-10px; border:0; border-left:2px solid var(--editorial-ink); border-radius:0 var(--radius-sm) var(--radius-sm) 0; background:none; cursor:pointer; font:inherit; color:inherit">
+                <span class="uncertainty-summary" style="display:block; font:500 14px/20px var(--font-sans)">“Mheán Fómhair” — 01:16</span>
+                <span class="uncertainty-reason" style="display:block; margin-top:2px; font:var(--text-annotation-weight) var(--text-annotation-size)/var(--text-annotation-lh) var(--font-sans); font-style:italic; color:var(--text-secondary)">The month was spoken quickly at the end of a sentence.</span>
+              </button>
+            </li>
+            <li class="uncertainty-entry">
+              <button type="button" class="dlx-row" onClick="{{ onReview4 }}" style="width:100%; text-align:left; display:block; padding:8px 10px; margin-left:-10px; border:0; border-left:2px solid var(--editorial-ink); border-radius:0 var(--radius-sm) var(--radius-sm) 0; background:none; cursor:pointer; font:inherit; color:inherit">
+                <span class="uncertainty-summary" style="display:block; font:500 14px/20px var(--font-sans)">“twelve thousand” — 01:48</span>
+                <span class="uncertainty-reason" style="display:block; margin-top:2px; font:var(--text-annotation-weight) var(--text-annotation-size)/var(--text-annotation-lh) var(--font-sans); font-style:italic; color:var(--text-secondary)">A figure was spoken in Irish and repeated in English.</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div id="transcript-readings" style="display:flex; flex-direction:column; gap:26px">
+          <div class="transcript-reading" id="seg-1" style="display:flex; gap:20px">
+            <span class="ts-gutter" style="flex:none; width:52px; padding-top:3px; font:400 12px/22px var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">00:12</span>
+            <div style="flex:1; min-width:0; border-left:2px solid var(--voice-mark-a); padding-left:16px">
+              <p class="transcript-speaker" style="margin:0 0 4px; font:600 13px/18px var(--font-sans); color:var(--text-primary)">Máire Ní Dhomhnaill</p>
+              <p class="transcript-line" style="margin:0; font:400 16px/28px var(--font-sans); color:var(--text-secondary); text-wrap:pretty">Tosóimid leis an bplean teanga don ráithe seo. Tá an dréacht curtha chuig gach ball den bhord, agus tá dhá leasú molta ag an gcoiste.</p>
+            </div>
+          </div>
+
+          <div class="transcript-reading" id="seg-2" style="display:flex; gap:20px">
+            <span class="ts-gutter" style="flex:none; width:52px; padding-top:3px; font:400 12px/22px var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">00:41</span>
+            <div style="flex:1; min-width:0; border-left:2px solid var(--voice-mark-b); padding-left:16px">
+              <p class="transcript-speaker" style="margin:0 0 4px; font:600 13px/18px var(--font-sans); color:var(--text-primary)">Seán Ó Braonáin</p>
+              <p class="transcript-line" style="margin:0; font:400 16px/28px var(--font-sans); color:var(--text-secondary); text-wrap:pretty">Aontaím leis sin. Ach caithfimid a bheith soiléir faoi <button type="button" class="uncertain-word dlx-word" style="font:inherit; color:inherit; background:none; border:0; padding:0 1px; text-decoration:underline dotted var(--content-uncertain); text-decoration-thickness:1.5px; text-underline-offset:0.24em; cursor:pointer" id="word-2" aria-expanded="false" aria-controls="review-2" onClick="{{ onWord2 }}">an scéim nua</button> sula rachaimid chuig an gcéad chruinniú eile.</p>
+              <div class="review-panel" id="review-2" hidden="{{ true }}" style="margin-top:14px; padding:16px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--brand-paper)">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+                  <button type="button" style="flex:none; width:34px; height:34px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border-default); border-radius:var(--radius-full); background:var(--surface-raised); color:var(--brand-cyanotype); cursor:pointer">
+                    <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="play" size="15" hint-size="15px,15px"></x-import>
+                  </button>
+                  <span style="flex:1; display:flex; align-items:flex-end; gap:2px; height:22px"><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:19px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:17px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:16px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:17px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:14px; border-radius:1px; background:var(--audio-waveform)"></span></span>
+                  <span style="flex:none; font:400 12px/1 var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">00:41 – 00:47</span>
+                </div>
+                <p style="margin:0 0 10px; font:var(--text-marginal-weight) var(--text-marginal-size)/var(--text-marginal-lh) var(--font-sans); color:var(--text-secondary)">Suggested readings — generated, not confirmed</p>
+                <div style="display:flex; flex-wrap:wrap; gap:8px"><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">an scéim nua <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">82%</span></button><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">an scéim nuachta <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">11%</span></button><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">an scéim Nua-Aoise <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">4%</span></button></div>
+                <div style="display:flex; gap:8px; margin-top:16px; padding-top:14px; border-top:var(--rule-functional)">
+                  <button type="button" style="font:600 13px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 13px; cursor:pointer">Keep original</button>
+                  <button type="button" class="dlx-chip" style="font:500 13px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:9px 13px; cursor:pointer">Type a correction</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="transcript-reading" id="seg-3" style="display:flex; gap:20px">
+            <span class="ts-gutter" style="flex:none; width:52px; padding-top:3px; font:400 12px/22px var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">01:16</span>
+            <div style="flex:1; min-width:0; border-left:2px solid var(--voice-mark-a); padding-left:16px">
+              <p class="transcript-speaker" style="margin:0 0 4px; font:600 13px/18px var(--font-sans); color:var(--text-primary)">Máire Ní Dhomhnaill</p>
+              <p class="transcript-line" style="margin:0; font:400 16px/28px var(--font-sans); color:var(--text-secondary); text-wrap:pretty">Ceart go leor. Cuirfimid an cheist sin ar an gclár do mhí <button type="button" class="uncertain-word dlx-word" style="font:inherit; color:inherit; background:none; border:0; padding:0 1px; text-decoration:underline dotted var(--content-uncertain); text-decoration-thickness:1.5px; text-underline-offset:0.24em; cursor:pointer" id="word-3" aria-expanded="false" aria-controls="review-3" onClick="{{ onWord3 }}">Mheán Fómhair</button>.</p>
+              <div class="review-panel" id="review-3" hidden="{{ true }}" style="margin-top:14px; padding:16px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--brand-paper)">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+                  <button type="button" style="flex:none; width:34px; height:34px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border-default); border-radius:var(--radius-full); background:var(--surface-raised); color:var(--brand-cyanotype); cursor:pointer">
+                    <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="play" size="15" hint-size="15px,15px"></x-import>
+                  </button>
+                  <span style="flex:1; display:flex; align-items:flex-end; gap:2px; height:22px"><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:19px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:17px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:16px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:17px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:14px; border-radius:1px; background:var(--audio-waveform)"></span></span>
+                  <span style="flex:none; font:400 12px/1 var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">01:16 – 01:21</span>
+                </div>
+                <p style="margin:0 0 10px; font:var(--text-marginal-weight) var(--text-marginal-size)/var(--text-marginal-lh) var(--font-sans); color:var(--text-secondary)">Suggested readings — generated, not confirmed</p>
+                <div style="display:flex; flex-wrap:wrap; gap:8px"><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">Mheán Fómhair <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">76%</span></button><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">Mheitheamh <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">15%</span></button><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">Mhí na Samhna <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">6%</span></button></div>
+                <div style="display:flex; gap:8px; margin-top:16px; padding-top:14px; border-top:var(--rule-functional)">
+                  <button type="button" style="font:600 13px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 13px; cursor:pointer">Keep original</button>
+                  <button type="button" class="dlx-chip" style="font:500 13px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:9px 13px; cursor:pointer">Type a correction</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="transcript-reading" id="seg-4" style="display:flex; gap:20px">
+            <span class="ts-gutter" style="flex:none; width:52px; padding-top:3px; font:400 12px/22px var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">01:48</span>
+            <div style="flex:1; min-width:0; border-left:2px solid var(--voice-mark-c); padding-left:16px">
+              <p class="transcript-speaker" style="margin:0 0 4px; font:600 13px/18px var(--font-sans); color:var(--text-primary)">Cathal Mac Aoidh <span style="font:var(--text-marginal-weight) var(--text-marginal-size)/17px var(--font-sans); color:var(--text-secondary)">· English</span></p>
+              <p class="transcript-line" style="margin:0; font:400 16px/28px var(--font-sans); color:var(--text-secondary); text-wrap:pretty">On the budget line, the ceiling moves to <button type="button" class="uncertain-word dlx-word" style="font:inherit; color:inherit; background:none; border:0; padding:0 1px; text-decoration:underline dotted var(--content-uncertain); text-decoration-thickness:1.5px; text-underline-offset:0.24em; cursor:pointer" id="word-4" aria-expanded="false" aria-controls="review-4" onClick="{{ onWord4 }}">twelve thousand</button> per applicant. Anything above that goes through the full procurement route.</p>
+              <div class="review-panel" id="review-4" hidden="{{ true }}" style="margin-top:14px; padding:16px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--brand-paper)">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+                  <button type="button" style="flex:none; width:34px; height:34px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border-default); border-radius:var(--radius-full); background:var(--surface-raised); color:var(--brand-cyanotype); cursor:pointer">
+                    <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="play" size="15" hint-size="15px,15px"></x-import>
+                  </button>
+                  <span style="flex:1; display:flex; align-items:flex-end; gap:2px; height:22px"><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:19px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:10px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:17px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:8px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:12px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:15px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:18px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:9px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:5px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:7px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:20px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:16px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:6px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:11px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:13px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:17px; border-radius:1px; background:var(--audio-waveform)"></span><span style="flex:1; height:14px; border-radius:1px; background:var(--audio-waveform)"></span></span>
+                  <span style="flex:none; font:400 12px/1 var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">01:48 – 01:55</span>
+                </div>
+                <p style="margin:0 0 10px; font:var(--text-marginal-weight) var(--text-marginal-size)/var(--text-marginal-lh) var(--font-sans); color:var(--text-secondary)">Suggested readings — generated, not confirmed</p>
+                <div style="display:flex; flex-wrap:wrap; gap:8px"><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">twelve thousand <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">88%</span></button><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">twelve thousand five hundred <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">7%</span></button><button type="button" class="dlx-chip" style="display:inline-flex; align-items:baseline; gap:8px; font:500 14px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 12px; cursor:pointer">twenty thousand <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary)">3%</span></button></div>
+                <div style="display:flex; gap:8px; margin-top:16px; padding-top:14px; border-top:var(--rule-functional)">
+                  <button type="button" style="font:600 13px/1 var(--font-sans); color:var(--text-primary); background:var(--surface-raised); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 13px; cursor:pointer">Keep original</button>
+                  <button type="button" class="dlx-chip" style="font:500 13px/1 var(--font-sans); color:var(--text-secondary); background:none; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:9px 13px; cursor:pointer">Type a correction</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="panel-downloads" aria-labelledby="tab-downloads" hidden="{{ true }}">
+        <p class="status" id="download-status" role="status" aria-live="polite" aria-atomic="true" style="margin:0 0 20px; min-height:20px; font:400 13px/20px var(--font-sans); color:var(--text-secondary)">Generated from the current summary.</p>
+        <ul id="download-list" style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px">
+          <li style="display:flex; align-items:center; gap:14px; padding:15px 16px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--brand-paper)">
+            <span style="flex:none; width:34px; height:34px; border-radius:var(--radius-sm); background:var(--surface-raised); border:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color:var(--brand-cyanotype)">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="file-text" size="16" hint-size="16px,16px"></x-import>
+            </span>
+            <span style="flex:1; min-width:0">
+              <span style="display:block; font:500 14.5px/20px var(--font-sans)">Minutes</span>
+              <span style="display:block; font:400 12.5px/18px var(--font-sans); color:var(--text-secondary)">DOCX · 48 KB · bilingual</span>
+            </span>
+            <a href="#" style="font:600 13px/1 var(--font-sans); color:var(--text-primary); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 13px">Download</a>
+          </li>
+          <li style="display:flex; align-items:center; gap:14px; padding:15px 16px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--brand-paper)">
+            <span style="flex:none; width:34px; height:34px; border-radius:var(--radius-sm); background:var(--surface-raised); border:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color:var(--brand-cyanotype)">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="align-left" size="16" hint-size="16px,16px"></x-import>
+            </span>
+            <span style="flex:1; min-width:0">
+              <span style="display:block; font:500 14.5px/20px var(--font-sans)">Transcript</span>
+              <span style="display:block; font:400 12.5px/18px var(--font-sans); color:var(--text-secondary)">TXT · 96 KB · Gaeilge and English</span>
+            </span>
+            <a href="#" style="font:600 13px/1 var(--font-sans); color:var(--text-primary); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 13px">Download</a>
+          </li>
+          <li style="display:flex; align-items:center; gap:14px; padding:15px 16px; border:1px solid var(--border-subtle); border-radius:var(--radius-md); background:var(--brand-paper)">
+            <span style="flex:none; width:34px; height:34px; border-radius:var(--radius-sm); background:var(--surface-raised); border:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary)">
+              <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="volume-2" size="16" hint-size="16px,16px"></x-import>
+            </span>
+            <span style="flex:1; min-width:0">
+              <span style="display:block; font:500 14.5px/20px var(--font-sans)">Original audio</span>
+              <span style="display:block; font:400 12.5px/18px var(--font-sans); color:var(--text-secondary)">M4A · 44 MB</span>
+            </span>
+            <a href="#" style="font:600 13px/1 var(--font-sans); color:var(--text-primary); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 13px">Download</a>
+          </li>
+        </ul>
+      </section>
+
+      <div class="failure" id="detail-failure" hidden="{{ true }}" style="margin-top:8px; padding:18px 20px; border:1px solid var(--error-subtle); border-left:3px solid var(--status-error); border-radius:var(--radius-md); background:var(--error-subtle)">
+        <p class="failure-message" id="failure-message" style="margin:0; font:600 15px/22px var(--font-sans); color:var(--error-strong)">The transcript could not be completed.</p>
+        <p class="failure-next" id="failure-next" style="margin:6px 0 0; font:400 14.5px/22px var(--font-sans); color:var(--text-secondary)">The audio was too quiet after 00:31. Your original audio is safe. Upload a clearer copy, or download the audio and try again.</p>
+      </div>
+    </div>
+
+    <div id="audio-dock" hidden="{{ true }}" style="position:sticky; bottom:0; display:flex; justify-content:center; padding:0 0 28px; pointer-events:none">
+      <div style="display:flex; align-items:center; gap:14px; padding:11px 18px; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); box-shadow:0 2px 10px rgba(22,61,84,0.08); pointer-events:auto">
+        <span style="display:flex; color:var(--brand-cyanotype)">
+          <x-import component-from-global-scope="DialextDesignSystem_62b2d6.Icon" name="play" size="18" hint-size="18px,18px"></x-import>
+        </span>
+        <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">00:41</span>
+        <span style="width:240px; height:3px; border-radius:var(--radius-full); background:var(--border-subtle); position:relative">
+          <span style="position:absolute; left:0; top:0; bottom:0; width:28%; border-radius:var(--radius-full); background:var(--audio-played)"></span>
+        </span>
+        <span style="font:400 12px/1 var(--font-mono); color:var(--text-secondary); font-variant-numeric:tabular-nums">48:02</span>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:940},&quot;openTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Summary&quot;,&quot;Notes&quot;,&quot;Transcript&quot;,&quot;Downloads&quot;],&quot;default&quot;:&quot;Summary&quot;,&quot;tsType&quot;:&quot;'Summary' | 'Notes' | 'Transcript' | 'Downloads'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Meeting&quot;,&quot;Empty&quot;,&quot;New recording&quot;,&quot;Processing&quot;,&quot;Failed&quot;],&quot;default&quot;:&quot;Meeting&quot;,&quot;tsType&quot;:&quot;'Meeting' | 'Empty' | 'New recording' | 'Processing' | 'Failed'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#163D54&quot;,&quot;#245F80&quot;,&quot;#28312F&quot;],&quot;default&quot;:&quot;#163D54&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Style&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Comfortable&quot;,&quot;Compact&quot;],&quot;default&quot;:&quot;Comfortable&quot;,&quot;tsType&quot;:&quot;'Comfortable' | 'Compact'&quot;,&quot;section&quot;:&quot;Style&quot;},&quot;showTimestamps&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Transcript&quot;},&quot;showCitations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Summary&quot;}}">
+class Component extends DCLogic {
+  el(id) { return document.getElementById(id); }
+
+  screen(name) {
+    ['workspace-empty', 'workspace-upload', 'workspace-progress', 'workspace-recording'].forEach(id => {
+      const n = this.el(id);
+      if (n) n.hidden = id !== name;
+    });
+  }
+
+  clearHighlights() {
+    document.querySelectorAll('#transcript-readings .transcript-line').forEach(p => {
+      p.style.background = '';
+      p.style.margin = '0';
+      p.style.padding = '0';
+      p.style.borderRadius = '';
+    });
+  }
+
+  setPanels(openId) {
+    document.querySelectorAll('.review-panel').forEach(p => { p.hidden = p.id !== openId; });
+    [2, 3, 4].forEach(i => {
+      const w = this.el('word-' + i);
+      if (w) w.setAttribute('aria-expanded', String(openId === 'review-' + i));
+    });
+  }
+
+  scrollTo(seg, offset) {
+    const main = this.el('workspace');
+    if (!main || !seg) return;
+    const delta = seg.getBoundingClientRect().top - main.getBoundingClientRect().top;
+    main.scrollTop = Math.max(0, main.scrollTop + delta - offset);
+  }
+
+  highlight(seg) {
+    const line = seg.querySelector('.transcript-line');
+    if (!line) return;
+    line.style.background = 'var(--surface-selected)';
+    line.style.margin = '0 -8px';
+    line.style.padding = '4px 8px';
+    line.style.borderRadius = 'var(--radius-sm)';
+  }
+
+  cite(n) {
+    this.showComplete();
+    this.tab('transcript');
+    this.setPanels(null);
+    this.clearHighlights();
+    const seg = this.el('seg-' + n);
+    if (!seg) return;
+    this.highlight(seg);
+    this.scrollTo(seg, 110);
+    const note = this.el('transcript-status');
+    if (note) note.textContent = 'Showing the passage this summary line came from.';
+  }
+
+  toggleWord(n) {
+    const panel = this.el('review-' + n);
+    if (!panel) return;
+    if (!panel.hidden) {
+      this.setPanels(null);
+      this.clearHighlights();
+      return;
+    }
+    this.review(n);
+  }
+
+  review(n) {
+    this.showComplete();
+    this.tab('transcript');
+    this.setPanels('review-' + n);
+    document.querySelectorAll('#transcript-readings .transcript-line').forEach(p => {
+      p.style.background = '';
+      p.style.margin = '0';
+      p.style.padding = '0';
+      p.style.borderRadius = '';
+    });
+    const seg = this.el('seg-' + n);
+    if (!seg) return;
+    const line = seg.querySelector('.transcript-line');
+    if (line) {
+      line.style.background = 'var(--surface-selected)';
+      line.style.margin = '0 -8px';
+      line.style.padding = '4px 8px';
+      line.style.borderRadius = 'var(--radius-sm)';
+    }
+    const main = this.el('workspace');
+    if (main) {
+      const delta = seg.getBoundingClientRect().top - main.getBoundingClientRect().top;
+      main.scrollTop = Math.max(0, main.scrollTop + delta - 110);
+    }
+  }
+
+  tab(name) {
+    ['summary', 'notes', 'transcript', 'downloads'].forEach(t => {
+      const btn = this.el('tab-' + t);
+      const panel = this.el('panel-' + t);
+      const on = t === name;
+      if (panel) panel.hidden = !on;
+      if (btn) {
+        btn.style.background = on ? 'var(--neutral-100)' : 'none';
+        btn.style.borderColor = on ? 'var(--border-subtle)' : 'transparent';
+        btn.style.color = on ? 'var(--text-primary)' : 'var(--text-secondary)';
+      }
+    });
+    const dock = this.el('audio-dock');
+    if (dock) dock.hidden = name !== 'transcript';
+  }
+
+  row(activeId) {
+    ['row-complete', 'row-failed'].forEach(id => {
+      const n = this.el(id);
+      if (n) n.style.background = id === activeId ? 'var(--surface-selected)' : 'none';
+    });
+  }
+
+  lang(which) {
+    [['lang-ga', which === 'ga'], ['lang-en', which === 'en']].forEach(([id, on]) => {
+      const n = this.el(id);
+      if (!n) return;
+      n.style.background = on ? 'var(--surface-raised)' : 'none';
+      n.style.color = on ? 'var(--text-primary)' : 'var(--text-secondary)';
+      n.style.boxShadow = on ? 'var(--ink-bleed)' : 'none';
+    });
+  }
+
+  applyProps() {
+    const p = this.props || {};
+    const accent = p.accent ?? '#163D54';
+    const compact = (p.density ?? 'Comfortable') === 'Compact';
+
+    const shell = document.querySelector('.app-shell');
+    if (shell) {
+      shell.style.setProperty('--action-primary', accent);
+      shell.style.setProperty('--brand-cyanotype', accent === '#28312F' ? '#28312F' : 'var(--brand-cyanotype)');
+    }
+    ['btn-new-recording', 'upload-button'].forEach(id => {
+      const n = this.el(id);
+      if (n) { n.style.background = ''; n.style.setProperty('--mat-base', accent); n.style.borderColor = accent; }
+    });
+
+    const rec = this.el('workspace-recording');
+    if (rec) rec.style.padding = compact ? '32px 44px 120px' : '56px 60px 140px';
+    const body = this.el('record-body');
+    if (body) body.style.gap = compact ? '20px' : '30px';
+    const readings = this.el('transcript-readings');
+    if (readings) readings.style.gap = compact ? '16px' : '26px';
+    const title = this.el('recording-title');
+    if (title) { title.style.font = compact ? '500 32px/40px var(--font-serif)' : '500 40px/48px var(--font-serif)'; }
+
+    const ts = (p.showTimestamps ?? true);
+    document.querySelectorAll('.ts-gutter').forEach(n => { n.style.display = ts ? '' : 'none'; });
+    const cites = (p.showCitations ?? true);
+    document.querySelectorAll('.citation-mark').forEach(n => { n.style.display = cites ? '' : 'none'; });
+
+    const screen = p.screen ?? 'Meeting';
+    if (screen === 'Empty') { this.screen('workspace-empty'); this.row(null); }
+    else if (screen === 'New recording') { this.screen('workspace-upload'); this.row(null); }
+    else if (screen === 'Processing') { this.screen('workspace-progress'); this.row(null); }
+    else if (screen === 'Failed') { this.showFailed(); }
+    else { this.showComplete(); this.tab((p.openTab ?? 'Summary').toLowerCase()); }
+  }
+
+  componentDidMount() { this.applyProps(); }
+  componentDidUpdate() { this.applyProps(); }
+
+  showComplete() {
+    this.screen('workspace-recording');
+    this.row('row-complete');
+    const t = this.el('recording-title'); if (t) t.textContent = 'Cruinniú boird — Q3 review';
+    const f = this.el('detail-failure'); if (f) f.hidden = true;
+    const tabs = this.el('recording-tabs'); if (tabs) tabs.hidden = false;
+    const stage = this.el('recording-stage'); if (stage) stage.hidden = false;
+  }
+
+  showFailed() {
+    this.screen('workspace-recording');
+    this.row('row-failed');
+    const t = this.el('recording-title'); if (t) t.textContent = 'Údarás partnership call';
+    const f = this.el('detail-failure'); if (f) f.hidden = false;
+    const tabs = this.el('recording-tabs'); if (tabs) tabs.hidden = true;
+    const stage = this.el('recording-stage'); if (stage) stage.hidden = true;
+    ['panel-summary', 'panel-notes', 'panel-transcript', 'panel-downloads'].forEach(id => {
+      const n = this.el(id); if (n) n.hidden = true;
+    });
+    const dock = this.el('audio-dock'); if (dock) dock.hidden = true;
+  }
+
+  renderVals() {
+    return {
+      onShowUpload: () => { this.screen('workspace-upload'); this.row(null); },
+      onShowProgress: () => this.screen('workspace-progress'),
+      onSelectComplete: () => { this.showComplete(); this.tab('summary'); },
+      onSelectFailed: () => this.showFailed(),
+      onTabSummary: () => this.tab('summary'),
+      onTabNotes: () => this.tab('notes'),
+      onReview2: () => this.review(2),
+      onReview3: () => this.review(3),
+      onReview4: () => this.review(4),
+      onWord2: () => this.toggleWord(2),
+      onWord3: () => this.toggleWord(3),
+      onWord4: () => this.toggleWord(4),
+      onCite1: () => this.cite(1),
+      onCite2: () => this.cite(3),
+      onCite3: () => this.cite(4),
+      onTabTranscript: () => this.tab('transcript'),
+      onTabDownloads: () => this.tab('downloads'),
+      onLangGa: () => this.lang('ga'),
+      onLangEn: () => this.lang('en'),
+      onToggleUncertainty: () => {
+        const list = this.el('uncertainties');
+        const btn = this.el('uncertainty-toggle');
+        if (!list) return;
+        const open = list.hidden;
+        list.hidden = !open;
+        if (btn) {
+          btn.setAttribute('aria-expanded', String(open));
+          const svg = btn.querySelector('svg');
+          if (svg) svg.style.transform = open ? 'rotate(90deg)' : 'none';
+        }
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

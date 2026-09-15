@@ -1,0 +1,12 @@
+{
+  "productName": "Dialext Prototype",
+  "identifier": "app.dialext.prototype",
+  "build": {
+    "beforeDevCommand": "pnpm -F @anlg/desktop dev"
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": { "schemes": ["dialext-prototype"] }
+    }
+  }
+}

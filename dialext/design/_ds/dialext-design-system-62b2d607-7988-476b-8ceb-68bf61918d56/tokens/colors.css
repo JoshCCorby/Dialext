@@ -1,0 +1,102 @@
+:root{
+  /* brand primitives */
+  --brand-paper: #F4F2EC;
+  --brand-clear-white: #FCFCFA;
+  --brand-mist: #E3E7E5;
+  --brand-stone: #A7AEAA;
+  --brand-peat: #28312F;
+  --brand-deep-atlantic: #163D54;
+  --brand-cyanotype: #245F80;
+  --brand-signal-blue: #397FA3;
+  --brand-lichen: #6B7865;
+
+  /* counter-inks — the second and third ink on the press, for emphasis,
+     annotation and stamps. Never used to carry status meaning. */
+  --brand-oxide: #8C4A2F;
+  --brand-ochre: #C08A2C;
+  --brand-oxide-wash: #F1E4DC;
+  --brand-ochre-wash: #F7EEDA;
+
+  /* extended neutrals */
+  --neutral-0: #FFFFFF;
+  --neutral-25: #FCFCFA;
+  --neutral-50: #F7F6F2;
+  --neutral-100: #F0F1EE;
+  --neutral-200: #E3E7E5;
+  --neutral-300: #CBD1CE;
+  --neutral-400: #A7AEAA;
+  --neutral-500: #7C8581;
+  --neutral-600: #626B67;
+  --neutral-700: #48524E;
+  --neutral-800: #28312F;
+  --neutral-900: #18201E;
+
+  /* functional */
+  --success-default: #357259; --success-subtle: #E6F1EB; --success-strong: #245340;
+  --warning-default: #A36D24; --warning-subtle: #F6ECD9; --warning-strong: #754A13;
+  --error-default: #A64743; --error-subtle: #F7E6E4; --error-strong: #7D312E;
+  --info-default: #397FA3; --info-subtle: #E3F0F5; --info-strong: #235D7A;
+  --recording-default: #B64B47; --recording-subtle: #FAE8E6; --recording-strong: #87332F;
+
+  /* semantic: backgrounds */
+  --background-canvas: var(--brand-paper);
+  --background-app: var(--neutral-50);
+  --background-inverse: var(--brand-deep-atlantic);
+
+  /* semantic: surfaces */
+  --surface-default: var(--brand-clear-white);
+  --surface-raised: var(--neutral-0);
+  --surface-subtle: var(--brand-mist);
+  --surface-transcript: var(--brand-clear-white);
+  --surface-translation: #F4F7F6;
+  --surface-generated: #EEF3F4;
+  --surface-selected: #DCECF2;
+  --surface-search-match: #F4E6A8;
+  --surface-disabled: var(--neutral-100);
+
+  /* semantic: text */
+  --text-primary: var(--brand-peat);
+  --text-secondary: var(--neutral-600);
+  --text-tertiary: var(--neutral-500);
+  --text-inverse: #FFFFFF;
+  --text-link: var(--brand-cyanotype);
+  --text-disabled: var(--neutral-400);
+
+  /* semantic: border */
+  --border-subtle: var(--neutral-200);
+  --border-default: var(--neutral-300);
+  --border-strong: var(--neutral-400);
+  --border-focus: var(--brand-signal-blue);
+
+  /* semantic: action */
+  --action-primary: var(--brand-deep-atlantic);
+  --action-primary-hover: #204F69;
+  --action-primary-active: #102F41;
+  --action-secondary: var(--brand-cyanotype);
+  --action-danger: #A64743;
+
+  /* semantic: status */
+  --status-success: var(--success-default);
+  --status-warning: var(--warning-default);
+  --status-error: var(--error-default);
+  --status-information: var(--info-default);
+  --status-recording: var(--recording-default);
+
+  /* semantic: content provenance */
+  --content-original: var(--brand-clear-white);
+  --content-translation: #F4F7F6;
+  --content-generated: #EEF3F4;
+  --content-human-edited: var(--brand-paper);
+  --content-uncertain: var(--warning-default);
+
+  /* semantic: audio */
+  --audio-active: var(--brand-signal-blue);
+  --audio-waveform: var(--neutral-400);
+  --audio-played: var(--brand-cyanotype);
+
+  /* semantic: editorial / annotation layer */
+  --editorial-ink: var(--brand-oxide);
+  --editorial-accent: var(--brand-ochre);
+  --editorial-annotation: var(--brand-oxide);
+  --editorial-stamp-border: var(--brand-oxide);
+}

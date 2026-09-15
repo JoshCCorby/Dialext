@@ -1,0 +1,78 @@
+/* Dark mode is a different material, not an inversion: midnight ink instead of
+   paper, softened off-white text, subdued cyanotype surfaces, quieter grain. */
+[data-theme="dark"]{
+  --paper-flat: #141B21;
+  --paper-flat-ink: #0E161C;
+  --paper-wash: radial-gradient(120% 90% at 8% 0%, #1B242B 0%, #141B21 52%, #0E141A 100%); /* @kind color */
+  --paper-wash-ink: radial-gradient(120% 100% at 12% 0%, #16303F 0%, #102632 55%, #0A1A23 100%); /* @kind color */
+
+  /* dark mode runs one step quieter */
+  --grain-surface: 0.012; /* @kind other */
+  --grain-brand: 0.05; /* @kind other */
+  --grain-reading: 0; /* @kind other */
+  --texture-surface: 0.012; /* @kind other */
+  --texture-reading: 0; /* @kind other */
+  --texture-ambient: 0.03; /* @kind other */
+  --texture-expressive: 0.09; /* @kind other */
+  --texture-expressive-max: 0.09; /* @kind other */
+
+  --background-canvas: #141B21;
+  --background-app: #10171C;
+  --background-inverse: #F4F2EC;
+
+  --surface-default: #1A2229;
+  --surface-raised: #202A31;
+  --surface-subtle: #232D34;
+  --surface-transcript: #1A2229;
+  --surface-translation: #1C262C;
+  --surface-generated: #17262E;
+  --surface-selected: #1E3D4E;
+  --surface-search-match: #4A431C;
+  --surface-disabled: #1D242A;
+
+  --text-primary: #E9E7E0;
+  --text-secondary: #B4BBBB;
+  --text-tertiary: #949C9C;
+  --text-inverse: #141B21;
+  --text-link: #8CC3DC;
+  --text-disabled: #6B7477;
+
+  --border-subtle: #2A343B;
+  --border-default: #3A464D;
+  --border-strong: #56646B;
+  --border-focus: #7EBBD6;
+
+  --action-primary: #2C6C8C;
+  --action-primary-hover: #35809F;
+  --action-primary-active: #23596F;
+  --action-secondary: #8CC3DC;
+  --action-danger: #D98A85;
+
+  /* counter-inks lifted to hold contrast against midnight */
+  --brand-oxide: #D28A6B;
+  --brand-ochre: #DFB35F;
+  --brand-oxide-wash: #2C201A;
+  --brand-ochre-wash: #2C2617;
+  --editorial-ink: #D28A6B;
+  --editorial-accent: #DFB35F;
+  --editorial-annotation: #D28A6B;
+  --editorial-stamp-border: #B8785C;
+
+  --success-default: #6BBF95; --success-subtle: #16281F; --success-strong: #A2DCBD;
+  --warning-default: #DFB35F; --warning-subtle: #2C2617; --warning-strong: #F0D08F;
+  --error-default: #D98A85; --error-subtle: #2C1A19; --error-strong: #EFB2AE;
+  --info-default: #8CC3DC; --info-subtle: #16262E; --info-strong: #B7DCEC;
+  --recording-default: #E0827C; --recording-subtle: #2E1917; --recording-strong: #F2ADA8;
+
+  --content-original: #1A2229;
+  --content-translation: #1C262C;
+  --content-generated: #17262E;
+  --content-human-edited: #1F2A26;
+
+  --audio-active: #8CC3DC;
+  --audio-waveform: #56646B;
+  --audio-played: #4E97B6;
+
+  --ink-bleed: 0 1px 0 rgba(0,0,0,0.45);
+  --rule-editorial: 2px solid #6E7C82; /* @kind other */
+}

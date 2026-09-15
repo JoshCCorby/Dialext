@@ -1,0 +1,8 @@
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--font-sans);font-size:var(--text-body-md-size);line-height:var(--text-body-md-lh);color:var(--text-primary);background:var(--background-app)}
+a{color:var(--text-link);text-decoration:underline;text-underline-offset:0.15em}
+a:hover{color:var(--action-primary-hover)}
+:focus-visible{outline:2px solid var(--border-focus);outline-offset:2px}
+h1,h2,h3,h4,p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}

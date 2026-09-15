@@ -1,0 +1,26 @@
+:root{
+  --motion-instant: 80ms; /* @kind other */
+  --motion-fast: 150ms; /* @kind other */
+  --motion-standard: 220ms; /* @kind other */
+  --motion-slow: 400ms; /* @kind other */
+  --motion-brand: 700ms; /* @kind other */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1); /* @kind other */
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1); /* @kind other */
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1); /* @kind other */
+
+  /* characteristic motions — ambient / expressive moments only */
+  --motion-align: 520ms; /* @kind other */
+  --motion-expose: 900ms; /* @kind other */
+  /* generated result settling into an AVAILABLE state, never "confirmed" */
+  --motion-resolve: 640ms; /* @kind other */
+  --ease-settle: cubic-bezier(0.16, 0.84, 0.24, 1); /* @kind other */
+}
+@media (prefers-reduced-motion: reduce){
+  :root{
+    --motion-instant: 0ms; /* @kind other */
+    --motion-fast: 0ms; /* @kind other */
+    --motion-standard: 0ms; /* @kind other */
+    --motion-slow: 0ms; /* @kind other */
+    --motion-brand: 0ms; /* @kind other */
+  }
+}

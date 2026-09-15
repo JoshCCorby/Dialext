@@ -1,0 +1,20 @@
+/* Material layer — purpose-named textures over the accessible solid tokens.
+   Texture is a separate layer beneath content. Never lower the opacity of a
+   surface or component; never texture a control, focus ring or status.
+   Intensity comes from the single ladder in tokens/texture.css
+   (--texture-controls / -reading / -surface / -ambient / -expressive).
+   Production ships flattened WebP/AVIF derivatives of these — never the
+   source normal, displacement, roughness or ambient-occlusion maps. */
+:root{
+  --texture-surface-tooth: url('../assets/textures/surface-tooth.jpg'); /* @kind other */
+  --texture-fibre-soft: url('../assets/textures/fibre-soft.jpg'); /* @kind other */
+  --texture-pigment-cloud: url('../assets/textures/pigment-cloud.jpg'); /* @kind other */
+  --texture-halftone-open: url('../assets/textures/halftone-open.jpg'); /* @kind other */
+  --texture-halftone-radial: url('../assets/textures/halftone-radial.jpg'); /* @kind other */
+  --texture-strata-soft: url('../assets/textures/strata-soft.jpg'); /* @kind other */
+  --texture-strata-flow: url('../assets/textures/strata-flow.jpg'); /* @kind other */
+  --texture-onyx-flow: url('../assets/textures/onyx-flow.jpg'); /* @kind other */
+  --texture-wet-sheen: url('../assets/textures/wet-sheen.jpg'); /* @kind other */
+  --texture-cyanotype-fibre: url('../assets/textures/cyanotype-fibre.jpg'); /* @kind other */
+  --texture-pigment-fibre: url('../assets/textures/pigment-fibre.png'); /* @kind other */
+}
