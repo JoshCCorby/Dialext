@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import fixture from "../../../../dialext/fixtures/language-practice.json";
 import { prepareDialextImport } from "./recording-import";
 
+import { isTranscriptWordSeekable } from "~/stt/timing";
+
 const identity = { workspaceId: "dialext-local", ownerUserId: "test-user" };
 const prepare = (bundle = fixture, language: "english" | "irish" = "english") =>
   prepareDialextImport(JSON.stringify(bundle), language, identity);
@@ -36,6 +38,9 @@ describe("Dialext recording import", () => {
     ).toBe("english");
     expect(envelope.transcripts[0].words[1].metadata.dialext.timing).toBe(
       "passage",
+    );
+    expect(isTranscriptWordSeekable(envelope.transcripts[0].words[1])).toBe(
+      false,
     );
   });
 

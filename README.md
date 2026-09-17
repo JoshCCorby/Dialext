@@ -1,6 +1,6 @@
 # Dialext
 
-A personal multilingual recording workspace, built on Anarlog's community desktop application. Start with [the product brief](dialext/product/product-vision.md).
+A personal multilingual recording workspace, built on Anarlog's community desktop application. Start with [the handover brief](dialext/HANDOFF.md), [implementation architecture](dialext/ARCHITECTURE.md) and [product brief](dialext/product/product-vision.md).
 
 Irish–English is the first pair. The aim is one readable language account, useful summaries, remembered speaker names, source-audio review and easy text exports. This is a development prototype, not a completed transcription product.
 
@@ -14,6 +14,8 @@ node dialext/dev.mjs
 ```
 
 On Xcode 27, the launcher selects SwiftPM’s native build mode to match the upstream Swift linker’s library paths. It builds shared UI first, then starts the native app in debug mode under `app.dialext.prototype`. Notes/settings use that separate application-support directory; audio uses `.dialext-data/vault/`. The locally installed Rust toolchain, when present, lives in `.dialext-tools/`. These directories are ignored by Git. The launcher does not load the old Dialext credentials or database.
+
+The launcher skips the upstream tutorial for the prepared-sample experiment; use `ONBOARDING=true node dialext/dev.mjs` to include it. Native compilation and process launch have passed on this Mac. The interactive import/edit/export check is still pending; see the handover for the exact automation blocker and acceptance steps.
 
 ## First integration slice
 

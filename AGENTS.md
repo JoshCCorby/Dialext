@@ -2,6 +2,9 @@
 
 This is Joshua's personal multilingual recording application, based on Anarlog's
 community desktop app at `cbd2468f8f22e173390aa7953f0889e91694591e`.
+Start with [dialext/HANDOFF.md](dialext/HANDOFF.md) for verified status and the next
+bounded milestone, then [dialext/ARCHITECTURE.md](dialext/ARCHITECTURE.md) for the
+integration contracts. Plans in that document are not implemented features.
 Read [dialext/product/product-vision.md](dialext/product/product-vision.md) before
 changing the product. That brief supersedes upstream positioning and old office
 or agency deployment plans. The original Dialext repository is a reference, not
@@ -17,6 +20,13 @@ Use synthetic samples until live provider testing is explicitly in scope.
 The development launcher is `node dialext/dev.mjs`. It deliberately builds in
 debug mode with a separate application identifier and vault; never substitute a
 release build, which upstream maps to the stable app's data directory.
+
+For this personal fork, verify each slice with its focused regressions, affected
+package type/lint checks and a real desktop workflow. Run the full desktop suite
+at milestone boundaries. The upstream release/platform matrix below is reference
+material, not a requirement to deploy or run unrelated hosted-service checks on
+every local change. Report inherited warnings and unverified native behaviour
+accurately; do not weaken validation to make a check pass.
 
 ---
 

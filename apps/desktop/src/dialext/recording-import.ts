@@ -139,6 +139,8 @@ export function prepareDialextImport(
         ? null
         : `Speaker ${String.fromCharCode(65 + speakers.indexOf(segment.speaker))}`,
     metadata: {
+      // Derived wording has passage anchors, not measured word timestamps.
+      timing: { source: "synthetic_text" },
       dialext: {
         anchors: segment.anchors,
         source_speaker: segment.speaker,

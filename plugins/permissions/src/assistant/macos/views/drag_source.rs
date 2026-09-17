@@ -147,10 +147,21 @@ define_class! {
             unsafe {
                 dragging_item.setDraggingFrame_contents(dragging_frame, Some(contents));
             }
-            let items = NSArray::from_slice(&[dragging_item.as_ref()]);
+            let items = NSArray::<NSDraggingItem>::from_slice(&[dragging_item.as_ref()]);
             let source = ProtocolObject::<dyn NSDraggingSource>::from_ref(self);
-            let session = self.beginDraggingSessionWithItems_event_source(&items, event, source);
-            session.setAnimatesToStartingPositionsOnCancelOrFail(true);
+            // AppKit can decline a drag despite the SDK's non-null annotation.
+            // A panic here crosses an Objective-C callback and aborts the app.
+            let session: Option<Retained<NSDraggingSession>> = unsafe {
+                msg_send![self, beginDraggingSessionWithItems: &*items, event: event, source: source]
+            };
+            if let Some(session) = session {
+                session.setAnimatesToStartingPositionsOnCancelOrFail(true);
+            } else {
+                self.update_interaction(|interaction| interaction.end_drag(false));
+                self.ivars().placeholder_view.setHidden(true);
+                self.ivars().row_view.setHidden(false);
+                self.update_guide();
+            }
         }
     }
 
