@@ -25,7 +25,7 @@ export const ACTIVITY_SQL = `
       THEN MAX(0, json_extract(word.value, '$.end_ms'))
       ELSE 0
     END) AS duration_ms
-  FROM transcripts AS transcript
+  FROM effective_transcripts AS transcript
   JOIN sessions AS session ON session.id = transcript.session_id
   JOIN json_each(CASE
     WHEN json_valid(transcript.words_json) THEN

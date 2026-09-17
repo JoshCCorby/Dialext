@@ -184,26 +184,41 @@ pub(crate) async fn run_legacy_import(
 
 #[tauri::command]
 #[specta::specta]
-pub(crate) async fn apply_session_ingest(
+pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
     state: tauri::State<'_, ManagedState>,
     workspace_id: String,
     envelope: serde_json::Value,
 ) -> Result<crate::SessionIngestApplyResult, String> {
-    let envelope = match serde_json::from_value(envelope) {
-        Ok(envelope) => envelope,
-        Err(error) => {
-            tracing::warn!(%workspace_id, %error, "rejected malformed session ingest envelope");
-            return Ok(crate::SessionIngestApplyResult::Rejected);
-        }
-    };
+    let envelope: anlg_session_ingest::SessionIngestEnvelope =
+        match serde_json::from_value(envelope) {
+            Ok(envelope) => envelope,
+            Err(error) => {
+                tracing::warn!(%workspace_id, %error, "rejected malformed session ingest envelope");
+                return Ok(crate::SessionIngestApplyResult::Rejected);
+            }
+        };
     match anlg_session_ingest::apply_session_envelope(state.pool(), &workspace_id, &envelope).await
     {
-        Ok(outcome) => Ok(match outcome {
-            anlg_session_ingest::ApplyOutcome::Applied => crate::SessionIngestApplyResult::Applied,
-            anlg_session_ingest::ApplyOutcome::AlreadyApplied => {
-                crate::SessionIngestApplyResult::AlreadyApplied
-            }
-        }),
+        Ok(outcome) => {
+            let vault = crate::import::resolve_startup_vault_base(&app)
+                .map_err(|error| error.to_string())?;
+            anlg_session_ingest::dialext::migrate_recording(
+                state.pool(),
+                &vault,
+                &envelope.session.id,
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+            Ok(match outcome {
+                anlg_session_ingest::ApplyOutcome::Applied => {
+                    crate::SessionIngestApplyResult::Applied
+                }
+                anlg_session_ingest::ApplyOutcome::AlreadyApplied => {
+                    crate::SessionIngestApplyResult::AlreadyApplied
+                }
+            })
+        }
         Err(error) if error.is_retryable() => Err(error.to_string()),
         Err(error) => {
             tracing::warn!(%workspace_id, %error, "rejected permanent session ingest envelope");

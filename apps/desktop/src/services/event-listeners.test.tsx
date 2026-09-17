@@ -321,7 +321,7 @@ describe("EventListeners notification events", () => {
     });
     liveQuerySubscribeMock.mockImplementation(
       async (sql, _params, handlers) => {
-        if (!String(sql).includes("FROM transcripts")) {
+        if (!String(sql).includes("FROM effective_transcripts")) {
           handlers.onData([]);
         }
         return async () => {};
@@ -351,7 +351,7 @@ describe("EventListeners notification events", () => {
       speaker_assignments: [],
     });
 
-    findLiveQueryHandlers("FROM transcripts").onData([]);
+    findLiveQueryHandlers("FROM effective_transcripts").onData([]);
     await vi.runOnlyPendingTimersAsync();
 
     expect(updateCaptureConfigMock).toHaveBeenCalledTimes(1);
@@ -368,7 +368,7 @@ describe("EventListeners notification events", () => {
     });
     liveQuerySubscribeMock.mockImplementation(
       async (sql, _params, handlers) => {
-        if (String(sql).includes("FROM transcripts")) {
+        if (String(sql).includes("FROM effective_transcripts")) {
           handlers.onError("no such table: transcripts");
         } else {
           handlers.onData([]);
@@ -412,7 +412,7 @@ describe("EventListeners notification events", () => {
     });
     liveQuerySubscribeMock.mockImplementation(
       async (sql, _params, handlers) => {
-        if (String(sql).includes("FROM transcripts")) {
+        if (String(sql).includes("FROM effective_transcripts")) {
           throw new Error("subscribe failed");
         }
         handlers.onData([]);
@@ -459,7 +459,7 @@ describe("EventListeners notification events", () => {
       expect(liveQuerySubscribeMock).toHaveBeenCalledTimes(2),
     );
     const transcriptCall = liveQuerySubscribeMock.mock.calls.find(([sql]) =>
-      String(sql).includes("FROM transcripts"),
+      String(sql).includes("FROM effective_transcripts"),
     );
     expect(transcriptCall?.[1]).toEqual(["session-1"]);
 
@@ -475,7 +475,7 @@ describe("EventListeners notification events", () => {
         human_id: "human-guest",
       },
     ]);
-    findLiveQueryHandlers("FROM transcripts").onData([
+    findLiveQueryHandlers("FROM effective_transcripts").onData([
       {
         id: "transcript-1",
         started_at_ms: 1_000,
@@ -549,7 +549,7 @@ describe("EventListeners notification events", () => {
     });
     liveQuerySubscribeMock.mockImplementation(
       async (sql, _params, handlers) => {
-        if (!String(sql).includes("FROM transcripts")) {
+        if (!String(sql).includes("FROM effective_transcripts")) {
           handlers.onData([]);
         }
         return async () => {};
@@ -564,7 +564,7 @@ describe("EventListeners notification events", () => {
       });
     const latestTranscriptHandlers = () => {
       const calls = liveQuerySubscribeMock.mock.calls.filter(([sql]) =>
-        String(sql).includes("FROM transcripts"),
+        String(sql).includes("FROM effective_transcripts"),
       );
       const call = calls[calls.length - 1];
       expect(call).toBeDefined();

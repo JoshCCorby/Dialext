@@ -133,7 +133,7 @@ const SESSION_CONTENT_SQL = `
         'words_json', transcript.words_json,
         'speaker_hints_json', transcript.speaker_hints_json
       ))
-      FROM transcripts AS transcript
+      FROM effective_transcripts AS transcript
       WHERE transcript.session_id = session.id
         AND transcript.deleted_at IS NULL
     ), '[]') AS transcripts_json,

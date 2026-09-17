@@ -112,7 +112,7 @@ export async function loadPendingAutoEnhanceJobs(): Promise<
         AND document.deleted_at IS NULL
         AND EXISTS (
           SELECT 1
-          FROM transcripts AS transcript
+          FROM effective_transcripts AS transcript
           WHERE transcript.session_id = session.id
             AND transcript.deleted_at IS NULL
             AND json_valid(transcript.words_json)

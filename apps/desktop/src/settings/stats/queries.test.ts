@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("~/auth", () => ({ useAuth: vi.fn() }));
@@ -15,10 +17,25 @@ describe("personal activity query", () => {
     const db = new DatabaseSync(":memory:");
     try {
       db.exec(`
-        CREATE TABLE sessions (id TEXT PRIMARY KEY, owner_user_id TEXT, deleted_at TEXT, event_json TEXT);
+        CREATE TABLE sessions (id TEXT PRIMARY KEY, owner_user_id TEXT, deleted_at TEXT, event_json TEXT, metadata_json TEXT DEFAULT '{}');
         CREATE TABLE transcripts (id TEXT PRIMARY KEY, session_id TEXT, started_at_ms INTEGER, created_at TEXT, words_json TEXT, deleted_at TEXT);
         INSERT INTO sessions (id, owner_user_id, deleted_at) VALUES ('mine', 'user', NULL), ('theirs', 'another-user', NULL), ('deleted', 'user', '2026-01-01'), ('guest', NULL, NULL);
       `);
+      for (const migration of [
+        "20260714120000_search_index_queue",
+        "20260917120000_dialext_accounts",
+        "20260917120100_dialext_effective_transcripts",
+      ]) {
+        db.exec(
+          readFileSync(
+            resolve(
+              process.cwd(),
+              `../../crates/db-app/migrations/${migration}.sql`,
+            ),
+            "utf8",
+          ),
+        );
+      }
       const insert = db.prepare(
         "INSERT INTO transcripts VALUES (?, ?, 1000, '2026-09-04T00:00:00Z', ?, ?)",
       );

@@ -36,7 +36,7 @@ const SESSION_TRANSCRIPT_COLUMNS: &str = "
            transcript.audio_attachment_id, transcript.memo, transcript.words_json,
            transcript.speaker_hints_json, transcript.metadata_json, transcript.created_at,
            transcript.updated_at
-    FROM transcripts AS transcript
+    FROM effective_transcripts AS transcript
     JOIN sessions AS session ON session.id = transcript.session_id AND session.deleted_at IS NULL
 ";
 

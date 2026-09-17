@@ -3,6 +3,7 @@
 mod calendar_ops;
 mod calendar_types;
 mod cloudsync;
+mod dialext_ops;
 mod e2ee;
 mod event_ops;
 mod event_types;
@@ -20,6 +21,7 @@ mod webhook_types;
 pub use calendar_ops::*;
 pub use calendar_types::*;
 pub use cloudsync::*;
+pub use dialext_ops::*;
 pub use e2ee::*;
 pub use event_ops::*;
 pub use event_types::*;
@@ -531,6 +533,18 @@ pub const APP_MIGRATION_STEPS: &[anlg_db_migrate::MigrationStep] = &[
         id: "20260917120000_dialext_accounts",
         scope: anlg_db_migrate::MigrationScope::Plain,
         sql: include_str!("../migrations/20260917120000_dialext_accounts.sql"),
+    },
+    anlg_db_migrate::MigrationStep {
+        id: "20260917120100_dialext_effective_transcripts",
+        scope: anlg_db_migrate::MigrationScope::Plain,
+        sql: include_str!("../migrations/20260917120100_dialext_effective_transcripts.sql"),
+    },
+    anlg_db_migrate::MigrationStep {
+        id: "20260917120200_dialext_transcript_ownership",
+        scope: anlg_db_migrate::MigrationScope::CloudsyncAlter {
+            table_name: "transcripts",
+        },
+        sql: include_str!("../migrations/20260917120200_dialext_transcript_ownership.sql"),
     },
 ];
 

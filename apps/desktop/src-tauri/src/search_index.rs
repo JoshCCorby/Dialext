@@ -397,7 +397,7 @@ async fn build_session_document(
 
     let transcripts: Vec<String> = sqlx::query_scalar(
         "SELECT words_json
-         FROM transcripts
+         FROM effective_transcripts
          WHERE session_id = ? AND deleted_at IS NULL
          ORDER BY started_at_ms, created_at, id",
     )
@@ -753,6 +753,60 @@ fn to_epoch_ms(value: &Value) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn search_projection_uses_only_selected_corrected_account_and_hides_deleted_sessions() {
+        let db = anlg_db_core::Db::connect_memory_plain().await.unwrap();
+        anlg_db_app::prepare_schema(&db).await.unwrap();
+        sqlx::query("INSERT INTO sessions(id,title) VALUES('dialext','Language practice')")
+            .execute(db.pool())
+            .await
+            .unwrap();
+        for (id, language, words) in [
+            ("en", "en", r#"[{"text":"Corrected English tea"}]"#),
+            ("ga", "ga", r#"[{"text":"Ceartú Gaeilge tae"}]"#),
+        ] {
+            sqlx::query("INSERT INTO transcripts(id,session_id,words_json) VALUES(?,'dialext',?)")
+                .bind(id)
+                .bind(words)
+                .execute(db.pool())
+                .await
+                .unwrap();
+            sqlx::query("INSERT INTO dialext_accounts(id,session_id,transcript_id,target_language,input_evidence_digest,original_sha256) VALUES(?,'dialext',?,?,?,?)").bind(id).bind(id).bind(language).bind("0".repeat(64)).bind("0".repeat(64)).execute(db.pool()).await.unwrap();
+        }
+        sqlx::query("INSERT INTO dialext_recordings(id,active_account_id) VALUES('dialext','en')")
+            .execute(db.pool())
+            .await
+            .unwrap();
+        for (previous, chosen, wanted, absent) in [
+            ("en", "ga", "Ceartú Gaeilge tae", "Corrected English tea"),
+            ("ga", "en", "Corrected English tea", "Ceartú Gaeilge tae"),
+        ] {
+            anlg_db_app::select_dialext_account(db.pool(), "dialext", chosen, Some(previous))
+                .await
+                .unwrap();
+            let mut connection = db.pool().acquire().await.unwrap();
+            let IndexAction::Upsert(document) = build_session_document(&mut connection, "dialext")
+                .await
+                .unwrap()
+            else {
+                panic!("missing recording");
+            };
+            assert!(document.content.contains(wanted));
+            assert!(!document.content.contains(absent));
+        }
+        sqlx::query("UPDATE sessions SET deleted_at = 'deleted' WHERE id = 'dialext'")
+            .execute(db.pool())
+            .await
+            .unwrap();
+        let mut connection = db.pool().acquire().await.unwrap();
+        assert!(matches!(
+            build_session_document(&mut connection, "dialext")
+                .await
+                .unwrap(),
+            IndexAction::Remove(_)
+        ));
+    }
 
     #[tokio::test]
     async fn acknowledgement_does_not_drop_a_concurrent_change() {

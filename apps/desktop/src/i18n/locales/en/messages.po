@@ -4536,6 +4536,10 @@ msgstr "Search timezone..."
 msgid "Search..."
 msgstr "Search..."
 
+#: src/shared/open-note-dialog.tsx
+msgid "Searching…"
+msgstr "Searching…"
+
 #: src/settings/team/index.tsx
 msgid "Seats"
 msgstr "Seats"

@@ -68,7 +68,7 @@ export function CloudApiBackfillLifecycle() {
           ), ''),
           COALESCE((
             SELECT max(transcript.updated_at)
-            FROM transcripts AS transcript
+            FROM effective_transcripts AS transcript
             WHERE transcript.session_id = session.id
           ), ''),
           COALESCE((

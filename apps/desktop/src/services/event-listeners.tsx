@@ -99,7 +99,7 @@ const LIVE_TRANSCRIPT_IDENTITY_SQL = `
     transcript.started_at_ms,
     transcript.words_json,
     transcript.speaker_hints_json
-  FROM transcripts AS transcript
+  FROM effective_transcripts AS transcript
   WHERE transcript.session_id = ? AND transcript.deleted_at IS NULL
   ORDER BY transcript.started_at_ms DESC, transcript.created_at DESC
   LIMIT 1

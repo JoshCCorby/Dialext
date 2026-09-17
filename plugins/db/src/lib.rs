@@ -336,7 +336,7 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::get_legacy_cleanup_status,
             commands::cleanup_legacy_files,
             commands::run_legacy_import,
-            commands::apply_session_ingest,
+            commands::apply_session_ingest<tauri::Wry>,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,
@@ -387,6 +387,10 @@ async fn bootstrap_app_database<R: tauri::Runtime>(
     import::import_legacy_data(&app, db.pool())
         .await
         .map_err(|error| error.to_string())?;
+    let vault = import::resolve_startup_vault_base(&app).map_err(|error| error.to_string())?;
+    if let Err(error) = anlg_session_ingest::dialext::migrate_recordings(db.pool(), &vault).await {
+        tracing::error!(%error, "Dialext account adoption incomplete; saved transcripts retained");
+    }
     if let Some(config) = startup_config {
         runtime.set_startup_status_if_running(StartupStatus::for_phase(
             StartupPhase::ConfiguringCloudsync,

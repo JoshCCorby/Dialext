@@ -1,4 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useQuery } from "@tanstack/react-query";
 import { Command as CommandPrimitive } from "cmdk";
 import {
   createContext,
@@ -20,6 +21,7 @@ import { cn } from "@anlg/utils";
 
 import { trackAnalyticsEvent } from "~/analytics";
 import { useAuth } from "~/auth";
+import { useSearchEngine } from "~/search/contexts/engine";
 import { useSessionSummaries } from "~/session/queries";
 import { useDurableSharedNotes } from "~/shared-notes/cache";
 import { useMainContentCenterOffset } from "~/shared/main/content-offset";
@@ -103,6 +105,24 @@ export function OpenNoteDialog({
   );
   const { session } = useAuth();
 
+  const { search } = useSearchEngine();
+  const contentSearch = useQuery({
+    // The provider search callback has no changing inputs; the query text owns this cache.
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
+    queryKey: ["open-note-search", query.trim()],
+    queryFn: () => search(query),
+    enabled: open && Boolean(query.trim()),
+    staleTime: 0,
+  });
+  const matchingSessionIds = useMemo(
+    () =>
+      new Set(
+        (contentSearch.data ?? [])
+          .filter((hit) => hit.document.type === "session")
+          .map((hit) => hit.document.id),
+      ),
+    [contentSearch.data],
+  );
   const sessions = useSessionSummaries();
   const sharedNotes = useDurableSharedNotes(session?.user.id);
 
@@ -163,18 +183,22 @@ export function OpenNoteDialog({
   const filteredRecentSessions = useMemo(() => {
     if (!query.trim()) return recentSessions;
     const lowerQuery = query.toLowerCase();
-    return recentSessions.filter((s) =>
-      s.title.toLowerCase().includes(lowerQuery),
+    return recentSessions.filter(
+      (s) =>
+        s.title.toLowerCase().includes(lowerQuery) ||
+        matchingSessionIds.has(s.id),
     );
-  }, [recentSessions, query]);
+  }, [recentSessions, query, matchingSessionIds]);
 
   const filteredOtherNotes = useMemo(() => {
     if (!query.trim()) return otherNotes;
     const lowerQuery = query.toLowerCase();
-    return otherNotes.filter((note) =>
-      note.title.toLowerCase().includes(lowerQuery),
+    return otherNotes.filter(
+      (note) =>
+        note.title.toLowerCase().includes(lowerQuery) ||
+        (note.resourceType === "session" && matchingSessionIds.has(note.id)),
     );
-  }, [otherNotes, query]);
+  }, [otherNotes, query, matchingSessionIds]);
 
   const hasAnyResults =
     filteredRecentSessions.length > 0 || filteredOtherNotes.length > 0;
@@ -300,7 +324,11 @@ export function OpenNoteDialog({
             <CommandPrimitive.List className="max-h-80 overflow-y-auto p-2">
               {!hasAnyResults ? (
                 <CommandPrimitive.Empty className="text-muted-foreground py-6 text-center text-sm">
-                  <Trans>No notes found.</Trans>
+                  {contentSearch.isFetching ? (
+                    <Trans>Searching…</Trans>
+                  ) : (
+                    <Trans>No notes found.</Trans>
+                  )}
                 </CommandPrimitive.Empty>
               ) : (
                 <>

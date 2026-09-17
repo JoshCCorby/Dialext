@@ -4536,6 +4536,10 @@ msgstr ""
 msgid "Search..."
 msgstr ""
 
+#: src/shared/open-note-dialog.tsx
+msgid "Searching…"
+msgstr ""
+
 #: src/settings/team/index.tsx
 msgid "Seats"
 msgstr ""

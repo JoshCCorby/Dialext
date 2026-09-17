@@ -219,7 +219,7 @@ export function useSessionTranscriptExistence(
     sql: `
       SELECT EXISTS (
         SELECT 1
-        FROM transcripts
+        FROM effective_transcripts
         WHERE session_id = ?
           AND deleted_at IS NULL
           AND CASE

@@ -167,7 +167,7 @@ export function useSessionTranscripts(sessionId: string): TranscriptRecord[] {
   >({
     sql: `
       SELECT ${TRANSCRIPT_COLUMNS}
-      FROM transcripts AS transcript
+      FROM effective_transcripts AS transcript
       WHERE transcript.session_id = ? AND transcript.deleted_at IS NULL
       ORDER BY transcript.started_at_ms, transcript.created_at, transcript.id
     `,
@@ -213,7 +213,7 @@ export function useSessionTranscriptMetadata(
           ? TRANSCRIPT_METADATA_WITH_PENDING_COLUMNS
           : TRANSCRIPT_METADATA_COLUMNS
       }
-      FROM transcripts AS transcript
+      FROM effective_transcripts AS transcript
       WHERE transcript.session_id = ? AND transcript.deleted_at IS NULL
       ORDER BY transcript.started_at_ms, transcript.created_at, transcript.id
     `,
@@ -275,7 +275,7 @@ export async function getSessionTranscriptRecords(
   const rows = await liveQueryClient.execute<TranscriptSqlRow>(
     `
       SELECT ${TRANSCRIPT_COLUMNS}
-      FROM transcripts AS transcript
+      FROM effective_transcripts AS transcript
       WHERE transcript.session_id = ? AND transcript.deleted_at IS NULL
       ORDER BY transcript.started_at_ms, transcript.created_at, transcript.id
     `,
@@ -600,7 +600,7 @@ export async function assignSessionTranscriptSpeaker({
   const transcripts = await liveQueryClient.execute<{ id: string }>(
     `
       SELECT id
-      FROM transcripts
+      FROM effective_transcripts
       WHERE session_id = ? AND deleted_at IS NULL
       ORDER BY started_at_ms, created_at, id
     `,

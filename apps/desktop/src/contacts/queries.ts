@@ -325,7 +325,7 @@ export function useHumanSessions(humanId: string): HumanSessionRecord[] {
           ), ''),
           COALESCE((
             SELECT MAX(transcript.updated_at)
-            FROM transcripts AS transcript
+            FROM effective_transcripts AS transcript
             WHERE transcript.session_id = sessions.id
               AND transcript.deleted_at IS NULL
           ), '')

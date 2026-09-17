@@ -1,7 +1,15 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  cleanup,
+  fireEvent,
+  render as renderUI,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  search: vi.fn(),
   openCurrent: vi.fn(),
   onOpenChange: vi.fn(),
   notes: [] as Array<{
@@ -17,6 +25,21 @@ const mocks = vi.hoisted(() => ({
     created_at: string;
   }>,
 }));
+
+vi.mock("~/search/contexts/engine", () => ({
+  useSearchEngine: () => ({ search: mocks.search }),
+}));
+function render(ui: React.ReactNode) {
+  return renderUI(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      {ui}
+    </QueryClientProvider>,
+  );
+}
 
 vi.mock("~/auth", () => ({
   useAuth: () => ({ session: { user: { id: "viewer-1" } } }),
@@ -48,6 +71,7 @@ import { OpenNoteDialog } from "./open-note-dialog";
 describe("OpenNoteDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.search.mockResolvedValue([]);
     mocks.notes = [];
     mocks.sessions = [];
     globalThis.ResizeObserver = class {
@@ -123,6 +147,34 @@ describe("OpenNoteDialog", () => {
     expect(mocks.openCurrent).toHaveBeenCalledWith({
       type: "shared_sessions",
       id: "share-1",
+    });
+  });
+  it("finds a corrected transcript through the native index while filtering foreign and non-session hits", async () => {
+    mocks.sessions = [
+      { id: "saved", title: "Language practice", created_at: "2026-09-17" },
+    ];
+    mocks.search.mockResolvedValue([
+      { document: { id: "saved", type: "session" } },
+      { document: { id: "foreign", type: "session" } },
+      { document: { id: "contact", type: "human" } },
+    ]);
+    render(<OpenNoteDialog open onOpenChange={mocks.onOpenChange} />);
+    fireEvent.change(screen.getByRole("combobox"), {
+      target: { value: "corrected tea" },
+    });
+    await waitFor(() =>
+      expect(mocks.search).toHaveBeenCalledWith("corrected tea"),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("option", { name: "Language practice" }),
+      ).toBeTruthy(),
+    );
+    expect(screen.queryByText("foreign")).toBeNull();
+    fireEvent.click(screen.getByRole("option", { name: "Language practice" }));
+    expect(mocks.openCurrent).toHaveBeenCalledWith({
+      id: "saved",
+      type: "sessions",
     });
   });
 });

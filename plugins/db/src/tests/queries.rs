@@ -74,3 +74,59 @@ async fn invalid_sql_sends_error_through_channel() {
     let event = next_event(&events, 0).await.unwrap();
     assert!(matches!(event, QueryEvent::Error(_)));
 }
+
+#[tokio::test]
+async fn effective_transcript_subscription_observes_account_selection() {
+    let (_dir, runtime) = setup_runtime().await;
+    runtime
+        .execute("INSERT INTO sessions(id) VALUES('dialext')".into(), vec![])
+        .await
+        .unwrap();
+    for (id, language) in [("english", "en"), ("irish", "ga")] {
+        runtime.execute("INSERT INTO transcripts(id,session_id,words_json) VALUES(?,'dialext','[{\"text\":\"saved\"}]')".into(),vec![json!(id)]).await.unwrap();
+        runtime.execute("INSERT INTO dialext_accounts(id,session_id,transcript_id,target_language,input_evidence_digest,original_sha256) VALUES(?,'dialext',?,?,?,?)".into(),vec![json!(id),json!(id),json!(language),json!("0".repeat(64)),json!("0".repeat(64))]).await.unwrap();
+    }
+    runtime
+        .execute(
+            "INSERT INTO dialext_recordings(id,active_account_id) VALUES('dialext','english')"
+                .into(),
+            vec![],
+        )
+        .await
+        .unwrap();
+    let (channel, events) = capture_channel();
+    let registration = runtime
+        .subscribe(
+            "SELECT transcript.id FROM effective_transcripts AS transcript WHERE transcript.session_id = 'dialext'".into(),
+            vec![],
+            runtime::QueryEventChannel::new(channel),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        next_event(&events, 0).await.unwrap(),
+        QueryEvent::Result(vec![json!({"id":"english"})])
+    );
+    let anlg_db_reactive::DependencyAnalysis::Reactive { targets } = &registration.analysis else {
+        panic!(
+            "effective view must be reactive: {:?}",
+            registration.analysis
+        );
+    };
+    for table in [
+        "transcripts",
+        "sessions",
+        "dialext_recordings",
+        "dialext_accounts",
+    ] {
+        assert!(targets.contains(&anlg_db_reactive::DependencyTarget::Table(table.into())));
+    }
+    anlg_db_app::select_dialext_account(runtime.pool(), "dialext", "irish", Some("english"))
+        .await
+        .unwrap();
+    assert_eq!(
+        next_event(&events, 1).await.unwrap(),
+        QueryEvent::Result(vec![json!({"id":"irish"})])
+    );
+    runtime.unsubscribe(&registration.id).await.unwrap();
+}

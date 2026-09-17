@@ -193,7 +193,7 @@ pub async fn cleanup_legacy_files(pool: &SqlitePool) -> crate::Result<crate::Leg
     cleanup::execute(pool).await
 }
 
-fn resolve_startup_vault_base<R: tauri::Runtime>(
+pub(crate) fn resolve_startup_vault_base<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> crate::Result<PathBuf> {
     let bundle_id: &str = app.config().identifier.as_ref();

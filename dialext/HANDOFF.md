@@ -32,7 +32,7 @@ The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. 
 - Switching accounts within the recording workspace; the language selector currently chooses the imported reading only.
 - Playback of source anchors, inline translation labels, raw-source review or a correction history for imported accounts.
 - Persistent recording-level speaker mappings shared between language accounts. Upstream contacts/assignment infrastructure exists; that is not proof of this multilingual behaviour.
-- A selected-account projection across search, export, summary generation and question context.
+- The workspace language selector and remembered preferred reading language (milestone 1c).
 - Atomic correction-driven summary proposals, stable summary-block provenance, or the requested footer question surface.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 
@@ -126,7 +126,7 @@ Use `ARCHITECTURE.md` as the decision record. Reopen a decision only when a conc
 
 ### Current continuation
 
-Native baseline is complete. Milestone 1a is next: additive native-owned evidence/registry storage and crash-safe metadata migration, preserving the edited selected transcript. Milestones 1b/1c remain unimplemented. The browser relay still stalls on live-query channel callbacks; use the identifiable native debug bundle for acceptance.
+Native baseline and milestones 1a/1b are complete. Milestone 1c is next: saved account selection and preferred reading language, followed by the two-language/restart journey. The browser relay still stalls on live-query channel callbacks; use the identifiable native debug bundle for acceptance.
 
 ### Milestone 1a — native storage implementation
 
@@ -137,3 +137,17 @@ Hash contract v1: compact UTF-8 JSON, recursively sorted object keys, no BOM/new
 Native focused tests: 12 passed (eight ingest regressions plus four adoption/preservation/interruption/evidence/anchor tests). The schema upgrade regression preserves existing prose; the full db-app run initially passed 243/244, with its registry-count assertion requiring the three new disabled tables. The affected Rust Clippy check passed with `--locked --all-targets --no-deps -- -D warnings`. Database TypeScript typecheck passed. Two inherited adapter fixture failures omitted the existing template icon column; corrected fixture rows retain the real positional transport contract.
 
 Activation is deliberately held for 1b: starting adoption before every effective reader uses the selected-account projection would concatenate the alternate language. The real native baseline remains verified; registry adoption in the running interface will be checked with 1b. The workspace selector is still absent. No paid calls or speaker-identity milestone is included here.
+
+### Milestone 1b — effective transcript and activation
+
+Activated metadata adoption during native startup and prepared import. The real prototype library now has two registered accounts; the edited English transcript, speaker hint and supplied summary remain intact. All four immutable artefacts were read from the prototype vault and checked against their registered SHA-256 digests. Original metadata remains retained.
+
+`effective_transcripts` is the shared SQLite view for session-level panel/metadata/render/export, enhancer/chat snapshots, native session access and the desktop search worker. Ordinary sessions retain all live transcripts; Dialext recordings return exactly their live selected usable account. Unadopted prepared bundles and absent/deleted selection return no combined fallback. Explicit account editing, retention and deletion still address canonical rows. Registered transcripts cannot be moved to another recording. Selection is a checked native transaction with expected previous ID and atomic search-dirty generation; it updates future context without changing summary documents.
+
+The actual sidebar Search dialog was title-only even though the local index already supported content. Connected it to that existing native index, intersecting session hits with the current live library while preserving shared-title results. Real interface acceptance: reopened migrated sample, saw saved tea correction and `Dialext Test Speaker`, found tea through sidebar Search, exported transcript-only TXT and checked its bytes contained corrected English/name without Irish account concatenation.
+
+Focused checks: 82 desktop tests across ten affected files plus three search-dialog tests; 15 session-ingest tests; six native plugin channel tests; ten native desktop search tests; full db-app 244 unit tests and two integration tests (three existing ignored); desktop typecheck, affected ESLint and native db-app/session-ingest Clippy with warnings denied passed. Oxlint retains upstream warnings. The full desktop suite is reserved for the milestone boundary after 1c.
+
+A native live-channel regression initially timed out: the dependency analyzer could not resolve aliases inside a view. Full underlying table names in the view allow the existing EXPLAIN analyzer to resolve all four dependencies, and the channel now delivers selection changes. No reactive-runtime policy was weakened. Native adoption also enforces exact anchors, speaker agreement and the existing bounded segment/text/anchor limits.
+
+The selector is still absent at this commit. 1c must disable switching during active editing and keep the previous selection on refusal. Two-language native acceptance and restart remain outstanding. No paid providers, source playback, speaker mapping/history or summary generation were added.

@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fs,
     io::Write,
     path::{Component, Path},
@@ -130,15 +130,25 @@ fn validate_bundle(bundle: &Value) -> Result<(), Error> {
         .ok_or_else(|| invalid("Missing recording duration"))?;
     let sources = array(&bundle["evidence"], "sources")?;
     let mut ids = BTreeSet::new();
-    let mut anchors = BTreeSet::new();
+    let mut anchors = BTreeMap::new();
     for source in sources {
         let id = text(source, "source_id")?;
         if !["irish-asr", "english-asr"].contains(&id) || !ids.insert(id) {
             return Err(invalid("Invalid independent source identity"));
         }
-        for segment in array(source, "segments")? {
+        let segments = array(source, "segments")?;
+        if segments.is_empty() || segments.len() > 2000 {
+            return Err(invalid("Invalid source segment count"));
+        }
+        for segment in segments {
             let (start, end) = interval(segment, duration)?;
-            if text(segment, "text")?.is_empty() || !anchors.insert((id, start, end)) {
+            let content = text(segment, "text")?;
+            if content.trim().is_empty()
+                || content.encode_utf16().count() > 4000
+                || anchors
+                    .insert((id, start, end), segment["speaker"].as_str())
+                    .is_some()
+            {
                 return Err(invalid("Ambiguous source interval"));
             }
         }
@@ -151,24 +161,37 @@ fn validate_bundle(bundle: &Value) -> Result<(), Error> {
             continue;
         };
         let segments = array(account, "segments")?;
-        if segments.is_empty() {
+        if segments.is_empty() || segments.len() > 2000 {
             return Err(invalid("Empty readable account"));
         }
         let mut previous = -1;
         for segment in segments {
             let (start, end) = interval(segment, duration)?;
-            if start < previous || text(segment, "text")?.is_empty() {
+            let content = text(segment, "text")?;
+            if start < previous
+                || content.trim().is_empty()
+                || content.encode_utf16().count() > 4000
+            {
                 return Err(invalid("Invalid account passage"));
             }
             previous = end;
             let support = array(segment, "anchors")?;
+            if support.is_empty() || support.len() > 8 {
+                return Err(invalid("Invalid anchor count"));
+            }
             let mut min = i64::MAX;
             let mut max = -1;
             for anchor in support {
                 let id = text(anchor, "source_id")?;
                 let (a, b) = interval(anchor, duration)?;
-                if !anchors.contains(&(id, a, b)) {
+                let Some(source_speaker) = anchors.get(&(id, a, b)) else {
                     return Err(invalid("Account anchor does not exactly resolve"));
+                };
+                if let (Some(speaker), Some(source_speaker)) =
+                    (segment["speaker"].as_str(), source_speaker)
+                    && speaker != *source_speaker
+                {
+                    return Err(invalid("Account speaker disagrees with its evidence"));
                 }
                 min = min.min(a);
                 max = max.max(b);
@@ -477,5 +500,170 @@ mod tests {
         );
         let foreign = sqlx::query("INSERT INTO dialext_accounts(id,session_id,transcript_id,input_evidence_digest,original_sha256) VALUES('foreign','other',?, ?, ?)").bind(format!("{id}:reading")).bind("0".repeat(64)).bind("0".repeat(64)).execute(db.pool()).await;
         assert!(foreign.is_err());
+    }
+    #[test]
+    fn native_bundle_validation_keeps_speaker_and_size_gates() {
+        let original: Value = serde_json::from_str(include_str!(
+            "../../../dialext/fixtures/language-practice.json"
+        ))
+        .unwrap();
+        for field in ["speaker", "text", "anchors"] {
+            let mut bundle = original.clone();
+            bundle["accounts"]["english"]["segments"][0][field] = match field {
+                "speaker" => json!("Invented Speaker"),
+                "text" => json!("a".repeat(4001)),
+                _ => json!(vec![
+                    bundle["accounts"]["english"]["segments"][0]["anchors"]
+                        [0]
+                    .clone();
+                    9
+                ]),
+            };
+            assert!(validate_bundle(&bundle).is_err());
+        }
+    }
+    #[tokio::test]
+    async fn selected_projection_changes_atomically_and_preserves_all_account_work() {
+        let db = db().await;
+        let vault = tempfile::tempdir().unwrap();
+        let id = sample(db.pool()).await;
+        migrate_recording(db.pool(), vault.path(), &id)
+            .await
+            .unwrap();
+        let en = format!("{id}:account:en:1");
+        let ga = format!("{id}:account:ga:1");
+        assert_eq!(
+            anlg_db_app::list_session_transcripts(db.pool(), &id)
+                .await
+                .unwrap()
+                .len(),
+            1
+        );
+        let before: i64 = sqlx::query_scalar("SELECT generation FROM search_index_dirty WHERE entity_id = ? AND entity_type = 'session'").bind(&id).fetch_one(db.pool()).await.unwrap();
+        anlg_db_app::select_dialext_account(db.pool(), &id, &ga, Some(&en))
+            .await
+            .unwrap();
+        let chosen = anlg_db_app::list_session_transcripts(db.pool(), &id)
+            .await
+            .unwrap();
+        assert_eq!(chosen.len(), 1);
+        assert_eq!(chosen[0].language, "ga");
+        assert!(matches!(
+            anlg_db_app::select_dialext_account(db.pool(), &id, &en, Some(&en)).await,
+            Err(anlg_db_app::DialextSelectionError::StaleSelection)
+        ));
+        assert!(
+            anlg_db_app::select_dialext_account(db.pool(), "foreign", &ga, Some(&en))
+                .await
+                .is_err()
+        );
+        let after: i64 = sqlx::query_scalar("SELECT generation FROM search_index_dirty WHERE entity_id = ? AND entity_type = 'session'").bind(&id).fetch_one(db.pool()).await.unwrap();
+        assert!(after > before);
+        sqlx::query(
+            "UPDATE transcripts SET words_json = '[{\"text\":\"Saved Irish edit\"}]' WHERE id = ?",
+        )
+        .bind(&chosen[0].id)
+        .execute(db.pool())
+        .await
+        .unwrap();
+        anlg_db_app::select_dialext_account(db.pool(), &id, &en, Some(&ga))
+            .await
+            .unwrap();
+        let english = anlg_db_app::list_session_transcripts(db.pool(), &id)
+            .await
+            .unwrap();
+        assert!(english[0].words_json.contains("Saved tea correction"));
+        anlg_db_app::select_dialext_account(db.pool(), &id, &ga, Some(&en))
+            .await
+            .unwrap();
+        assert!(
+            anlg_db_app::list_session_transcripts(db.pool(), &id)
+                .await
+                .unwrap()[0]
+                .words_json
+                .contains("Saved Irish edit")
+        );
+        assert!(
+            sqlx::query("UPDATE transcripts SET session_id = 'foreign' WHERE id = ?")
+                .bind(&chosen[0].id)
+                .execute(db.pool())
+                .await
+                .is_err()
+        );
+        sqlx::query("UPDATE sessions SET deleted_at = 'deleted' WHERE id = ?")
+            .bind(&id)
+            .execute(db.pool())
+            .await
+            .unwrap();
+        assert!(
+            anlg_db_app::list_session_transcripts(db.pool(), &id)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            anlg_db_app::select_dialext_account(db.pool(), &id, &en, Some(&ga))
+                .await
+                .is_err()
+        );
+        sqlx::query("UPDATE sessions SET deleted_at = NULL WHERE id = ?")
+            .bind(&id)
+            .execute(db.pool())
+            .await
+            .unwrap();
+        assert!(
+            anlg_db_app::list_session_transcripts(db.pool(), &id)
+                .await
+                .unwrap()[0]
+                .words_json
+                .contains("Saved Irish edit")
+        );
+        sqlx::query("UPDATE transcripts SET deleted_at = 'deleted' WHERE id = ?")
+            .bind(&chosen[0].id)
+            .execute(db.pool())
+            .await
+            .unwrap();
+        assert!(
+            anlg_db_app::list_session_transcripts(db.pool(), &id)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            anlg_db_app::select_dialext_account(db.pool(), &id, &ga, Some(&ga))
+                .await
+                .is_err()
+        );
+    }
+    #[tokio::test]
+    async fn ordinary_recordings_keep_all_transcripts_and_unadopted_dialext_is_unavailable() {
+        let db = db().await;
+        let id = sample(db.pool()).await;
+        assert!(
+            anlg_db_app::list_session_transcripts(db.pool(), &id)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        sqlx::query("INSERT INTO sessions(id) VALUES('ordinary')")
+            .execute(db.pool())
+            .await
+            .unwrap();
+        for transcript in ["one", "two"] {
+            sqlx::query(
+                "INSERT INTO transcripts(id,session_id,words_json) VALUES(?,'ordinary','[]')",
+            )
+            .bind(transcript)
+            .execute(db.pool())
+            .await
+            .unwrap();
+        }
+        assert_eq!(
+            anlg_db_app::list_session_transcripts(db.pool(), "ordinary")
+                .await
+                .unwrap()
+                .len(),
+            2
+        );
     }
 }
