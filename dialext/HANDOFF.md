@@ -127,3 +127,13 @@ Use `ARCHITECTURE.md` as the decision record. Reopen a decision only when a conc
 ### Current continuation
 
 Native baseline is complete. Milestone 1a is next: additive native-owned evidence/registry storage and crash-safe metadata migration, preserving the edited selected transcript. Milestones 1b/1c remain unimplemented. The browser relay still stalls on live-query channel callbacks; use the identifiable native debug bundle for acceptance.
+
+### Milestone 1a — native storage implementation
+
+Implemented additive migration `20260917120000_dialext_accounts`, the three agreed personal-only tables (CloudSync disabled), same-recording registry constraints and immutable evidence/generation rows. The Drizzle adapter mirrors the schema. Prototype adoption lives in native `session-ingest::dialext`: preserves the edited selected transcript/hints/content version, creates the alternate from the retained bundle, writes immutable vault artefacts, and commits the registry and metadata marker together. Originals remain in metadata pending acceptance.
+
+Hash contract v1: compact UTF-8 JSON, recursively sorted object keys, no BOM/newline. ASR originals are wrapped with `format: dialext-asr-evidence` and `version: 1`; account originals include the exact source IDs/revisions/digests. Evidence-set digests cover `format: dialext-evidence-set`, `version: 1` and a source-ID-sorted list of `{source_id, revision, sha256}`. Source-file bytes will be hashed directly when audio/file ingest exists. Files are named by their digest beneath `dialext/artifacts/v1/`; complete synced temporary bytes are atomically published without overwriting an existing path. A failed SQL commit can leave unreferenced files; retry verifies/reuses them. No garbage collection is implemented.
+
+Native focused tests: 12 passed (eight ingest regressions plus four adoption/preservation/interruption/evidence/anchor tests). The schema upgrade regression preserves existing prose; the full db-app run initially passed 243/244, with its registry-count assertion requiring the three new disabled tables. The affected Rust Clippy check passed with `--locked --all-targets --no-deps -- -D warnings`. Database TypeScript typecheck passed. Two inherited adapter fixture failures omitted the existing template icon column; corrected fixture rows retain the real positional transport contract.
+
+Activation is deliberately held for 1b: starting adoption before every effective reader uses the selected-account projection would concatenate the alternate language. The real native baseline remains verified; registry adoption in the running interface will be checked with 1b. The workspace selector is still absent. No paid calls or speaker-identity milestone is included here.

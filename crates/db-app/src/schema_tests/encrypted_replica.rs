@@ -9,7 +9,14 @@ fn cloudsync_registry_enables_only_the_encrypted_replica() {
         .map(|table| table.table_name.as_str())
         .collect();
 
-    assert_eq!(registry.len(), 23);
+    assert_eq!(registry.len(), 26);
+    for name in ["dialext_recordings", "dialext_accounts", "dialext_evidence"] {
+        assert!(
+            registry
+                .iter()
+                .any(|table| table.table_name == name && !table.enabled)
+        );
+    }
     assert_eq!(enabled, vec!["e2ee_records"]);
     assert!(
         !registry

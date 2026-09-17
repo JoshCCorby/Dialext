@@ -19,3 +19,5 @@ anlg-agent-access = { workspace = true }
 anlg-db-app = { workspace = true }
 anlg-db-core = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
+
+tempfile = { workspace = true }

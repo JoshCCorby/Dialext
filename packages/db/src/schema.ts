@@ -749,3 +749,56 @@ export const storageMigrationState = sqliteTable("storage_migration_state", {
   lastError: text("last_error").notNull().default(""),
   updatedAt: text("updated_at").notNull().default(currentTimestamp),
 });
+
+export const dialextRecordings = sqliteTable("dialext_recordings", {
+  id: text("id").primaryKey().notNull(),
+  activeAccountId: text("active_account_id"),
+  preferredLanguage: text("preferred_language").notNull().default("en"),
+  createdAt: text("created_at").notNull().default(currentTimestamp),
+  updatedAt: text("updated_at").notNull().default(currentTimestamp),
+});
+export const dialextEvidence = sqliteTable(
+  "dialext_evidence",
+  {
+    id: text("id").primaryKey().notNull(),
+    sessionId: text("session_id").notNull().default(""),
+    kind: text("kind").notNull().default("asr"),
+    sourceId: text("source_id").notNull().default(""),
+    revision: integer("revision").notNull().default(1),
+    sha256: text("sha256").notNull().default(""),
+    artifactPath: text("artifact_path").notNull().default(""),
+    durationMs: integer("duration_ms"),
+    createdAt: text("created_at").notNull().default(currentTimestamp),
+    updatedAt: text("updated_at").notNull().default(currentTimestamp),
+  },
+  (table) => [
+    uniqueIndex("dialext_evidence_source_revision").on(
+      table.sessionId,
+      table.sourceId,
+      table.revision,
+    ),
+  ],
+);
+export const dialextAccounts = sqliteTable(
+  "dialext_accounts",
+  {
+    id: text("id").primaryKey().notNull(),
+    sessionId: text("session_id").notNull().default(""),
+    transcriptId: text("transcript_id").notNull().default(""),
+    targetLanguage: text("target_language").notNull().default("en"),
+    generation: integer("generation").notNull().default(1),
+    inputEvidenceDigest: text("input_evidence_digest").notNull().default(""),
+    originalArtifactPath: text("original_artifact_path").notNull().default(""),
+    originalSha256: text("original_sha256").notNull().default(""),
+    createdAt: text("created_at").notNull().default(currentTimestamp),
+    updatedAt: text("updated_at").notNull().default(currentTimestamp),
+  },
+  (table) => [
+    uniqueIndex("dialext_accounts_transcript").on(table.transcriptId),
+    uniqueIndex("dialext_accounts_generation").on(
+      table.sessionId,
+      table.targetLanguage,
+      table.generation,
+    ),
+  ],
+);

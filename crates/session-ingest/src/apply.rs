@@ -783,7 +783,7 @@ fn content_hash(envelope: &SessionIngestEnvelope) -> Result<String, serde_json::
     Ok(sha256_hex(&serde_json::to_vec(&canonical)?))
 }
 
-fn sort_json_keys(value: &mut Value) {
+pub(crate) fn sort_json_keys(value: &mut Value) {
     match value {
         Value::Array(values) => values.iter_mut().for_each(sort_json_keys),
         Value::Object(values) => {

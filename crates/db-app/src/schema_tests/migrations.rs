@@ -94,6 +94,9 @@ async fn migrations_apply_cleanly() {
             "cloudsync_session_evictions",
             "cloudsync_writable_workspaces",
             "daily_notes",
+            "dialext_accounts",
+            "dialext_evidence",
+            "dialext_recordings",
             "e2ee_apply_guard",
             "e2ee_ciphertext_archive",
             "e2ee_dirty_rows",
@@ -567,4 +570,40 @@ async fn enterprise_session_delivery_tables_are_registered() {
             "enterprise_session_delivery_state",
         ]
     );
+}
+
+#[tokio::test]
+async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260917120000_dialext_accounts"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('saved')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO transcripts(id,session_id,words_json) VALUES('saved-reading','saved','[1]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    prepare_schema(&db).await.unwrap();
+    let saved: String =
+        sqlx::query_scalar("SELECT words_json FROM transcripts WHERE id = 'saved-reading'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(saved, "[1]");
+    for name in ["dialext_recordings", "dialext_accounts", "dialext_evidence"] {
+        assert!(
+            !cloudsync_table_registry()
+                .iter()
+                .find(|s| s.table_name == name)
+                .unwrap()
+                .enabled
+        );
+    }
 }

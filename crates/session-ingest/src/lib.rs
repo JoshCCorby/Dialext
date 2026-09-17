@@ -6,6 +6,8 @@ mod protocol;
 #[cfg(feature = "apply")]
 mod apply;
 #[cfg(feature = "apply")]
+pub mod dialext;
+#[cfg(feature = "apply")]
 mod validate;
 
 #[cfg(feature = "apply")]
