@@ -99,17 +99,23 @@ At the end of each milestone: verify the actual desktop workflow, record exact r
 
 ## Native runtime verification
 
-**Build and process launch passed; interactive baseline remains open.** The initial full native build completed on 16 September. After the permissions-helper fix, the incremental native build completed successfully in approximately 22 seconds. The launcher was run again on 17 September: the real desktop process started, Vite listened on 1422, and the native development relay listened on loopback port 1424. The separate profile exists at `~/Library/Application Support/app.dialext.prototype`; it was not substituted with a mocked database.
+**Native baseline passed on 17 September 2026 through the actual native interface.** The launcher now wraps the isolated signed debug executable in `.dialext-data/Dialext Prototype.app`, allowing native UI automation to identify its window. This remains a debug build under the existing prototype identifier/vault.
+
+Verified individually: Settings → Imports, English import of `language-practice.json`; sample title and supplied summary; both passage texts; first passage corrected from coffee to tea; `Dialext Test Speaker` assigned; TXT exported through More → Export and its bytes checked for the correction/name; full Quit and launcher restart; correction and name retained; identical repeat import retained both. No provider calls, mocked database, source audio or playback were involved.
+
+Baseline limitation: the import supplies string speaker labels but no upstream provider-speaker hints, so both passages display in one speaker block. The assignment above applies to that block; this does not prove independent or recording-level multilingual speaker identity. Preserve the saved text and hint assignment when registering this selected account. New alternate-account conversion must supply the upstream hints.
+
+Historical build/runtime observations follow. **Build and process launch passed; interactive baseline was open at the previous handoff.** The initial full native build completed on 16 September. After the permissions-helper fix, the incremental native build completed successfully in approximately 22 seconds. The launcher was run again on 17 September: the real desktop process started, Vite listened on 1422, and the native development relay listened on loopback port 1424. The separate profile exists at `~/Library/Application Support/app.dialext.prototype`; it was not substituted with a mocked database.
 
 The UI automation tool cannot identify this unbundled debug executable as a native application. The alternative browser interface at `http://localhost:1422` stalls at “Loading” despite the native relay listening. The native console reported “Couldn't find callback id” warnings; the browser showed no useful error. This is an unresolved observation, not a proven root cause. The relay forwards commands by evaluating them in the main native webview (`plugins/relay/src/relay.rs`); channel/callback forwarding is a targeted place to inspect if pursuing that route. Do not replace the backend with browser mocks to declare this acceptance complete.
 
-No sample import, transcript edit, speaker assignment, export or persistence-after-restart has been verified through the new app's real interface. Earlier mocked renderer tests and native ingest tests cover their own layers only. The sample does not contain audio, so source playback cannot pass yet.
+At the previous handoff, no sample import, transcript edit, speaker assignment, export or persistence-after-restart had been verified through the new app's real interface. Those baseline steps have now passed as recorded above. Earlier mocked renderer tests and native ingest tests cover their own layers only. The sample does not contain audio, so source playback cannot pass yet.
 
 The first run also encountered a native permissions-helper drag panic (fixed as described above). In a subsequent interrupted development run, the webview health monitor restarted the native process after its frontend disappeared; that relaunched process used the default relay port 1423. Restart the whole development launcher after interruption rather than leaving an orphan native process running. Do not interpret this as a database-corruption diagnosis or reset saved data.
 
 Local diagnostic logs: `/tmp/dialext-anarlog-dev.log`, `/tmp/dialext-final-focused-tests.log`, `/tmp/dialext-anarlog-typecheck.log`, `/tmp/dialext-anarlog-ingest-test.log`, and `~/Library/Logs/app.dialext.prototype/app.log`. Temporary logs are supplemental, not required source files; the durable findings are recorded here.
 
-### First task for the next session
+### Original baseline checklist (completed above; milestone 1 now next)
 
 1. Start `node dialext/dev.mjs` in a terminal that remains open. Use the actual native window if available. Do not press Record or configure paid providers for this sample check.
 2. In Settings → Imports, choose English and import `dialext/fixtures/language-practice.json`. Confirm the sample title, supplied summary and two transcript passages. Verify that changing the first passage, assigning a test speaker name, copying/exporting and restarting preserves the changes. Reimport the same file and confirm saved edits are retained. Record outcomes individually.
@@ -117,3 +123,7 @@ Local diagnostic logs: `/tmp/dialext-anarlog-dev.log`, `/tmp/dialext-final-focus
 4. Once the baseline passes, begin milestone 1 in three reviewable commits: **1a** additive schema/native storage and crash-safe metadata migration; **1b** one effective-transcript projection across all readers and search invalidation; **1c** saved language selection in the existing workspace, plus the two-language/restart acceptance journey. Keep the selector absent until its backend and consumers agree. No paid calls, full rebrand, new chat UI or provider migration in this milestone.
 
 Use `ARCHITECTURE.md` as the decision record. Reopen a decision only when a concrete code constraint or user requirement contradicts it; record that evidence before changing the contract. Update this file after each completed slice so a later session can continue without relying on chat history.
+
+### Current continuation
+
+Native baseline is complete. Milestone 1a is next: additive native-owned evidence/registry storage and crash-safe metadata migration, preserving the edited selected transcript. Milestones 1b/1c remain unimplemented. The browser relay still stalls on live-query channel callbacks; use the identifiable native debug bundle for acceptance.
