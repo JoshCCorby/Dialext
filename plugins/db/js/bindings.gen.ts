@@ -102,6 +102,14 @@ async applySessionIngest(workspaceId: string, envelope: JsonValue) : Promise<Res
     else return { status: "error", error: e  as any };
 }
 },
+async selectDialextAccount(sessionId: string, accountId: string, expectedPreviousAccountId: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|select_dialext_account", { sessionId, accountId, expectedPreviousAccountId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getE2eeIdentityStatus(accountUserId: string) : Promise<Result<E2eeIdentityStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|get_e2ee_identity_status", { accountUserId }) };

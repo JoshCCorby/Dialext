@@ -5,6 +5,7 @@ Default permissions for the plugin
 #### This default permission set includes the following:
 
 - `allow-apply-session-ingest`
+- `allow-select-dialext-account`
 - `allow-execute`
 - `allow-execute-proxy`
 - `allow-execute-transaction`
@@ -770,6 +771,32 @@ Enables the seal_workspace_e2ee_key_for_recipients command without any pre-confi
 <td>
 
 Denies the seal_workspace_e2ee_key_for_recipients command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-select-dialext-account`
+
+</td>
+<td>
+
+Enables the select_dialext_account command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-select-dialext-account`
+
+</td>
+<td>
+
+Denies the select_dialext_account command without any pre-configured scope.
 
 </td>
 </tr>

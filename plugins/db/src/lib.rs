@@ -337,6 +337,7 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::cleanup_legacy_files,
             commands::run_legacy_import,
             commands::apply_session_ingest<tauri::Wry>,
+            commands::select_dialext_account,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,

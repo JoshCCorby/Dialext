@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-select-dialext-account"
+description = "Enables the select_dialext_account command without any pre-configured scope."
+commands.allow = ["select_dialext_account"]
+
+[[permission]]
+identifier = "deny-select-dialext-account"
+description = "Denies the select_dialext_account command without any pre-configured scope."
+commands.deny = ["select_dialext_account"]

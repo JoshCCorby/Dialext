@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Prepared 16–17 September 2026 for continuation in a smaller-model session. Read this before inspecting the whole monorepo. The architecture is ready for implementation; the full product and native workflow acceptance are not complete.
+Updated 18 September 2026. Native baseline and all three bounded steps of milestone 1 are complete and verified in the isolated native app. Continue with milestone 2; the full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -19,20 +19,20 @@ The user wants a working personal tool based on Anarlog's layout, not another en
 1. A separate community-source repository with the agreed brief and original design files.
 2. `node dialext/dev.mjs`: isolated native development launch under `app.dialext.prototype`; `.dialext-data/vault/` for audio; local `.dialext-tools/` Rust installation where present. Xcode's Metal Toolchain has been installed on this Mac.
 3. Xcode 27 build compatibility: `dialext/toolchain/swift` selects SwiftPM's native build layout, which `swift-rs` expects. The native runner signs with the prototype identifier. This is scoped to the launcher, not a global compiler configuration. The launcher defaults `ONBOARDING=false` for the prepared-sample experiment; `ONBOARDING=true node dialext/dev.mjs` restores the upstream tutorial. This does not grant operating-system recording permissions.
-4. Settings → Imports → **Import a Dialext recording**. This reads a versioned prepared JSON bundle, validates both accounts against exact evidence anchors, and calls Anarlog's native `applySessionIngest` command. It inserts one selected reading and optional supplied summary, retaining the original bundle separately in session metadata.
+4. Settings → Imports → **Import a Dialext recording**. This reads a versioned prepared JSON bundle, validates both accounts against exact evidence anchors, and calls Anarlog's native `applySessionIngest` command. It inserts the initially selected reading and optional supplied summary; native adoption registers both prepared accounts and immutable artefacts. Original metadata is retained for recovery.
 5. Finalized, deterministic import identity. An identical repeat is idempotent; changed content under the same identity is rejected instead of overwriting edits. The native ingest tests cover these guarantees. This is an import seam, not the provider pipeline.
 6. Original reconstruction validator and 13 tests copied unchanged from Dialext. The new bridge additionally checks unique source identities, ambiguous intervals, measured-duration bounds and agreement between displayed passage timing and its source anchors.
-7. A native permissions-helper fix: an AppKit drag operation returning nil now restores the row state instead of panicking across an Objective-C callback. The app compiled successfully with this fix. The exact failed-drag interaction has not been reproduced after the fix.
+7. Durable personal-only recording/evidence/account tables, crash-safe metadata adoption and verified immutable vault artefacts. One effective-transcript view supplies the selected reading to the panel, export, search, enhancer/chat snapshots and native session access.
+8. English/Gaeilge selection in the existing Transcript workspace, checked by native transaction against the expected previous selection. Separate saved edits survive switching/restart. General settings remembers the preferred reading language, default English, for fresh prepared imports. Missing accounts are explicitly unavailable; switching is disabled while editing or processing. Existing summary documents are unchanged by switching.
+9. A native permissions-helper fix: an AppKit drag operation returning nil now restores the row state instead of panicking across an Objective-C callback. The app compiled successfully with this fix. The exact failed-drag interaction has not been reproduced after the fix.
 
 The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. It has **no source audio**, no actual ASR output, and no evaluated translation quality. Do not describe opening it as a successful live transcription test.
 
 ## What is not implemented
 
 - Generating a language account or running Azure/another speech provider in the new app.
-- Switching accounts within the recording workspace; the language selector currently chooses the imported reading only.
 - Playback of source anchors, inline translation labels, raw-source review or a correction history for imported accounts.
 - Persistent recording-level speaker mappings shared between language accounts. Upstream contacts/assignment infrastructure exists; that is not proof of this multilingual behaviour.
-- The workspace language selector and remembered preferred reading language (milestone 1c).
 - Atomic correction-driven summary proposals, stable summary-block provenance, or the requested footer question surface.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 
@@ -44,16 +44,16 @@ Do not fill these gaps with inert controls. Complete one visible journey at a ti
 | --- | --- |
 | Pinned dependency install and shared UI build | Passed |
 | Desktop TypeScript check | Passed |
-| Full desktop test suite | 463 files, 4,408 tests passed before the final timing metadata refinement |
+| Full desktop test suite | Milestone boundary: 466 files, 4,421 tests passed |
 | Focused import/UI tests | 13 tests passed on 17 September, including the final timing metadata refinement |
 | Original source-anchor validator | 13 tests passed |
-| Native `session-ingest` tests | 8 tests passed, including idempotence/finalization and ownership checks |
+| Native tests | session-ingest 15; db-app 244 unit + 2 integration (3 existing ignored); db plugin 162; desktop 57 passed |
 | Common repository Node tests | 82 tests passed |
 | Licence-boundary tests/check | 9 tests and boundary check passed |
 | Lingui extraction and strict compilation | Passed; generated catalog changes are committed with the first import slice |
 | Lingui check against tracked catalogs | Passed |
 | Desktop Oxlint | No errors; 207 inherited warnings |
-| ESLint on the new query/mutation component | Passed |
+| Affected ESLint / native Clippy | Desktop ESLint passed; plugin JS has no matching ESLint configuration. db-app/session-ingest Clippy passed with warnings denied. Plugin Clippy is blocked by two inherited lints described below. |
 | Workflow audit | Offline zizmor scan found 358 inherited findings. No upstream workflow fixes or release-readiness claim. GitHub Actions are disabled on this private repository. |
 
 Native runtime verification is recorded in the final section below. Passing mocked UI tests or the database tests is not a substitute for it.
@@ -80,7 +80,7 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 
 ## Hard findings the next session must retain
 
-- `useSessionTranscripts`, `loadSessionContentSnapshot` and native `list_session_transcripts` all currently read every transcript belonging to a recording. Merely adding a second language row will mix both languages in downstream consumers.
+- Milestone 1 routes effective recording readers through `effective_transcripts`; explicit per-account editing/retention stays on canonical `transcripts`. Do not return to session-wide raw reads, which concatenate language accounts. Voiceprint raw-audio matching is outside this milestone and must be audited before later speaker work.
 - The old reconstruction validator's returned `language` is the **target** language. Preserve a distinct spoken-language annotation; never derive it from a forced provider locale.
 - Upstream missing timing metadata defaults to precise provider-word timing. Imported derived wording uses `synthetic_text` to disable that claim; source interval playback must be implemented explicitly.
 - Anarlog edits its working `words_json`. Do not put immutable ASR legs in that editable table or silently turn its editing path into an evidence rewrite.
@@ -91,7 +91,7 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Finish native baseline verification first if any item below is pending. Then undertake **milestone 1 only**: durable accounts and one effective-transcript projection, using prepared fixtures and no paid calls. Read the nearest database/plugin instructions before changing those layers. Make migrations additive and test fresh creation, upgrade, deletion/restoration and restart.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestone 1 have passed; next undertake **milestone 2 only**: source review and recording-level speaker identity, using synthetic audio/prepared fixtures and no paid calls. Read the nearest database/plugin instructions before changing those layers. Preserve current saved edits, contacts and immutable artefacts; use additive migrations and test fresh creation, upgrade, deletion/restoration and restart.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -115,7 +115,7 @@ The first run also encountered a native permissions-helper drag panic (fixed as 
 
 Local diagnostic logs: `/tmp/dialext-anarlog-dev.log`, `/tmp/dialext-final-focused-tests.log`, `/tmp/dialext-anarlog-typecheck.log`, `/tmp/dialext-anarlog-ingest-test.log`, and `~/Library/Logs/app.dialext.prototype/app.log`. Temporary logs are supplemental, not required source files; the durable findings are recorded here.
 
-### Original baseline checklist (completed above; milestone 1 now next)
+### Original baseline checklist (completed; milestone 1 also completed)
 
 1. Start `node dialext/dev.mjs` in a terminal that remains open. Use the actual native window if available. Do not press Record or configure paid providers for this sample check.
 2. In Settings → Imports, choose English and import `dialext/fixtures/language-practice.json`. Confirm the sample title, supplied summary and two transcript passages. Verify that changing the first passage, assigning a test speaker name, copying/exporting and restarting preserves the changes. Reimport the same file and confirm saved edits are retained. Record outcomes individually.
@@ -126,9 +126,9 @@ Use `ARCHITECTURE.md` as the decision record. Reopen a decision only when a conc
 
 ### Current continuation
 
-Native baseline and milestones 1a/1b are complete. Milestone 1c is next: saved account selection and preferred reading language, followed by the two-language/restart journey. The browser relay still stalls on live-query channel callbacks; use the identifiable native debug bundle for acceptance.
+Native baseline and milestones 1a/1b/1c are complete. Milestone 2 is next. Use [NEXT_SESSION.md](NEXT_SESSION.md). The browser relay still stalls on live-query channel callbacks; use the identifiable native debug bundle for acceptance. The final running prototype has the original sample selected in Irish and the global fresh-import preference restored to English. These are independent settings. Test data is synthetic; `.Rhistory` appeared untracked and was left untouched/uncommitted.
 
-### Milestone 1a — native storage implementation
+### Milestone 1a — native storage implementation (commit `e5b8655`)
 
 Implemented additive migration `20260917120000_dialext_accounts`, the three agreed personal-only tables (CloudSync disabled), same-recording registry constraints and immutable evidence/generation rows. The Drizzle adapter mirrors the schema. Prototype adoption lives in native `session-ingest::dialext`: preserves the edited selected transcript/hints/content version, creates the alternate from the retained bundle, writes immutable vault artefacts, and commits the registry and metadata marker together. Originals remain in metadata pending acceptance.
 
@@ -136,9 +136,9 @@ Hash contract v1: compact UTF-8 JSON, recursively sorted object keys, no BOM/new
 
 Native focused tests: 12 passed (eight ingest regressions plus four adoption/preservation/interruption/evidence/anchor tests). The schema upgrade regression preserves existing prose; the full db-app run initially passed 243/244, with its registry-count assertion requiring the three new disabled tables. The affected Rust Clippy check passed with `--locked --all-targets --no-deps -- -D warnings`. Database TypeScript typecheck passed. Two inherited adapter fixture failures omitted the existing template icon column; corrected fixture rows retain the real positional transport contract.
 
-Activation is deliberately held for 1b: starting adoption before every effective reader uses the selected-account projection would concatenate the alternate language. The real native baseline remains verified; registry adoption in the running interface will be checked with 1b. The workspace selector is still absent. No paid calls or speaker-identity milestone is included here.
+At this commit activation was deliberately held for 1b: starting adoption before every effective reader uses the selected-account projection would concatenate the alternate language. The real native baseline remains verified; registry adoption in the running interface will be checked with 1b. The workspace selector is still absent. No paid calls or speaker-identity milestone is included here.
 
-### Milestone 1b — effective transcript and activation
+### Milestone 1b — effective transcript and activation (commit `9674a66`)
 
 Activated metadata adoption during native startup and prepared import. The real prototype library now has two registered accounts; the edited English transcript, speaker hint and supplied summary remain intact. All four immutable artefacts were read from the prototype vault and checked against their registered SHA-256 digests. Original metadata remains retained.
 
@@ -150,4 +150,19 @@ Focused checks: 82 desktop tests across ten affected files plus three search-dia
 
 A native live-channel regression initially timed out: the dependency analyzer could not resolve aliases inside a view. Full underlying table names in the view allow the existing EXPLAIN analyzer to resolve all four dependencies, and the channel now delivers selection changes. No reactive-runtime policy was weakened. Native adoption also enforces exact anchors, speaker agreement and the existing bounded segment/text/anchor limits.
 
-The selector is still absent at this commit. 1c must disable switching during active editing and keep the previous selection on refusal. Two-language native acceptance and restart remain outstanding. No paid providers, source playback, speaker mapping/history or summary generation were added.
+At the 1b commit the selector was absent. The switching/editing/refusal and two-language restart checks were subsequently completed in 1c below. No paid providers, source playback, speaker mapping/history or summary generation were added.
+
+
+### Milestone 1c — saved selection and native acceptance
+
+Added the thin native selection command, generated bindings/default permission, live account query, existing ButtonGroup language controls and the local `dialext_reading_language` preference. The renderer flushes queued edits before selection; there is no optimistic replacement of the current reading. Native stale/foreign/deleted/empty selection refuses without changing the previous selection or summary. Prepared repeat import uses its finalized initial envelope language while the native fingerprint still rejects changed originals; a changed global preference cannot overwrite or break an identical repeat.
+
+Real native acceptance on 17–18 September: switched English/Gaeilge; changed Irish `caife` to `tae`; confirmed the English `tea` correction and `Dialext Test Speaker` remained independent; switching was disabled in edit mode. Fully quit/restarted the native app and confirmed selection and both edits persisted. Exported each selected reading through More → Export → TXT, transcript-only, then inspected bytes: Irish contained `Ba mhaith liom tae a ordú.` and no English reading; English contained `Dialext Test Speaker: I would like to order tea.` and no Irish reading. Native sidebar search found the selected correction and excluded inactive Irish text when English was selected; switching back to Irish found `tae` after restart. Existing English summary remained unchanged.
+
+Saved the global preference as Gaeilge, imported `preferred-language.json` fresh and confirmed Irish selection. Fully quit/restarted again and observed Gaeilge still saved in General settings. Restored the default preference to English, imported `english-only.json` and observed the disabled `Gaeilge (unavailable)` control. Reimported the original sample while the global preference was Irish and confirmed its saved English selection/correction/name were retained; its independent Irish edit remained intact. Created and reopened `Sample · Ordinary note check` with saved prose; it has no Dialext selector. Synthetic fixtures are committed; no original audio or paid provider was used.
+
+All registered immutable artefacts were read and hashed after these edits/imports/restarts. The original four digests match the pre-edit baseline. Native/schema tests cover interrupted adoption/retry, missing/corrupt artefacts, exact/foreign anchors, ownership, deletion/restoration and checked selection. Real SQLite projection tests cover panel/metadata/export requests and enhancer/chat snapshots; no AI request was made to verify these inputs.
+
+Milestone boundary checks: full desktop **466 files / 4,421 tests**, full native db-plugin **162**, full native desktop **57**, desktop and plugin TypeScript, affected desktop ESLint, branch-diff format, common Node **82**, licence **9** plus boundary check, and Lingui extraction/strict compilation passed. Oxlint: **207 inherited warnings, zero errors**. Plugin JS is covered by TypeScript; ESLint reports it outside configured files. db-app/session-ingest Clippy passed earlier. Additional plugin check `cargo clippy --locked -p tauri-plugin-db --all-targets --no-deps -- -D warnings` fails on inherited `needless_borrow` in CloudSync workspace setup and `too_many_arguments` in `configure_cloudsync_token`; neither belongs to the new command. Do not call this full Clippy or cross-platform/release readiness. Generated bindings are native-owned; final Lingui check is run after committing catalogs.
+
+Development-only observations: browser relay/channel acceptance remains unavailable. During HMR, native menu listeners temporarily failed to open Export; a full clean quit/launcher restart restored it and both exports passed. Do not reset the database to resolve either symptom. Final native log: `/tmp/dialext-m1-final-native.log`; test logs `/tmp/dialext-m1-*.log` are supplemental only. Start with `node dialext/dev.mjs`, never release mode. Baseline commit is `c378b04`; all completed work is committed to the private origin, not upstream.

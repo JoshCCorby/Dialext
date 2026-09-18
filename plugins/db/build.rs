@@ -11,6 +11,7 @@ const COMMANDS: &[&str] = &[
     "cleanup_legacy_files",
     "run_legacy_import",
     "apply_session_ingest",
+    "select_dialext_account",
     "get_e2ee_identity_status",
     "inspect_e2ee_recovery_key",
     "create_e2ee_identity",

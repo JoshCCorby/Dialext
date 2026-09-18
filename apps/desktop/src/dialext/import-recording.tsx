@@ -8,6 +8,8 @@ import { Button } from "@anlg/ui/components/ui/button";
 
 import { prepareDialextImport, type ReadingLanguage } from "./recording-import";
 
+import { liveQueryClient } from "~/db";
+import { useSettingsReady, useStoredSettingValue } from "~/settings/queries";
 import { DEFAULT_USER_ID } from "~/shared/utils";
 import { useTabs } from "~/store/zustand/tabs";
 
@@ -15,8 +17,16 @@ export function ImportDialextRecording() {
   const input = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const openCurrent = useTabs((state) => state.openCurrent);
+  const settingsReady = useSettingsReady();
+  const { value: preferredLanguage } = useStoredSettingValue(
+    "dialext_reading_language",
+  );
   const form = useForm({
-    defaultValues: { language: "english" as ReadingLanguage },
+    defaultValues: {
+      language: (preferredLanguage === "ga"
+        ? "irish"
+        : "english") as ReadingLanguage,
+    },
   });
   const mutation = useMutation({
     mutationFn: async (file: File) => {
@@ -25,14 +35,25 @@ export function ImportDialextRecording() {
           "This recording bundle is larger than the 2 MB prototype import limit.",
         );
       }
-      const prepared = prepareDialextImport(
-        await file.text(),
-        form.state.values.language,
-        {
-          workspaceId: "dialext-local",
-          ownerUserId: DEFAULT_USER_ID,
-        },
-      );
+      const content = await file.text();
+      const recordingId: unknown = JSON.parse(content)?.recording?.id;
+      const existing =
+        typeof recordingId === "string" &&
+        /^[a-zA-Z0-9_-]{1,100}$/.test(recordingId)
+          ? await liveQueryClient.execute<{ language: string | null }>(
+              "SELECT json_extract(CASE WHEN json_valid(metadata_json) THEN metadata_json ELSE '{}' END, '$.dialext.selected_language') AS language FROM sessions WHERE id = ?",
+              [`dialext-${recordingId}`],
+            )
+          : [];
+      // Finalized ingest pins its initial envelope; repeat import uses that language while the native fingerprint still rejects changed originals.
+      const initialLanguage =
+        existing[0]?.language === "english" || existing[0]?.language === "irish"
+          ? existing[0].language
+          : form.state.values.language;
+      const prepared = prepareDialextImport(content, initialLanguage, {
+        workspaceId: "dialext-local",
+        ownerUserId: DEFAULT_USER_ID,
+      });
       const result = await applySessionIngest(
         "dialext-local",
         prepared.envelope,
@@ -57,8 +78,9 @@ export function ImportDialextRecording() {
       </h2>
       <p className="text-muted-foreground text-sm">
         <Trans>
-          Choose a prepared language reading. Your original readings are
-          preserved, and importing again will not replace saved edits.
+          Import prepared language accounts. Your original readings are
+          preserved. Importing again keeps saved edits and the recording’s
+          selected language.
         </Trans>
       </p>
       <form.Field name="language">
@@ -67,7 +89,7 @@ export function ImportDialextRecording() {
             <Trans>Reading language</Trans>
             <select
               value={field.state.value}
-              disabled={mutation.isPending}
+              disabled={!settingsReady || mutation.isPending}
               onChange={(event) =>
                 field.handleChange(event.target.value as ReadingLanguage)
               }
@@ -92,7 +114,7 @@ export function ImportDialextRecording() {
       />
       <Button
         className="w-fit"
-        disabled={mutation.isPending}
+        disabled={!settingsReady || mutation.isPending}
         onClick={() => input.current?.click()}
       >
         {mutation.isPending ? (

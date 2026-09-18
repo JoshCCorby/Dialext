@@ -8,6 +8,7 @@ import { TranscriptEmptyState } from "./screens/empty";
 import { TranscriptListeningState } from "./screens/listening";
 import { useTranscriptScreen } from "./state";
 
+import { ReadingSelector } from "~/dialext/reading-selector";
 import { useListener } from "~/stt/contexts";
 import { useUploadFile } from "~/stt/useUploadFile";
 
@@ -54,6 +55,14 @@ function TranscriptContent({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
+      <ReadingSelector
+        sessionId={sessionId}
+        editing={
+          editMode ||
+          screen.kind === "listening" ||
+          screen.kind === "running_batch"
+        }
+      />
       {screen.kind === "running_batch" && (
         <TranscriptEmptyState
           isBatching

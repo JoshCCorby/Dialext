@@ -1,6 +1,6 @@
 # Personal Dialext: implementation decisions
 
-Updated 17 September 2026. This is the implementation direction for the next sessions, not a description of completed features. The user's [product brief](product/product-vision.md) is authoritative. Build one milestone at a time; prove it in the desktop interface before adding the next.
+Updated 18 September 2026. Native baseline and milestone 1 are implemented and verified; [HANDOFF.md](HANDOFF.md) records the completed checks. Later milestones below remain implementation direction, not completed features. The user's [product brief](product/product-vision.md) is authoritative. Build one milestone at a time; prove it in the desktop interface before adding the next.
 
 ## Product and reuse boundary
 
@@ -25,7 +25,7 @@ Use Anarlog's SQLite database for workspace state. Add schema through `crates/db
 | Summaries and notes | Existing session documents. New template outputs preserve earlier outputs. Personal notes are not silently treated as recorded speech. |
 | Model proposals | Explicit pending versions pinned to the exact account and document versions used to prepare them. Only acceptance changes the document. |
 
-The first import currently retains original evidence and the supplied alternate account inside session metadata. That is a bounded fixture/import seam, **not the final evidence store**. Replace it with owned artefacts and a registry before supporting normal recording sizes. The native ingest limit is 2 MB, including both the original bundle and the selected working account. Do not simply raise the limit or duplicate whole evidence bundles across language accounts.
+Prepared import retains its original bundle in session metadata for recovery. Milestone 1 adopts it into immutable owned artefacts and a registry, preserving saved selected edits in place. This remains a bounded fixture/import seam; source audio and normal recording-size ingest are later work. The native ingest limit is 2 MB, including both the original bundle and the selected working account. Do not simply raise the limit or duplicate whole evidence bundles across language accounts.
 
 Do not use soft deletion to hide unselected accounts. Deletion has separate retention and restoration semantics.
 
@@ -51,7 +51,7 @@ For the prototype metadata migration, preserve the already edited selected trans
 
 ## One effective transcript across the application
 
-Adding an Irish transcript beside an English transcript currently makes upstream readers concatenate both. A language dropdown that filters only the visible component would recreate the old frontend/backend mismatch.
+Unmodified upstream readers concatenate every transcript in a recording. Milestone 1 now uses `effective_transcripts` for effective reads; preserve that contract when adding readers. A language dropdown that filters only the visible component would recreate the old frontend/backend mismatch.
 
 Introduce a shared database view or equivalent central native projection that returns:
 

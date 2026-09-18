@@ -24,6 +24,7 @@ import { SummaryLengthSelector } from "./summary-length";
 import { TimezoneSelector } from "./timezone";
 import { WeekStartSelector } from "./week-start";
 
+import { PreferredReadingLanguage } from "~/dialext/preferred-reading";
 import { SettingsPageTitle } from "~/settings/page-title";
 import {
   type StoredSettingValues,
@@ -243,6 +244,7 @@ function SettingsSectionContent({
               <Trans>Language &amp; Region</Trans>
             </h2>
             <div className="flex flex-col gap-6">
+              <PreferredReadingLanguage />
               <form.Field name="ai_language">
                 {(field) => (
                   <MainLanguageView

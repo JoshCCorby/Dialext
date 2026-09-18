@@ -30,6 +30,7 @@ vi.mock("~/stt/speaker-context-query", () => ({
 }));
 
 import fixture from "../../../../dialext/fixtures/language-practice.json";
+import { useDialextAccounts } from "./account-query";
 import { prepareDialextImport } from "./recording-import";
 
 import { useSessionTranscriptRenderData } from "~/session/components/note-input/transcript/render-request-hooks";
@@ -112,6 +113,12 @@ describe("effective language account on actual SQLite projections", () => {
       db.prepare(
         "UPDATE dialext_recordings SET active_account_id = ? WHERE id = ?",
       ).run(code, sessionId);
+      const accounts = renderHook(() => useDialextAccounts(sessionId));
+      expect(accounts.result.current.data).toHaveLength(2);
+      expect(
+        accounts.result.current.data?.find((row) => row.id === code)?.usable,
+      ).toBe(1);
+      accounts.unmount();
       const records = await getSessionTranscriptRecords(sessionId);
       expect(records).toHaveLength(1);
       expect(records[0].words[0].text).toBe(wanted);

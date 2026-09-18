@@ -214,6 +214,11 @@ export const SETTING_DEFINITIONS = {
     path: ["general", "cloud_sync_enabled"],
     default: true as boolean,
   },
+  dialext_reading_language: {
+    type: "string",
+    path: ["language", "dialext_reading_language"],
+    default: "en" as string,
+  },
   ai_language: {
     type: "string",
     path: ["language", "ai_language"],

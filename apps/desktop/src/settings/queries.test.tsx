@@ -63,6 +63,24 @@ import {
   updateSettingValue,
 } from "./queries";
 
+describe("personal reading preference", () => {
+  it("accepts only supported account languages and keeps English as the independent default", () => {
+    expect(
+      parseSettingRows([{ id: "dialext_reading_language", value_json: '"ga"' }])
+        .values.dialext_reading_language,
+    ).toBe("ga");
+    expect(
+      parseSettingRows([
+        { id: "dialext_reading_language", value_json: '"fr"' },
+      ]).hasValues.has("dialext_reading_language"),
+    ).toBe(false);
+    expect(
+      parseSettingRows([{ id: "ai_language", value_json: '"ga"' }]).values
+        .dialext_reading_language,
+    ).toBeUndefined();
+  });
+});
+
 describe("SQLite settings", () => {
   it("persists and reloads export folders as device-local settings", async () => {
     mocks.executeTransaction.mockClear();

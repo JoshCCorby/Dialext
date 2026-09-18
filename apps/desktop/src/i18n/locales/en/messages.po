@@ -13,6 +13,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/dialext/reading-selector.tsx
+msgid " (unavailable)"
+msgstr " (unavailable)"
+
 #: src/services/enhancer/summary-notification.ts
 msgid "\"{title}\" is ready to read."
 msgstr "\"{title}\" is ready to read."
@@ -1072,10 +1076,6 @@ msgstr "Choose a Linear team first."
 #: src/settings/automations/index.tsx
 msgid "Choose a Notion page first."
 msgstr "Choose a Notion page first."
-
-#: src/dialext/import-recording.tsx
-msgid "Choose a prepared language reading. Your original readings are preserved, and importing again will not replace saved edits."
-msgstr "Choose a prepared language reading. Your original readings are preserved, and importing again will not replace saved edits."
 
 #: src/settings/automations/index.tsx
 msgid "Choose a Slack channel first."
@@ -2371,6 +2371,10 @@ msgstr "Finding Your Rhythm"
 msgid "Finish checkout in your browser to unlock more, then return to Anarlog."
 msgstr "Finish checkout in your browser to unlock more, then return to Anarlog."
 
+#: src/dialext/reading-selector.tsx
+msgid "Finish editing before switching languages."
+msgstr "Finish editing before switching languages."
+
 #: src/settings/general/account.tsx
 msgid "Finish in your browser, then return to Anarlog."
 msgstr "Finish in your browser, then return to Anarlog."
@@ -2656,6 +2660,10 @@ msgstr "Import a Dialext recording"
 #: src/onboarding/index.tsx
 msgid "Import notes and transcripts from the meeting apps you already use."
 msgstr "Import notes and transcripts from the meeting apps you already use."
+
+#: src/dialext/import-recording.tsx
+msgid "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language."
+msgstr "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language."
 
 #: src/session/components/note-input/transcript/screens/empty.tsx
 msgid "Importing audio..."
@@ -3950,6 +3958,10 @@ msgstr "Post the meeting summary to a channel you can access."
 msgid "Post to a channel"
 msgstr "Post to a channel"
 
+#: src/dialext/preferred-reading.tsx
+msgid "Preferred reading language"
+msgstr "Preferred reading language"
+
 #: src/settings/general/notification.tsx
 msgid "Prepare for events with a 5-minute reminder."
 msgstr "Prepare for events with a 5-minute reminder."
@@ -4024,6 +4036,7 @@ msgid "Read meeting controls and visible chat."
 msgstr "Read meeting controls and visible chat."
 
 #: src/dialext/import-recording.tsx
+#: src/dialext/reading-selector.tsx
 msgid "Reading language"
 msgstr "Reading language"
 
@@ -4444,6 +4457,10 @@ msgstr "Save visible chat from supported meetings using Accessibility."
 #: src/settings/sync/index.tsx
 msgid "Saved locally"
 msgstr "Saved locally"
+
+#: src/dialext/reading-selector.tsx
+msgid "Saving…"
+msgstr "Saving…"
 
 #: src/settings/team/index.tsx
 msgid "SCIM bearer token"
@@ -5494,6 +5511,10 @@ msgstr "This name is synced to your other devices signed in to this account."
 msgid "This note was edited on another device at the same time. The later edit was kept."
 msgstr "This note was edited on another device at the same time. The later edit was kept."
 
+#: src/dialext/reading-selector.tsx
+msgid "This recording has no usable selected reading. Saved accounts are retained."
+msgstr "This recording has no usable selected reading. Saved accounts are retained."
+
 #: src/chat/components/session-provider.tsx
 msgid "This recording is using batch transcription, so the transcript isn't available to chat yet. Ask again after transcription finishes, or switch to a Pro model for live transcription."
 msgstr "This recording is using batch transcription, so the transcript isn't available to chat yet. Ask again after transcription finishes, or switch to a Pro model for live transcription."
@@ -5852,6 +5873,10 @@ msgstr "Use the other version"
 #: src/settings/team/index.tsx
 msgid "Use this domain for links shared from this workspace."
 msgstr "Use this domain for links shared from this workspace."
+
+#: src/dialext/preferred-reading.tsx
+msgid "Use this language for new Dialext recordings. Existing readings and summaries keep their saved language."
+msgstr "Use this language for new Dialext recordings. Existing readings and summaries keep their saved language."
 
 #: src/settings/general/main-language.tsx
 msgid "Use this language for summaries and AI responses."

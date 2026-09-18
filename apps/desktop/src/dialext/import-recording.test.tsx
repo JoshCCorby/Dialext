@@ -10,7 +10,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import fixture from "../../../../dialext/fixtures/language-practice.json";
 
-const mocks = vi.hoisted(() => ({ apply: vi.fn(), open: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  apply: vi.fn(),
+  open: vi.fn(),
+  read: vi.fn(),
+  preferred: "en",
+}));
+vi.mock("~/db", () => ({ liveQueryClient: { execute: mocks.read } }));
+vi.mock("~/settings/queries", () => ({
+  useSettingsReady: () => true,
+  useStoredSettingValue: () => ({ value: mocks.preferred }),
+}));
 vi.mock("@anlg/plugin-db", () => ({ applySessionIngest: mocks.apply }));
 vi.mock("~/store/zustand/tabs", () => ({
   useTabs: (selector: (value: { openCurrent: typeof mocks.open }) => unknown) =>
@@ -33,6 +43,8 @@ function selectFile(content = JSON.stringify(fixture)) {
 describe("ImportDialextRecording", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.preferred = "en";
+    mocks.read.mockResolvedValue([]);
     mocks.apply.mockResolvedValue("applied");
     render(
       <QueryClientProvider
@@ -78,5 +90,33 @@ describe("ImportDialextRecording", () => {
       ),
     );
     expect(mocks.apply).not.toHaveBeenCalled();
+  });
+  it("keeps the finalized initial language when an identical recording is imported after selection or preference changes", async () => {
+    mocks.read.mockResolvedValue([{ language: "english" }]);
+    fireEvent.change(screen.getByRole("combobox"), {
+      target: { value: "irish" },
+    });
+    selectFile();
+    await waitFor(() => expect(mocks.apply).toHaveBeenCalled());
+    expect(
+      mocks.apply.mock.calls[0][1].session.metadata.dialext.selected_language,
+    ).toBe("english");
+    expect(mocks.apply.mock.calls[0][1].transcripts[0].language).toBe("en");
+  });
+  it("uses saved Irish preference for a new recording", async () => {
+    cleanup();
+    mocks.preferred = "ga";
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ImportDialextRecording />
+      </QueryClientProvider>,
+    );
+    expect(
+      screen.getByRole("combobox").getAttribute("value") ??
+        (screen.getByRole("combobox") as HTMLSelectElement).value,
+    ).toBe("irish");
+    selectFile();
+    await waitFor(() => expect(mocks.apply).toHaveBeenCalled());
+    expect(mocks.apply.mock.calls[0][1].transcripts[0].language).toBe("ga");
   });
 });

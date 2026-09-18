@@ -184,6 +184,24 @@ pub(crate) async fn run_legacy_import(
 
 #[tauri::command]
 #[specta::specta]
+pub(crate) async fn select_dialext_account(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    account_id: String,
+    expected_previous_account_id: Option<String>,
+) -> Result<(), String> {
+    anlg_db_app::select_dialext_account(
+        state.pool(),
+        &session_id,
+        &account_id,
+        expected_previous_account_id.as_deref(),
+    )
+    .await
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     state: tauri::State<'_, ManagedState>,

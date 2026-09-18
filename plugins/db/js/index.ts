@@ -214,6 +214,18 @@ export async function runLegacyImport(dryRun = false): Promise<string> {
   return invoke("plugin:db|run_legacy_import", { dryRun });
 }
 
+export async function selectDialextAccount(
+  sessionId: string,
+  accountId: string,
+  expectedPreviousAccountId: string | null,
+): Promise<void> {
+  return invoke("plugin:db|select_dialext_account", {
+    sessionId,
+    accountId,
+    expectedPreviousAccountId,
+  });
+}
+
 export async function applySessionIngest(
   workspaceId: string,
   envelope: Record<string, unknown>,

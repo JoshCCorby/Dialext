@@ -43,6 +43,10 @@ vi.mock("~/settings/queries", () => ({
   useStoredSettingValuesQuery: mocks.useStoredSettingValuesQuery,
 }));
 
+vi.mock("~/dialext/preferred-reading", () => ({
+  PreferredReadingLanguage: () => <span>Preferred reading language</span>,
+}));
+
 vi.mock("./account", () => ({ SettingsAccount: () => null }));
 vi.mock("./app-settings", () => ({ AppSettingsView: () => null }));
 vi.mock("./audio-settings", () => ({

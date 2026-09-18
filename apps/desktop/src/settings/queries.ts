@@ -370,6 +370,9 @@ function normalizeSettingValue(
 ): boolean | number | string | typeof INVALID {
   if (value === INVALID || value === undefined) return INVALID;
 
+  if (key === "dialext_reading_language")
+    return value === "en" || value === "ga" ? value : INVALID;
+
   if (key === "audio_retention") {
     return normalizeAudioRetention(value, undefined) ?? INVALID;
   }

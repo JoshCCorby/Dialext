@@ -1,0 +1,148 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  select: vi.fn(),
+  flush: vi.fn(),
+  rows: [] as Array<{
+    active_account_id: string | null;
+    id: string;
+    transcript_id: string;
+    target_language: string;
+    usable: number;
+  }>,
+}));
+vi.mock("@anlg/plugin-db", () => ({ selectDialextAccount: mocks.select }));
+vi.mock("./account-query", () => ({
+  useDialextAccounts: () => ({ data: mocks.rows }),
+}));
+vi.mock("~/db/write-queue", () => ({ flushDatabaseWrites: mocks.flush }));
+import { ReadingSelector } from "./reading-selector";
+
+function mount(editing = false) {
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { mutations: { retry: false } } })
+      }
+    >
+      <ReadingSelector sessionId="recording" editing={editing} />
+    </QueryClientProvider>,
+  );
+}
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.select.mockResolvedValue(undefined);
+  mocks.flush.mockResolvedValue(undefined);
+  mocks.rows = [
+    {
+      active_account_id: "english",
+      id: "english",
+      transcript_id: "en-work",
+      target_language: "en",
+      usable: 1,
+    },
+    {
+      active_account_id: "english",
+      id: "irish",
+      transcript_id: "ga-work",
+      target_language: "ga",
+      usable: 1,
+    },
+  ];
+});
+afterEach(cleanup);
+describe("saved account selection", () => {
+  it("flushes saved work, submits the previous account pin and waits for authoritative selection", async () => {
+    let finish!: () => void;
+    mocks.select.mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    mount();
+    fireEvent.click(screen.getByRole("button", { name: "Gaeilge" }));
+    await waitFor(() =>
+      expect(mocks.select).toHaveBeenCalledWith(
+        "recording",
+        "irish",
+        "english",
+      ),
+    );
+    expect(mocks.flush).toHaveBeenCalledWith(["transcript:en-work"]);
+    expect(
+      screen
+        .getByRole("button", { name: "English" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(
+      (screen.getByRole("button", { name: "Gaeilge" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    finish();
+    await waitFor(() =>
+      expect(
+        (screen.getByRole("button", { name: "Gaeilge" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false),
+    );
+  });
+  it("keeps the reading and explains a stale refusal", async () => {
+    mocks.select.mockRejectedValue(
+      new Error("The reading changed in another window."),
+    );
+    mount();
+    fireEvent.click(screen.getByRole("button", { name: "Gaeilge" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain("another window"),
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "English" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+  });
+  it("prevents switching while a person is editing", () => {
+    mount(true);
+    expect(
+      (screen.getByRole("button", { name: "Gaeilge" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      screen.getByText("Finish editing before switching languages."),
+    ).toBeTruthy();
+    expect(mocks.select).not.toHaveBeenCalled();
+  });
+  it("makes missing alternates unavailable and does not substitute another account for a missing selection", () => {
+    mocks.rows = [mocks.rows[0]];
+    mocks.rows[0].active_account_id = null;
+    mount();
+    expect(
+      screen
+        .getByRole("button", { name: "English" })
+        .getAttribute("aria-pressed"),
+    ).toBe("false");
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Gaeilge (unavailable)",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    expect(screen.getByRole("status").textContent).toContain(
+      "no usable selected reading",
+    );
+  });
+  it("leaves ordinary recordings in the existing interface", () => {
+    mocks.rows = [];
+    mount();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+});

@@ -16,6 +16,8 @@ const {
   regenerateTranscriptMock: vi.fn(),
 }));
 
+vi.mock("~/dialext/reading-selector", () => ({ ReadingSelector: () => null }));
+
 vi.mock("./actions", () => ({
   useRegenerateTranscript: () => regenerateTranscriptMock,
 }));
