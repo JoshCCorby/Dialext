@@ -1031,6 +1031,10 @@ msgstr ""
 msgid "Checking migration..."
 msgstr ""
 
+#: src/dialext/source-panel.tsx
+msgid "Checking this source…"
+msgstr ""
+
 #: src/onboarding/account/after-login.tsx
 msgid "Checking trial eligibility..."
 msgstr ""
@@ -1228,6 +1232,7 @@ msgid "Clone"
 msgstr ""
 
 #: src/changelog/index.tsx
+#: src/dialext/source-panel.tsx
 #: src/main/windows-title-bar.tsx
 #: src/session/components/note-input/search/bar.tsx
 #: src/shared/open-note-dialog.tsx
@@ -2265,6 +2270,11 @@ msgstr ""
 msgid "Everything is already here."
 msgstr ""
 
+#. placeholder {0}: formatInterval(start, end)
+#: src/dialext/source-panel.tsx
+msgid "Exactly the recorded audio from {0}. The words above are what this reading heard; the passage timing is not a measured word timing."
+msgstr ""
+
 #: src/templates/auto-format-examples-dialog.tsx
 msgid "Example summary"
 msgstr ""
@@ -2662,7 +2672,7 @@ msgid "Import notes and transcripts from the meeting apps you already use."
 msgstr ""
 
 #: src/dialext/import-recording.tsx
-msgid "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language."
+msgid "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language. If the recording names a source audio file, choose it alongside the .json file."
 msgstr ""
 
 #: src/session/components/note-input/transcript/screens/empty.tsx
@@ -3934,6 +3944,10 @@ msgstr ""
 msgid "Play from here"
 msgstr ""
 
+#: src/dialext/source-panel.tsx
+msgid "Play the recorded audio for this passage"
+msgstr ""
+
 #: src/settings/team/index.tsx
 msgid "Policies"
 msgstr ""
@@ -5069,6 +5083,10 @@ msgstr ""
 msgid "Sound"
 msgstr ""
 
+#: src/dialext/source-panel.tsx
+msgid "Source for this passage"
+msgstr ""
+
 #: src/settings/general/notification.tsx
 msgid "Sparkle"
 msgstr ""
@@ -5509,6 +5527,19 @@ msgstr ""
 
 #: src/session/components/note-conflict-banner.tsx
 msgid "This note was edited on another device at the same time. The later edit was kept."
+msgstr ""
+
+#: src/dialext/source-panel.tsx
+msgid "This passage names no source interval."
+msgstr ""
+
+#: src/dialext/source-panel.tsx
+msgid "This reading did not attribute a voice."
+msgstr ""
+
+#. placeholder {0}: query.data.providerLabel
+#: src/dialext/source-panel.tsx
+msgid "This reading heard {0}. Each reading labels voices on its own."
 msgstr ""
 
 #: src/dialext/reading-selector.tsx

@@ -15,6 +15,7 @@ import {
 } from "./utils";
 import { WordSpan } from "./word-span";
 
+import { DialextPassageSource } from "~/dialext/source-panel";
 import { createHighlightSegments } from "~/session/components/note-input/search/matching";
 import type { Segment, SegmentWord } from "~/stt/live-segment";
 import { updateTranscriptSegmentText } from "~/stt/queries";
@@ -167,6 +168,7 @@ export const SegmentRenderer = memo(
                           Boolean(word.id) && word.id === search.activeMatchId
                         }
                       />
+                      <DialextPassageSource word={word} />
                     </Fragment>
                   ))}
                 </span>

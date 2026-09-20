@@ -1031,6 +1031,10 @@ msgstr "Checking installed meeting assistants…"
 msgid "Checking migration..."
 msgstr "Checking migration..."
 
+#: src/dialext/source-panel.tsx
+msgid "Checking this source…"
+msgstr "Checking this source…"
+
 #: src/onboarding/account/after-login.tsx
 msgid "Checking trial eligibility..."
 msgstr "Checking trial eligibility..."
@@ -1228,6 +1232,7 @@ msgid "Clone"
 msgstr "Clone"
 
 #: src/changelog/index.tsx
+#: src/dialext/source-panel.tsx
 #: src/main/windows-title-bar.tsx
 #: src/session/components/note-input/search/bar.tsx
 #: src/shared/open-note-dialog.tsx
@@ -2265,6 +2270,11 @@ msgstr "Everyone in the workspace"
 msgid "Everything is already here."
 msgstr "Everything is already here."
 
+#. placeholder {0}: formatInterval(start, end)
+#: src/dialext/source-panel.tsx
+msgid "Exactly the recorded audio from {0}. The words above are what this reading heard; the passage timing is not a measured word timing."
+msgstr "Exactly the recorded audio from {0}. The words above are what this reading heard; the passage timing is not a measured word timing."
+
 #: src/templates/auto-format-examples-dialog.tsx
 msgid "Example summary"
 msgstr "Example summary"
@@ -2662,8 +2672,8 @@ msgid "Import notes and transcripts from the meeting apps you already use."
 msgstr "Import notes and transcripts from the meeting apps you already use."
 
 #: src/dialext/import-recording.tsx
-msgid "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language."
-msgstr "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language."
+msgid "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language. If the recording names a source audio file, choose it alongside the .json file."
+msgstr "Import prepared language accounts. Your original readings are preserved. Importing again keeps saved edits and the recording’s selected language. If the recording names a source audio file, choose it alongside the .json file."
 
 #: src/session/components/note-input/transcript/screens/empty.tsx
 msgid "Importing audio..."
@@ -3934,6 +3944,10 @@ msgstr "Play a sound when transcription, summaries, or cloud sync finish."
 msgid "Play from here"
 msgstr "Play from here"
 
+#: src/dialext/source-panel.tsx
+msgid "Play the recorded audio for this passage"
+msgstr "Play the recorded audio for this passage"
+
 #: src/settings/team/index.tsx
 msgid "Policies"
 msgstr "Policies"
@@ -5069,6 +5083,10 @@ msgstr "Sort options"
 msgid "Sound"
 msgstr "Sound"
 
+#: src/dialext/source-panel.tsx
+msgid "Source for this passage"
+msgstr "Source for this passage"
+
 #: src/settings/general/notification.tsx
 msgid "Sparkle"
 msgstr "Sparkle"
@@ -5510,6 +5528,19 @@ msgstr "This name is synced to your other devices signed in to this account."
 #: src/session/components/note-conflict-banner.tsx
 msgid "This note was edited on another device at the same time. The later edit was kept."
 msgstr "This note was edited on another device at the same time. The later edit was kept."
+
+#: src/dialext/source-panel.tsx
+msgid "This passage names no source interval."
+msgstr "This passage names no source interval."
+
+#: src/dialext/source-panel.tsx
+msgid "This reading did not attribute a voice."
+msgstr "This reading did not attribute a voice."
+
+#. placeholder {0}: query.data.providerLabel
+#: src/dialext/source-panel.tsx
+msgid "This reading heard {0}. Each reading labels voices on its own."
+msgstr "This reading heard {0}. Each reading labels voices on its own."
 
 #: src/dialext/reading-selector.tsx
 msgid "This recording has no usable selected reading. Saved accounts are retained."
