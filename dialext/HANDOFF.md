@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 20 September 2026. Native baseline and milestone 1 are complete and verified in the isolated native app. Milestone 2 is **implemented, its automated checks pass, and its source-review journey is verified in the real interface; speaker naming, exports and restart are NOT yet verified there** — read "Native acceptance: what passed on 20 September" below before treating milestone 2 as done. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 20 September 2026. Native baseline and milestone 1 are complete and verified in the isolated native app. **Milestone 2's acceptance is now complete**: every step passed in the real interface, including speaker naming across both readings, per-language TXT export, restart, a second recording reusing the contact, and the original sample reporting no source audio. Two defects were found while doing it — an unnamed-speaker display/export conflation, and baseline text that had moved across a passage boundary on 17 September — both recorded under "Native acceptance completed on 20 September, evening" and **neither repaired**. Read that section before starting milestone 3. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -297,25 +297,121 @@ grant as well as full-screen control — expect to need both again):
 7. The speaker picker on a Dialext passage offers **no "Apply to all"** choice, and lists the
    existing contacts including the baseline `Dialext Test Speaker`.
 
-**Still to verify, and the reason it stopped there.** Confirming a name failed with
-`db.assign_dialext_speaker not allowed. Command not found`. That is a **stale binary, not a
-defect**: the running native build predated the step 3 commit that added the command. The
-launcher was stopped and restarted to rebuild. Everything below is therefore unverified in
-the real interface:
-
-- naming a speaker and seeing the name in both readings;
-- TXT export in each selected language carrying that name;
-- the name and the selection surviving a full quit and restart;
-- importing `second-meeting.json` + `.wav` and reusing the same contact, leaving the first
-  recording's names unchanged;
-- the original sample reporting that it has no source audio stored;
-- that `tea`, `tae` and the saved `Dialext Test Speaker` assignment are still intact
-  afterwards. **Do not re-point that baseline assignment to make anything else pass.**
-
-Two milestone-boundary suites were interrupted by an unrelated application restart and have
-**not** been rerun: the full native `desktop` crate tests and the full desktop vitest suite.
-Everything else in the table below did pass.
+**Why it stopped there.** Confirming a name failed with
+`db.assign_dialext_speaker not allowed. Command not found`. That was a **stale binary, not a
+defect**: the running native build predated the step 3 commit that added the command. The six
+steps it blocked were completed later the same day against a current build — see the next
+section.
 
 A contact row with an empty name (`101e53a7-…`) exists in the prototype database from
 16 September. It pre-dates this work and was left alone.
+
+### Native acceptance completed on 20 September, evening
+
+The launcher was restarted from a clean tree (`node dialext/dev.mjs`, no orphan `dev.mjs`,
+`desktop` or Vite processes) so the running binary contained `assign_dialext_speaker`.
+Everything below happened in the **real** `app.dialext.prototype` window. Background clicks
+still do not reach the Tauri webview — the AX action is delivered and ignored — so this needed
+full-screen control throughout; the Open panel needed the Finder grant as the earlier section
+predicted. No provider call, mocked database or browser mock was involved.
+
+Each outcome individually:
+
+1. **Naming carries across both readings — PASSED.** `Sample · Source review with audio` was
+   open on the Gaeilge reading. Naming the first passage Gary through the existing speaker
+   picker succeeded with no error, and the Irish reading became `Gary` / `Speaker 1` / `Gary` /
+   `Speaker 2` — both of Gary's passages, and only his. Switching to English showed `Gary` on
+   the matching two passages there. The picker offered **no "Apply to all"** choice, as
+   intended. Read back from the live database: `dialext_speakers` for that recording holds
+   exactly `gary → Gary` and `nuala → (none)`, so the second speaker is untouched, and
+   `transcripts.speaker_hints_json` carries one `user_speaker_assignment` naming passages 0 and
+   2 in **each** reading.
+2. **TXT export in each selected language — PASSED.** More → Export, TXT, transcript only,
+   exported straight to `~/Downloads` with no save panel. English bytes:
+   `Participants: Gary`, `Gary: I would like two tickets, please.` … `Gary: Thank you very
+   much.`, and no Irish text. Gaeilge bytes: `Participants: Gary`,
+   `Gary: Ba mhaith liom dhá thicéad, le do thoil.` … `Gary: Go raibh míle maith agat.`, and no
+   English text. Each export contains only its own reading.
+3. **Quit and restart — PASSED.** Quit through the application menu (the log records
+   `app_exit_requested`; no `dev.mjs`, `desktop` or Vite process survived), then a fresh
+   `node dialext/dev.mjs`. Reopening the recording showed the Gaeilge selection still chosen,
+   Gary still on both his passages, and the source panel still working: "Spoken in Irish and
+   written in Irish", the Irish reading's own words, `Irish reading · 0:00–0:04`, "This reading
+   heard spk-1. Each reading labels voices on its own", and a player.
+4. **Second recording reusing the contact — PASSED.** `second-meeting.json` and
+   `second-meeting.wav` were selected together in one Open-panel selection and imported;
+   `Sample · Second meeting with Gary` opened with its summary and no error. Naming its first
+   speaker with the **existing** Gary contact succeeded. The database holds one `Gary` row
+   (`c572e7e0-…`) referenced by `first-voice` of the new recording **and** `gary` of the first
+   one — no duplicate contact was created — and the first recording still reads
+   `Gary` / `Speaker 1` / `Gary` / `Speaker 2` with `nuala` unnamed.
+5. **The original sample has no source audio — PASSED.** Revealing the first passage of
+   `Sample · Irish–English language practice` says "This recording has no source audio stored."
+   and offers **no player**, while still showing the provider's own words. `tae` is intact in
+   the Irish account, `tea` in the English one, and the saved `Dialext Test Speaker` assignment
+   is intact and untouched (`user_speaker_assignment` for `human_id 9bd6646a-…`). It was not
+   re-pointed.
+
+#### The two interrupted milestone-boundary suites, rerun
+
+Both were rerun to completion after the acceptance run, with the native app fully quit so the
+cargo lock was free:
+
+| Suite | Command | Result |
+| --- | --- | --- |
+| Full desktop vitest | `pnpm -F @anlg/desktop exec vitest run` | **468 files, 4,434 tests passed**, 0 failed (219s) |
+| Full native `desktop` crate | `cargo test --locked -p desktop` | **57 passed**, 0 failed, 0 ignored (plus the empty integration and doc-test targets) |
+| Branch-diff format | `dprint check` over the 302 files changed from `1f0643e` plus this file | Passed, no output. **rustfmt must be on `PATH`** — without the checkout-local toolchain it fails six Rust files with "Cannot start formatter process", which is a missing formatter, not a formatting failure |
+
+Milestone 1c's boundary run was 466 files / 4,421 tests; the increase is milestone 2's own new
+desktop tests. The native `desktop` count of 57 is unchanged. No inherited plugin Clippy
+failure or Oxlint warning was re-examined in this run — they stand as recorded at the
+milestone 2 commits, and neither was weakened.
+
+#### Two defects found while doing this. Neither was caused by milestone 2's commits.
+
+**A. An unnamed speaker and an unattributed passage collapse into one displayed speaker,
+and it reaches the exported bytes.** The renderer's segment key is
+`[channel, speaker_index, speaker_human_id]` (`SpeakerLabelManager` / `SegmentKeyUtils` in
+`apps/desktop/src/stt/live-segment.ts`). Only a `provider_speaker_index` **hint** supplies
+`speaker_index`; the provider label that Dialext stores as the `speaker` **string** in
+`words_json`, and in `metadata.dialext.source_speaker`, is not consulted. The generated
+alternate account carries those hints, so the Irish reading distinguishes its voices
+correctly. The **selected account written by the import path does not**, so every unnamed
+speaker in it keys as `[0, null, null]`:
+
+- in `source-review`, nuala's passage and the unattributed `Hmm.` both render and export as
+  `Speaker 1` in English, while Irish correctly shows `Speaker 1` and `Speaker 2`;
+- in `second-meeting`, the two passages belong to **two different recording-level speakers**
+  (`first-voice`, `second-voice`) and, being adjacent, merged into a single `Speaker 1` block
+  in the default English reading.
+
+The stored data is correct throughout — `speaker`, `source_speaker`, the anchors and
+`dialext_speakers` all distinguish them — and the native command is correct: naming
+`first-voice` Gary resolved only that speaker and **split the merged block**. So this is a
+display and export derivation defect affecting unnamed speakers only. It nevertheless shows
+two people as one person in the default reading, which is what milestone 2's "two provider
+labels never conflated" is meant to exclude, so it should be fixed before milestone 3's
+summary work depends on block identity. The likely repair is to emit `provider_speaker_index`
+hints for the imported selected account as the alternate-account path already does; do not
+"fix" it by matching provider label strings across readings, which is the conflation the
+architecture forbids.
+
+**B. The 17 September baseline edit moved text across a passage boundary in
+`language-practice`'s English account.** Stored now: passage 0 is `"I"` and passage 1 is
+`"would like to order tea. You can ask for coffee with milk."`. The fixture declares
+`"I would like to order coffee."` and `"You can ask for coffee with milk."`. Every word the
+reader sees is right and the `tea` correction is present, but passage 1 — anchored to the
+**English** leg and `voice-b` — now carries text that was spoken by `voice-a` and anchored to
+the **Irish** leg. The interface shows it: the `translated · Irish` control sits after `"I"`
+instead of after `"tea."`. The Irish account of the same recording is undamaged.
+
+This happened because defect A merged both passages into one editable block, so the baseline
+correction was typed across a passage boundary. It pre-dates milestone 2, was recorded on
+17 September only as "first passage corrected from coffee to tea", and is exactly the
+anchor-to-evidence association `ARCHITECTURE.md` says must be preserved. It has been **left as
+found** rather than repaired: it is baseline evidence, and rewriting a stored account to make
+the fixture match is the kind of quiet correction this handover exists to prevent. Deciding
+whether to repair the row, re-import the recording under a new identity, or leave it as a
+known-damaged baseline is a call for the next session with Joshua.
 
