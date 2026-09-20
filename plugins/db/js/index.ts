@@ -252,6 +252,20 @@ export async function readDialextSourceInterval(
   });
 }
 
+export async function assignDialextSpeaker(
+  sessionId: string,
+  wordId: string,
+  humanId: string | null,
+  expectedHumanId: string | null,
+): Promise<string> {
+  return invoke("plugin:db|assign_dialext_speaker", {
+    sessionId,
+    wordId,
+    humanId,
+    expectedHumanId,
+  });
+}
+
 export async function applySessionIngest(
   workspaceId: string,
   envelope: Record<string, unknown>,

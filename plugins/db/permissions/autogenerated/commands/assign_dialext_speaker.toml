@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-assign-dialext-speaker"
+description = "Enables the assign_dialext_speaker command without any pre-configured scope."
+commands.allow = ["assign_dialext_speaker"]
+
+[[permission]]
+identifier = "deny-assign-dialext-speaker"
+description = "Denies the assign_dialext_speaker command without any pre-configured scope."
+commands.deny = ["assign_dialext_speaker"]

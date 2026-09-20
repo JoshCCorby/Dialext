@@ -8,6 +8,7 @@ Default permissions for the plugin
 - `allow-select-dialext-account`
 - `allow-attach-dialext-source-audio`
 - `allow-read-dialext-source-interval`
+- `allow-assign-dialext-speaker`
 - `allow-execute`
 - `allow-execute-proxy`
 - `allow-execute-transaction`
@@ -71,6 +72,32 @@ Enables the apply_session_ingest command without any pre-configured scope.
 <td>
 
 Denies the apply_session_ingest command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-assign-dialext-speaker`
+
+</td>
+<td>
+
+Enables the assign_dialext_speaker command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-assign-dialext-speaker`
+
+</td>
+<td>
+
+Denies the assign_dialext_speaker command without any pre-configured scope.
 
 </td>
 </tr>

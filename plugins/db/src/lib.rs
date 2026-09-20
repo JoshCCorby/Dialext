@@ -371,6 +371,7 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::select_dialext_account,
             commands::attach_dialext_source_audio::<tauri::Wry>,
             commands::read_dialext_source_interval::<tauri::Wry>,
+            commands::assign_dialext_speaker,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,

@@ -20,6 +20,10 @@ import { ContactImage } from "~/contacts/contact-avatar";
 import { createHuman, useHumans } from "~/contacts/queries";
 import { ContactFacehash } from "~/contacts/shared";
 import {
+  assignDialextPassageSpeaker,
+  dialextPassageWordId,
+} from "~/dialext/speaker-assignment";
+import {
   addSessionParticipant,
   useSession,
   useSessionParticipants,
@@ -51,6 +55,7 @@ export function SpeakerAssignPopover({
 }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const dialextWordId = dialextPassageWordId(segment);
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -66,23 +71,30 @@ export function SpeakerAssignPopover({
           "[data-transcript-container]",
         ) ?? null;
       const assign = () =>
-        assignmentMode === "all" && sessionId
-          ? assignSessionTranscriptSpeaker({
+        dialextWordId && sessionId
+          ? assignDialextPassageSpeaker({
               sessionId,
-              transcriptId,
-              segmentKey: segment.key,
+              wordId: dialextWordId,
               humanId,
-              anchorWordId,
-              wordIds: getAssignmentWordIds(segment),
-            })
-          : assignTranscriptSpeaker({
-              transcriptId,
-              segmentKey: segment.key,
-              humanId,
-              anchorWordId,
-              mode: assignmentMode,
-              wordIds: getAssignmentWordIds(segment),
-            });
+              expectedHumanId: segment.key.speaker_human_id ?? null,
+            }).then(() => undefined)
+          : assignmentMode === "all" && sessionId
+            ? assignSessionTranscriptSpeaker({
+                sessionId,
+                transcriptId,
+                segmentKey: segment.key,
+                humanId,
+                anchorWordId,
+                wordIds: getAssignmentWordIds(segment),
+              })
+            : assignTranscriptSpeaker({
+                transcriptId,
+                segmentKey: segment.key,
+                humanId,
+                anchorWordId,
+                mode: assignmentMode,
+                wordIds: getAssignmentWordIds(segment),
+              });
       void preserveScrollPosition(scrollContainer, assign)
         .then(() => {
           trackAnalyticsEvent("participant_assigned", {
@@ -96,7 +108,14 @@ export function SpeakerAssignPopover({
           console.error("[transcript] failed to assign speaker", error);
         });
     },
-    [handleOpenChange, onAssigned, sessionId, transcriptId, segment],
+    [
+      dialextWordId,
+      handleOpenChange,
+      onAssigned,
+      sessionId,
+      transcriptId,
+      segment,
+    ],
   );
 
   return (
@@ -128,7 +147,9 @@ export function SpeakerAssignPopover({
         <SpeakerParticipantPicker
           sessionId={sessionId}
           onSelect={handleAssign}
-          showAssignmentScope={Number.isInteger(segment.key.speaker_index)}
+          showAssignmentScope={
+            !dialextWordId && Number.isInteger(segment.key.speaker_index)
+          }
         />
       </PopoverContent>
     </Popover>

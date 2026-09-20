@@ -126,6 +126,14 @@ async readDialextSourceInterval(sessionId: string, sourceId: string, startMs: nu
     else return { status: "error", error: e  as any };
 }
 },
+async assignDialextSpeaker(sessionId: string, wordId: string, humanId: string | null, expectedHumanId: string | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|assign_dialext_speaker", { sessionId, wordId, humanId, expectedHumanId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getE2eeIdentityStatus(accountUserId: string) : Promise<Result<E2eeIdentityStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|get_e2ee_identity_status", { accountUserId }) };

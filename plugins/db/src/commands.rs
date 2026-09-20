@@ -280,6 +280,26 @@ pub(crate) async fn read_dialext_source_interval<R: tauri::Runtime>(
 
 #[tauri::command]
 #[specta::specta]
+pub(crate) async fn assign_dialext_speaker(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    word_id: String,
+    human_id: Option<String>,
+    expected_human_id: Option<String>,
+) -> Result<String, String> {
+    anlg_session_ingest::dialext_speakers::assign_speaker(
+        state.pool(),
+        &session_id,
+        &word_id,
+        human_id.as_deref(),
+        expected_human_id.as_deref(),
+    )
+    .await
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     state: tauri::State<'_, ManagedState>,
