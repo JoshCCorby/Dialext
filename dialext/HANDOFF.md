@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 20 September 2026. Native baseline and milestone 1 are complete and verified in the isolated native app. **Milestone 2's acceptance is now complete**: every step passed in the real interface, including speaker naming across both readings, per-language TXT export, restart, a second recording reusing the contact, and the original sample reporting no source audio. Two defects were found while doing it — an unnamed-speaker display/export conflation, and baseline text that had moved across a passage boundary on 17 September — both recorded under "Native acceptance completed on 20 September, evening" and **neither repaired**. Read that section before starting milestone 3. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 20 September 2026. Native baseline and milestone 1 are complete and verified in the isolated native app. **Milestone 2's acceptance is now complete**: every step passed in the real interface, including speaker naming across both readings, per-language TXT export, restart, a second recording reusing the contact, and the original sample reporting no source audio. Two defects were found while doing it, both recorded under "Native acceptance completed on 20 September, evening": an unnamed-speaker display and export conflation, **now fixed and verified**, and baseline text that had moved across a passage boundary on 17 September, **deliberately left as found**. Read that section before starting milestone 3, which has not been started. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -392,10 +392,9 @@ The stored data is correct throughout — `speaker`, `source_speaker`, the ancho
 display and export derivation defect affecting unnamed speakers only. It nevertheless shows
 two people as one person in the default reading, which is what milestone 2's "two provider
 labels never conflated" is meant to exclude, so it should be fixed before milestone 3's
-summary work depends on block identity. The likely repair is to emit `provider_speaker_index`
-hints for the imported selected account as the alternate-account path already does; do not
-"fix" it by matching provider label strings across readings, which is the conflation the
-architecture forbids.
+summary work depends on block identity. **This one has since been fixed — see "Defect A is
+fixed" below.** Do not "fix" it again by matching provider label strings across readings,
+which is the conflation the architecture forbids.
 
 **B. The 17 September baseline edit moved text across a passage boundary in
 `language-practice`'s English account.** Stored now: passage 0 is `"I"` and passage 1 is
@@ -414,4 +413,65 @@ found** rather than repaired: it is baseline evidence, and rewriting a stored ac
 the fixture match is the kind of quiet correction this handover exists to prevent. Deciding
 whether to repair the row, re-import the recording under a new identity, or leave it as a
 known-damaged baseline is a call for the next session with Joshua.
+
+## Defect A is fixed. Defect B is still there, by decision
+
+Joshua chose to repair the speaker-key defect before starting milestone 3, and to leave the
+damaged baseline text as found.
+
+**One owner, one derivation.** `dialext_speakers::write_speaker_indexes` now writes every
+account's `provider_speaker_index` hints from the recording's own speakers: each passage is
+resolved through the existing `word_speaker` — `metadata.dialext.source_speaker` plus its
+anchors, against `dialext_source_speakers` — and carries that speaker's `display_index`. Two
+sources that happen to share a label string therefore stay two people, because the identity
+comes from the attribution table and never from the label. A passage with no attribution, or
+whose anchors disagree about who spoke, gets **no** hint and stays its own block.
+
+It is called from the two places that already existed: inside `migrate_recording` in the same
+adoption transaction, which covers every new import; and `migrate_all_speaker_indexes` after
+`migrate_all_speakers` in `migrate_recordings`, which backfilled the recordings already
+adopted. An index hint keeps its position in the array when it is rewritten, so a pass with
+nothing to change writes nothing at all — asserted on `updated_at`, not just on content.
+
+**`working_words` no longer writes hints.** It numbered by the order a label string first
+appeared, which would have merged `irish-asr/A` with `english-asr/A` inside one account. Its
+four hint lines are gone so one function owns the hint rather than two drifting.
+
+**The desktop importer is deliberately unchanged.** Adding hints to the envelope would change
+its content hash, and `apply_session_envelope` rejects changed content under the same identity
+— an identical repeat import would stop answering `AlreadyApplied` and start failing as a
+revision conflict. Deriving the hints natively, after the speaker registry exists, keeps repeat
+imports idempotent.
+
+Verified in the real window against the live database after a rebuild:
+
+- `Sample · Source review with audio` in **English** now reads `Gary` / `Speaker 1` / `Gary` /
+  `Speaker 2`, identical to its Irish reading. Before the fix, Nuala and the unattributed
+  `Hmm.` were both `Speaker 1`. The TXT export carries the same two distinct speakers.
+- `Sample · Second meeting with Gary` shows its two people as two blocks.
+- Read back from the live database: the backfill wrote indexes 0/1/0/none and 0/1 for those two
+  recordings and left both saved `user_speaker_assignment` hints untouched.
+- **`language-practice` looks exactly as it did.** The prediction recorded above — that the
+  backfill would visibly split its English reading — was wrong. Indexes 1 and 2 were written,
+  but the saved `Dialext Test Speaker` assignment covers both passages, and a passage with a
+  named human keys on that human, so they stay one named block. That is faithful to what the
+  reader actually saved on 17 September. Defect B is therefore still present in the stored
+  text, and still shows as the `translated · Irish` control sitting after `"I"`.
+
+Automated: session-ingest **34** (31 before; three new), db-app **245** unit + **2**
+integration (3 existing ignored), plugin db **162**, native `desktop` **57**, session-ingest
+Clippy with `--features apply --all-targets --no-deps -- -D warnings`, and branch-diff dprint.
+Desktop TypeScript is untouched by this change, so the **468 files / 4,434 tests** recorded
+above still stand.
+
+Negative controls, each run and confirmed red before the assertion was trusted: numbering by
+the bare label string turned **only** `two_sources_sharing_a_provider_label_are_not_one_block`
+red; removing the adoption call turned four tests red including the existing
+`adoption_preserves_edits_hints_versions_and_is_idempotent`; and dropping non-index hints
+turned `the_index_pass_keeps_a_saved_name_and_settles` red on the saved name.
+
+A pre-fix copy of the prototype database was taken to `/tmp/dialext-prebackfill.db` before the
+rebuild. It is a scratch file, not a durable backup. The running prototype now has
+`source-review` selected in **English** — the acceptance run above proved Gaeilge survived a
+restart before it was switched.
 

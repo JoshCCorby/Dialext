@@ -227,29 +227,18 @@ fn working_words(
     language: &str,
     account: &Value,
 ) -> Result<(String, String), Error> {
-    let mut speakers = Vec::new();
+    // Speaker grouping hints are not written here. Numbering a label by the order its
+    // string first appears merges two sources that happen to share one — `irish-asr/A`
+    // and `english-asr/A` are two people. `dialext_speakers::write_speaker_indexes`
+    // derives them from the recording's own speakers later in this same transaction.
     let mut words = Vec::new();
-    let mut hints = Vec::new();
     for (index, segment) in array(account, "segments")?.iter().enumerate() {
         let id = format!("{session}:{language}:passage:{index}");
-        let speaker = segment["speaker"].as_str();
-        let speaker_index = speaker.map(|name| {
-            if !speakers.contains(&name) {
-                speakers.push(name);
-            }
-            speakers.iter().position(|v| *v == name).unwrap()
-        });
         words.push(json!({"id":id,"text":segment["text"],"start_ms":segment["start_ms"],"end_ms":segment["end_ms"],"channel":0,
             "metadata":{"timing":{"source":"synthetic_text"},"dialext":{"anchors":segment["anchors"],"source_speaker":segment["speaker"],"target_language":language,
             "spoken_language":segment.get("spoken_language").cloned().unwrap_or(json!("unknown")),"timing":"passage"}}}));
-        if let Some(speaker_index) = speaker_index {
-            hints.push(json!({"id":format!("{id}:speaker"),"word_id":id,"type":"provider_speaker_index","value":json!({"channel":0,"speaker_index":speaker_index}).to_string()}));
-        }
     }
-    Ok((
-        serde_json::to_string(&words)?,
-        serde_json::to_string(&hints)?,
-    ))
+    Ok((serde_json::to_string(&words)?, "[]".to_string()))
 }
 
 pub async fn migrate_recording(
@@ -353,6 +342,7 @@ pub async fn migrate_recording(
         &crate::dialext_speakers::derive(bundle)?,
     )
     .await?;
+    crate::dialext_speakers::write_speaker_indexes(&mut tx, session_id).await?;
     sqlx::query("UPDATE sessions SET metadata_json = json_set(metadata_json,'$.dialext.registry_version',1) WHERE id = ?").bind(session_id).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(true)
@@ -363,7 +353,8 @@ pub async fn migrate_recordings(pool: &SqlitePool, vault: &Path) -> Result<(), E
     for id in ids {
         migrate_recording(pool, vault, &id).await?;
     }
-    crate::dialext_speakers::migrate_all_speakers(pool).await
+    crate::dialext_speakers::migrate_all_speakers(pool).await?;
+    crate::dialext_speakers::migrate_all_speaker_indexes(pool).await
 }
 
 #[cfg(test)]

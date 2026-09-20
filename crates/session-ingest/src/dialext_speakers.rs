@@ -226,6 +226,142 @@ pub async fn migrate_all_speakers(pool: &SqlitePool) -> Result<(), Error> {
 }
 
 // ---------------------------------------------------------------------------
+// Which displayed speaker a passage belongs to
+// ---------------------------------------------------------------------------
+
+/// The reader groups passages into speaker blocks on `(channel, speaker_index,
+/// speaker_human_id)`, and `speaker_index` reaches it only through a
+/// `provider_speaker_index` hint. An account carrying no such hint therefore keys
+/// every unnamed passage identically, so two different people — or a person and a
+/// passage nobody was attributed to — render and export as one speaker.
+///
+/// The index is the recording-level speaker's own `display_index`, so it means the
+/// same person in both readings, and two sources that happen to share a label string
+/// stay two speakers because the identity comes from `dialext_source_speakers` rather
+/// than from the label. A passage with no attribution, or whose anchors disagree about
+/// who spoke, gets no hint and stays its own unattributed block.
+pub(crate) async fn write_speaker_indexes(
+    tx: &mut sqlx::SqliteConnection,
+    session_id: &str,
+) -> Result<(), Error> {
+    let indexes: BTreeMap<(String, String), i64> = sqlx::query_as::<_, (String, String, i64)>(
+        "SELECT m.source_id, m.provider_label, s.display_index FROM dialext_source_speakers m
+             JOIN dialext_speakers s ON s.id = m.speaker_id AND s.session_id = m.session_id
+             WHERE m.session_id = ?",
+    )
+    .bind(session_id)
+    .fetch_all(&mut *tx)
+    .await?
+    .into_iter()
+    .map(|(source_id, label, index)| ((source_id, label), index))
+    .collect();
+    if indexes.is_empty() {
+        return Ok(());
+    }
+    // `word_speaker` resolves to a speaker key; here the same walk resolves to that
+    // speaker's display index, so both read one attribution table.
+    let attributions: BTreeMap<(String, String), String> = indexes
+        .iter()
+        .map(|(label, index)| (label.clone(), index.to_string()))
+        .collect();
+
+    let rows = sqlx::query_as::<_, (String, String, String)>(
+        "SELECT a.transcript_id, t.words_json, t.speaker_hints_json FROM dialext_accounts a
+         JOIN transcripts t ON t.id = a.transcript_id AND t.session_id = a.session_id AND t.deleted_at IS NULL
+         WHERE a.session_id = ?",
+    )
+    .bind(session_id)
+    .fetch_all(&mut *tx)
+    .await?;
+
+    for (transcript_id, words_json, hints_json) in rows {
+        let words: Value = serde_json::from_str(&words_json)?;
+        let hints: Value = serde_json::from_str(&hints_json).unwrap_or(Value::Array(Vec::new()));
+        let next = with_speaker_indexes(&hints, &words, &attributions);
+        if next == hints {
+            continue;
+        }
+        sqlx::query("UPDATE transcripts SET speaker_hints_json = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND session_id = ?")
+            .bind(next.to_string())
+            .bind(&transcript_id)
+            .bind(session_id)
+            .execute(&mut *tx)
+            .await?;
+    }
+    Ok(())
+}
+
+/// Replaces every `provider_speaker_index` hint with one derived from the recording's
+/// own speakers. Every other hint — a reader's saved name above all — is kept verbatim
+/// and in order.
+fn with_speaker_indexes(
+    hints: &Value,
+    words: &Value,
+    attributions: &BTreeMap<(String, String), String>,
+) -> Value {
+    let resolved: BTreeMap<&str, Value> = words
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|word| {
+            let id = word["id"].as_str()?;
+            let index = word_speaker(word, attributions)?.parse::<i64>().ok()?;
+            Some((
+                id,
+                json!({
+                    "id": format!("{id}:speaker"),
+                    "word_id": id,
+                    "type": "provider_speaker_index",
+                    "value": json!({"channel": word["channel"].as_i64().unwrap_or(0), "speaker_index": index}).to_string(),
+                }),
+            ))
+        })
+        .collect();
+
+    // An index hint already in the account keeps its position, so a pass that changes
+    // nothing produces the identical array and writes nothing.
+    let mut next = Vec::new();
+    let mut placed: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+    for hint in hints.as_array().into_iter().flatten() {
+        if hint["type"] != "provider_speaker_index" {
+            next.push(hint.clone());
+            continue;
+        }
+        let Some(word_id) = hint["word_id"].as_str() else {
+            continue;
+        };
+        // A passage nobody is attributed to loses its index and becomes its own block.
+        if let Some(replacement) = resolved.get(word_id)
+            && placed.insert(word_id)
+        {
+            next.push(replacement.clone());
+        }
+    }
+    for (word_id, hint) in &resolved {
+        if !placed.contains(word_id) {
+            next.push(hint.clone());
+        }
+    }
+    Value::Array(next)
+}
+
+/// Backfills recordings adopted before the reader's speaker grouping was derived from
+/// the recording's own speakers. It rewrites no passage text and drops no saved name.
+pub async fn migrate_all_speaker_indexes(pool: &SqlitePool) -> Result<(), Error> {
+    let ids: Vec<String> = sqlx::query_scalar(
+        "SELECT r.id FROM dialext_recordings r JOIN sessions s ON s.id = r.id AND s.deleted_at IS NULL",
+    )
+    .fetch_all(pool)
+    .await?;
+    for id in ids {
+        let mut tx = pool.begin_with("BEGIN IMMEDIATE").await?;
+        write_speaker_indexes(&mut tx, &id).await?;
+        tx.commit().await?;
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
 // Naming a recording-level speaker
 // ---------------------------------------------------------------------------
 
@@ -898,5 +1034,105 @@ mod tests {
             input["source_speakers"] = mappings;
             assert!(derive(&input).is_err());
         }
+    }
+
+    /// `speaker_index` is what groups passages into speaker blocks for the reader,
+    /// the export and search. Each recording-level speaker must therefore have its
+    /// own, consistently in every reading.
+    async fn speaker_indexes(db: &anlg_db_core::Db, transcript_id: &str) -> Vec<Option<i64>> {
+        let hints = hints(db, transcript_id).await;
+        let words: Value = serde_json::from_str(
+            &sqlx::query_scalar::<_, String>("SELECT words_json FROM transcripts WHERE id = ?")
+                .bind(transcript_id)
+                .fetch_one(db.pool())
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        let indexes = provider_speaker_indexes(&hints);
+        words
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|word| indexes.get(word["id"].as_str().unwrap()).copied().flatten())
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn every_recording_speaker_gets_its_own_block_in_both_readings() {
+        let fixture = include_str!("../../../dialext/fixtures/source-review.json");
+        let (db, _vault, id) = recording(fixture).await;
+
+        // Gary speaks the first and third passages, Nuala the second, and the fourth
+        // is attributed to nobody, so it carries no index and stays its own block.
+        assert_eq!(
+            speaker_indexes(&db, &format!("{id}:reading")).await,
+            vec![Some(0), Some(1), Some(0), None],
+            "the selected reading the importer wrote must group by recording speaker"
+        );
+        assert_eq!(
+            speaker_indexes(&db, &format!("{id}:reading:ga:1")).await,
+            vec![Some(0), Some(1), Some(0), None],
+            "an index means the same person in the other reading"
+        );
+    }
+
+    #[tokio::test]
+    async fn two_sources_sharing_a_provider_label_are_not_one_block() {
+        // Both readings now label a voice "B", but they are two different people:
+        // `irish-asr/B` is Gary and `english-asr/B` is Nuala.
+        let fixture =
+            include_str!("../../../dialext/fixtures/source-review.json").replace("spk-1", "B");
+        let (db, _vault, id) = recording(&fixture).await;
+
+        let indexes = speaker_indexes(&db, &format!("{id}:reading")).await;
+        assert_eq!(indexes[0], indexes[2], "both of Gary's passages are Gary");
+        assert_ne!(
+            indexes[0], indexes[1],
+            "a shared label string must not merge two recording speakers"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_index_pass_keeps_a_saved_name_and_settles() {
+        let fixture = include_str!("../../../dialext/fixtures/source-review.json");
+        let (db, _vault, id) = recording(fixture).await;
+        assign_speaker(
+            db.pool(),
+            &id,
+            &format!("{id}:passage:0"),
+            Some("gary-contact"),
+            None,
+        )
+        .await
+        .unwrap();
+        let named = assigned_word_ids(&hints(&db, &format!("{id}:reading")).await, "gary-contact");
+        let stamped =
+            sqlx::query_scalar::<_, String>("SELECT updated_at FROM transcripts WHERE id = ?")
+                .bind(format!("{id}:reading"))
+                .fetch_one(db.pool())
+                .await
+                .unwrap();
+
+        migrate_all_speaker_indexes(db.pool()).await.unwrap();
+
+        assert_eq!(
+            assigned_word_ids(&hints(&db, &format!("{id}:reading")).await, "gary-contact"),
+            named,
+            "a reader's saved name is not a speaker index and must survive verbatim"
+        );
+        assert_eq!(
+            speaker_indexes(&db, &format!("{id}:reading")).await,
+            vec![Some(0), Some(1), Some(0), None]
+        );
+        assert_eq!(
+            sqlx::query_scalar::<_, String>("SELECT updated_at FROM transcripts WHERE id = ?")
+                .bind(format!("{id}:reading"))
+                .fetch_one(db.pool())
+                .await
+                .unwrap(),
+            stamped,
+            "a pass with nothing to change must not write"
+        );
     }
 }
