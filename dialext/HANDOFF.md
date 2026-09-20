@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 18 September 2026. Native baseline and all three bounded steps of milestone 1 are complete and verified in the isolated native app. Continue with milestone 2; the full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 20 September 2026. Native baseline and milestone 1 are complete and verified in the isolated native app. Milestone 2 is **implemented, its automated checks pass, and its source-review journey is verified in the real interface; speaker naming, exports and restart are NOT yet verified there** — read "Native acceptance: what passed on 20 September" below before treating milestone 2 as done. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -31,10 +31,12 @@ The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. 
 ## What is not implemented
 
 - Generating a language account or running Azure/another speech provider in the new app.
-- Playback of source anchors, inline translation labels, raw-source review or a correction history for imported accounts.
-- Persistent recording-level speaker mappings shared between language accounts. Upstream contacts/assignment infrastructure exists; that is not proof of this multilingual behaviour.
+- A correction history for imported accounts.
 - Atomic correction-driven summary proposals, stable summary-block provenance, or the requested footer question surface.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
+- Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
+  `session_attachments`, so the ordinary audio-retention sweep and the Delete recording
+  control do not reach it. Recorded rather than fixed; see the placement note in milestone 2a.
 
 Do not fill these gaps with inert controls. Complete one visible journey at a time.
 
@@ -124,7 +126,7 @@ Local diagnostic logs: `/tmp/dialext-anarlog-dev.log`, `/tmp/dialext-final-focus
 
 Use `ARCHITECTURE.md` as the decision record. Reopen a decision only when a concrete code constraint or user requirement contradicts it; record that evidence before changing the contract. Update this file after each completed slice so a later session can continue without relying on chat history.
 
-### Current continuation
+### Current continuation (superseded by the milestone 2 section at the end of this file)
 
 Native baseline and milestones 1a/1b/1c are complete. Milestone 2 is next. Use [NEXT_SESSION.md](NEXT_SESSION.md). The browser relay still stalls on live-query channel callbacks; use the identifiable native debug bundle for acceptance. The final running prototype has the original sample selected in Irish and the global fresh-import preference restored to English. These are independent settings. Test data is synthetic; `.Rhistory` appeared untracked and was left untouched/uncommitted.
 
@@ -166,3 +168,154 @@ All registered immutable artefacts were read and hashed after these edits/import
 Milestone boundary checks: full desktop **466 files / 4,421 tests**, full native db-plugin **162**, full native desktop **57**, desktop and plugin TypeScript, affected desktop ESLint, branch-diff format, common Node **82**, licence **9** plus boundary check, and Lingui extraction/strict compilation passed. Oxlint: **207 inherited warnings, zero errors**. Plugin JS is covered by TypeScript; ESLint reports it outside configured files. db-app/session-ingest Clippy passed earlier. Additional plugin check `cargo clippy --locked -p tauri-plugin-db --all-targets --no-deps -- -D warnings` fails on inherited `needless_borrow` in CloudSync workspace setup and `too_many_arguments` in `configure_cloudsync_token`; neither belongs to the new command. Do not call this full Clippy or cross-platform/release readiness. Generated bindings are native-owned; final Lingui check is run after committing catalogs.
 
 Development-only observations: browser relay/channel acceptance remains unavailable. During HMR, native menu listeners temporarily failed to open Export; a full clean quit/launcher restart restored it and both exports passed. Do not reset the database to resolve either symptom. Final native log: `/tmp/dialext-m1-final-native.log`; test logs `/tmp/dialext-m1-*.log` are supplemental only. Start with `node dialext/dev.mjs`, never release mode. Baseline commit is `c378b04`; all completed work is committed to the private origin, not upstream.
+
+## Milestone 2 — source review and speaker identity (commits `5cc2ebf`, `f1b3de3`, `70d0f91`)
+
+### 2a — source and speaker contracts (`5cc2ebf`)
+
+**Source audio is app-owned evidence, not a session attachment, and that was forced by a
+real constraint rather than chosen.** `resolve_session_dir` in `plugins/fs-sync` calls
+`find_session_dir`, which refuses any session id that is not a UUID. Every Dialext
+recording is `dialext-<recording id>`, so `audio_import_data`, `audio_path`, `audio_exist`
+and `audio_metadata` are all unavailable to them, and `catalogLocalSessionAudio` with
+them. Widening `is_uuid` was rejected: it is also what separates a session directory from
+a folder in every vault scan, listing and discovery path, and it is shared with mobile.
+Source audio therefore publishes through the same no-clobber digest-named vault path the
+other immutable Dialext originals already use (`dialext/artifacts/v1/<digest>.wav`) and is
+registered as a `dialext_evidence` row with `kind = 'audio'`. The consequence is recorded
+under "What is not implemented": nothing in the ordinary audio-retention or delete path
+reaches it yet.
+
+Audio is **measured, never declared**. `attach_source_audio` parses the RIFF/PCM header
+itself — 16-bit PCM, one or two channels only — and derives the duration from the sample
+count. A bounded in-crate parser was preferred to a decoder dependency because interval
+playback needs a sample-accurate slice anyway. Audio shorter than the readings recorded
+against it is refused. An identical repeat returns the stored row; different bytes under
+the same identity are refused rather than replacing evidence an account is anchored to.
+
+`read_source_interval` resolves an anchor **exactly**. A near match, an interval containing
+the anchor, a foreign source id, and a session whose stored readings no longer reproduce
+the active account's `input_evidence_digest` are each a separate refusal. Missing or
+corrupt audio is a reported state on an otherwise resolved interval, because the
+provider's own words are still worth reading. The returned clip is the stored samples for
+that interval, so playback cannot drift past the passage.
+
+**Evidence-version pinning is exact but narrow.** `input_evidence_digest` is a hash of a
+sorted list, so it cannot be inverted to name a revision. Resolution therefore requires
+exactly one stored revision per source and re-derives the digest to confirm it is the one
+the account was generated from; a second revision refuses rather than guessing. When
+re-transcription arrives it needs a stored pinned list, not a looser check.
+
+**Recording-level speaker identity** is migration `20260920120000_dialext_speakers`:
+`dialext_speakers` (one per recording-level voice, optional `human_id`) and
+`dialext_source_speakers` (which provider label of which reading that voice spoke as).
+Attribution is immutable; only the name moves. A prepared recording may declare
+`speakers` and `source_speakers`, and only then do two readings' labels become one person.
+Without a declaration every provider label stays its own recording-level speaker —
+`irish-asr/voice-a` and `english-asr/voice-a` are two speakers, not one. Existing
+recordings were backfilled from their retained originals. Both tables are registered
+CloudSync-disabled; the registry assertion moved from 26 to 28.
+
+New fixtures: `source-review.json` + `.wav` (four passages, two declared speakers across
+four provider labels, one passage with no attribution and unknown spoken language) and
+`second-meeting.json` + `.wav` (a second recording for reusing a contact). The audio is
+synthetic tones, regenerated by `node dialext/fixtures/make-synthetic-audio.mjs`; the
+bundle names its audio file and digest, and the importer takes the `.wav` beside the
+`.json`, checks the digest and refuses a mismatch while leaving the accounts imported.
+**The existing `language-practice.json` was deliberately not changed**: its recording is
+already adopted and the native fingerprint rejects changed originals under one identity.
+
+### 2b — the source panel (`f1b3de3`)
+
+One panel per recording workspace, rendered at the foot of the transcript panel and
+reached from a quiet per-passage control. A later summary source control or chat citation
+reuses the same reveal. The control is absent where a passage names no source, and says
+what it will show: `translated · Irish`, `as spoken · English`, or `language unknown`
+where the original language was never established. The panel is a labelled section with a
+focused heading, closes on Escape, shows the provider's own words, reports the provider's
+label as that reading's own rather than as a person, plays the interval clip from a blob
+URL, and says out loud that the passage timing is not a measured word timing. Every
+refusal and each missing-audio reason stays visible with no player offered.
+
+### 2c — naming a speaker (`70d0f91`)
+
+`assign_dialext_speaker` names the recording-level speaker who spoke one passage, in one
+checked native transaction. The existing contact search and speaker picker are reused
+unchanged; only the route differs, and for a Dialext passage the per-reading scope
+checkbox is hidden because there is one meaning. The identity in `dialext_speakers` is the
+durable record; the per-account `user_speaker_assignment` hints are how every existing
+reader, export and search consumer already shows a contact, so both move in the same
+transaction and a name written in one language is read in the other. An earlier saved
+assignment is **narrowed** to the passages the new name does not claim, never discarded.
+A stale expectation, an unknown or deleted contact, a passage whose anchors disagree about
+who spoke, and a soft-deleted recording are each refused.
+
+### Verified, and how
+
+- The additive migration ran against the **real** `app.dialext.prototype` database on
+  startup of the rebuilt native app. The backfill created 12 speaker rows and 12
+  attributions across the three existing recordings. Read back directly from that
+  database: the English `tea` correction, the saved `Dialext Test Speaker` assignment, the
+  Irish `tae` correction, the Irish provider-speaker hints and the Irish selection are all
+  unchanged.
+- Naming was exercised against a byte-for-byte copy of that same live database. Naming the
+  second passage moved the baseline `Dialext Test Speaker` assignment down to the first
+  passage only and added the new contact to the matching passage of **both** the English
+  and the Irish reading. The scratch harness was removed afterwards; it is not committed.
+- Automated: session-ingest **31**, db-app **245** unit + **2** integration (3 existing
+  ignored), plugin db **162**, desktop native (see the table), desktop vitest for the
+  changed areas, desktop TypeScript, affected ESLint, Oxlint with no new warnings, dprint
+  on the branch diff, and Lingui extraction plus strict compilation with catalogs
+  committed.
+- Negative controls run and confirmed red before being trusted: relaxing exact anchor
+  resolution to containment; labelling an unestablished language as translated; and
+  merging provider labels across readings by matching their strings.
+
+### Native acceptance: what passed on 20 September, and what is still outstanding
+
+Verified in the **real** `app.dialext.prototype` window (background clicks do not reach the
+Tauri webview; the Open panel is hosted by a separate process, so driving it needs a Finder
+grant as well as full-screen control — expect to need both again):
+
+1. Settings → Imports accepted `source-review.json` and `source-review.wav` chosen together
+   in one selection. The recording imported and opened with its English summary and no error.
+2. Read back from the live database and vault afterwards: the audio is registered as
+   `dialext_evidence` `kind = 'audio'` with a **measured** duration of 12 000 ms and a digest
+   equal to the one the bundle declares, the WAV is published at its digest-named app-owned
+   vault path, and the recording has exactly two recording-level speakers (`gary`, `nuala`)
+   derived from four provider labels across the two readings.
+3. The English reading shows the quiet per-passage controls: `translated · Irish`,
+   `as spoken · English`, `translated · Irish`, `language unknown`.
+4. Opening the first control shows "Spoken in Irish and written here in English", the Irish
+   reading's own words `Ba mhaith liom dhá thicéad, le do thoil.`, `Irish reading · 0:00–0:04`,
+   "This reading heard spk-1. Each reading labels voices on its own", and a player whose clip
+   is **0:04 long, not the 12-second recording**. It plays.
+5. The unattributed passage says the original language was not established, reports that the
+   reading did not attribute a voice, and offers a 0:02 clip for its 0:02 interval.
+6. Switching to Gaeilge inverts the labels correctly (`as spoken · Irish`,
+   `translated · English`) and shows the Irish reading's own speaker blocks.
+7. The speaker picker on a Dialext passage offers **no "Apply to all"** choice, and lists the
+   existing contacts including the baseline `Dialext Test Speaker`.
+
+**Still to verify, and the reason it stopped there.** Confirming a name failed with
+`db.assign_dialext_speaker not allowed. Command not found`. That is a **stale binary, not a
+defect**: the running native build predated the step 3 commit that added the command. The
+launcher was stopped and restarted to rebuild. Everything below is therefore unverified in
+the real interface:
+
+- naming a speaker and seeing the name in both readings;
+- TXT export in each selected language carrying that name;
+- the name and the selection surviving a full quit and restart;
+- importing `second-meeting.json` + `.wav` and reusing the same contact, leaving the first
+  recording's names unchanged;
+- the original sample reporting that it has no source audio stored;
+- that `tea`, `tae` and the saved `Dialext Test Speaker` assignment are still intact
+  afterwards. **Do not re-point that baseline assignment to make anything else pass.**
+
+Two milestone-boundary suites were interrupted by an unrelated application restart and have
+**not** been rerun: the full native `desktop` crate tests and the full desktop vitest suite.
+Everything else in the table below did pass.
+
+A contact row with an empty name (`101e53a7-…`) exists in the prototype database from
+16 September. It pre-dates this work and was left alone.
+
