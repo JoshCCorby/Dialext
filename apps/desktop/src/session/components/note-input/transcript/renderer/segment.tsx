@@ -1,4 +1,5 @@
-import { Fragment, memo, useCallback, useMemo } from "react";
+import { Trans } from "@lingui/react/macro";
+import { Fragment, memo, useCallback, useMemo, useState } from "react";
 
 import { cn } from "@anlg/utils";
 
@@ -15,6 +16,7 @@ import {
 } from "./utils";
 import { WordSpan } from "./word-span";
 
+import { editDialextPassageText } from "~/dialext/checked-edit";
 import { DialextPassageSource } from "~/dialext/source-panel";
 import { createHighlightSegments } from "~/session/components/note-input/search/matching";
 import type { Segment, SegmentWord } from "~/stt/live-segment";
@@ -237,6 +239,7 @@ const EditableSegmentText = memo(function EditableSegmentText({
       ),
     [segment.words],
   );
+  const [refused, setRefused] = useState(false);
   const handleBlur = useCallback(
     (event: React.FocusEvent<HTMLDivElement>) => {
       const nextText = normalizeEditableTranscriptText(
@@ -246,11 +249,30 @@ const EditableSegmentText = memo(function EditableSegmentText({
         return;
       }
 
-      void updateTranscriptSegmentText({
-        transcriptId,
-        wordIds,
-        text: nextText,
-      }).catch((error) => {
+      void (async () => {
+        // A Dialext account is pinned to the reading this text was typed against.
+        // Anything else keeps the ordinary transcript path.
+        const attempt = await editDialextPassageText({
+          transcriptId,
+          wordIds,
+          text: nextText,
+        });
+        if (attempt.outcome === "stale") {
+          // The reading moved under this correction. Leave the typed text in place
+          // and say so; overwriting it here is the loss this check exists to stop.
+          setRefused(true);
+          return;
+        }
+        setRefused(false);
+        if (attempt.outcome !== "not-dialext") {
+          return;
+        }
+        await updateTranscriptSegmentText({
+          transcriptId,
+          wordIds,
+          text: nextText,
+        });
+      })().catch((error) => {
         console.error("[transcript] failed to update text", error);
       });
     },
@@ -273,7 +295,7 @@ const EditableSegmentText = memo(function EditableSegmentText({
     [originalText],
   );
 
-  return (
+  const editor = (
     <div
       data-transcript-segment-content
       data-transcript-editor
@@ -296,6 +318,22 @@ const EditableSegmentText = memo(function EditableSegmentText({
     >
       {originalText}
     </div>
+  );
+
+  if (!refused) {
+    return editor;
+  }
+
+  return (
+    <>
+      {editor}
+      <p role="alert" className="text-destructive text-sm">
+        <Trans>
+          This reading changed in another window. Your text is still here.
+          Refresh and review it before saving.
+        </Trans>
+      </p>
+    </>
   );
 });
 

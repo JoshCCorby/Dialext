@@ -5533,6 +5533,10 @@ msgstr ""
 msgid "This passage names no source interval."
 msgstr ""
 
+#: src/session/components/note-input/transcript/renderer/segment.tsx
+msgid "This reading changed in another window. Your text is still here. Refresh and review it before saving."
+msgstr ""
+
 #: src/dialext/source-panel.tsx
 msgid "This reading did not attribute a voice."
 msgstr ""
