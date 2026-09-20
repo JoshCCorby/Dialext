@@ -298,6 +298,78 @@ pub(crate) async fn assign_dialext_speaker(
     .map_err(|error| error.to_string())
 }
 
+fn dialext_edit_result(
+    outcome: anlg_session_ingest::dialext_edits::EditOutcome,
+) -> crate::DialextEditResult {
+    use anlg_session_ingest::dialext_edits::EditOutcome;
+    match outcome {
+        EditOutcome::Applied {
+            edit_id,
+            sequence,
+            content_version,
+        } => crate::DialextEditResult {
+            outcome: "applied".to_string(),
+            content_version,
+            edit_id: Some(edit_id),
+            sequence: Some(sequence),
+        },
+        EditOutcome::Stale { content_version } => crate::DialextEditResult {
+            outcome: "stale".to_string(),
+            content_version,
+            edit_id: None,
+            sequence: None,
+        },
+        EditOutcome::Unchanged { content_version } => crate::DialextEditResult {
+            outcome: "unchanged".to_string(),
+            content_version,
+            edit_id: None,
+            sequence: None,
+        },
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn edit_dialext_passage(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    account_id: String,
+    expected_content_version: String,
+    word_ids: Vec<String>,
+    text: String,
+) -> Result<crate::DialextEditResult, String> {
+    anlg_session_ingest::dialext_edits::edit_passage(
+        state.pool(),
+        &session_id,
+        &account_id,
+        &expected_content_version,
+        &word_ids,
+        &text,
+    )
+    .await
+    .map(dialext_edit_result)
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn undo_dialext_edit(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    account_id: String,
+    expected_content_version: String,
+) -> Result<crate::DialextEditResult, String> {
+    anlg_session_ingest::dialext_edits::undo_last_edit(
+        state.pool(),
+        &session_id,
+        &account_id,
+        &expected_content_version,
+    )
+    .await
+    .map(dialext_edit_result)
+    .map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(

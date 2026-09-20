@@ -15,6 +15,8 @@ const COMMANDS: &[&str] = &[
     "attach_dialext_source_audio",
     "read_dialext_source_interval",
     "assign_dialext_speaker",
+    "edit_dialext_passage",
+    "undo_dialext_edit",
     "get_e2ee_identity_status",
     "inspect_e2ee_recovery_key",
     "create_e2ee_identity",

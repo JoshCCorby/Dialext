@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-edit-dialext-passage"
+description = "Enables the edit_dialext_passage command without any pre-configured scope."
+commands.allow = ["edit_dialext_passage"]
+
+[[permission]]
+identifier = "deny-edit-dialext-passage"
+description = "Denies the edit_dialext_passage command without any pre-configured scope."
+commands.deny = ["edit_dialext_passage"]

@@ -94,6 +94,7 @@ async fn migrations_apply_cleanly() {
             "cloudsync_session_evictions",
             "cloudsync_writable_workspaces",
             "daily_notes",
+            "dialext_account_edits",
             "dialext_accounts",
             "dialext_evidence",
             "dialext_recordings",
@@ -602,6 +603,7 @@ async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose(
     for name in [
         "dialext_recordings",
         "dialext_accounts",
+        "dialext_account_edits",
         "dialext_evidence",
         "dialext_speakers",
         "dialext_source_speakers",
@@ -678,5 +680,86 @@ async fn dialext_speaker_identity_upgrades_and_keeps_attribution_immutable() {
             .await
             .is_err(),
         "an attribution may not borrow another recording's speaker"
+    );
+}
+
+#[tokio::test]
+async fn dialext_edit_history_upgrades_and_stays_append_only() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260921120000_dialext_account_edits"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('kept')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO transcripts(id,session_id,words_json) VALUES('kept-reading','kept','[3]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO dialext_accounts(id,session_id,transcript_id,target_language,
+            input_evidence_digest,original_sha256)
+         VALUES('account-1','kept','kept-reading','en',
+            'aa00000000000000000000000000000000000000000000000000000000000001',
+            'aa00000000000000000000000000000000000000000000000000000000000002')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+    let saved: String =
+        sqlx::query_scalar("SELECT words_json FROM transcripts WHERE id = 'kept-reading'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(saved, "[3]", "adding history must not touch saved prose");
+
+    sqlx::query(
+        "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json)
+         VALUES('e1','kept','account-1',1,'[]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    assert!(
+        sqlx::query("UPDATE dialext_account_edits SET changes_json = '[9]' WHERE id = 'e1'")
+            .execute(db.pool())
+            .await
+            .is_err(),
+        "history is evidence of what the reader did; it may not be rewritten"
+    );
+
+    sqlx::query(
+        "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json,undoes_edit_id)
+         VALUES('e2','kept','account-1',2,'[]','e1')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    assert!(
+        sqlx::query(
+            "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json,undoes_edit_id)
+             VALUES('e3','kept','account-1',3,'[]','e1')",
+        )
+        .execute(db.pool())
+        .await
+        .is_err(),
+        "one edit may be undone once, so an undo stack cannot double-revert it"
+    );
+    assert!(
+        sqlx::query(
+            "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json)
+             VALUES('e4','kept','account-1',2,'[]')",
+        )
+        .execute(db.pool())
+        .await
+        .is_err(),
+        "an account's edit sequence is dense and unique"
     );
 }

@@ -174,6 +174,18 @@ pub struct DialextSourceInterval {
     pub audio_unavailable: Option<String>,
 }
 
+/// The result of a version-pinned Dialext account edit. `outcome` is `applied`,
+/// `stale` or `unchanged`; a stale answer is an expected outcome, not an error, so
+/// the interface keeps what the reader typed and offers `contentVersion` to refresh.
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextEditResult {
+    pub outcome: String,
+    pub content_version: String,
+    pub edit_id: Option<String>,
+    pub sequence: Option<i64>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct E2eeIdentityStatus {
@@ -372,6 +384,8 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::attach_dialext_source_audio::<tauri::Wry>,
             commands::read_dialext_source_interval::<tauri::Wry>,
             commands::assign_dialext_speaker,
+            commands::edit_dialext_passage,
+            commands::undo_dialext_edit,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,

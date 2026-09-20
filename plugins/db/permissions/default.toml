@@ -6,6 +6,8 @@ permissions = [
   "allow-attach-dialext-source-audio",
   "allow-read-dialext-source-interval",
   "allow-assign-dialext-speaker",
+  "allow-edit-dialext-passage",
+  "allow-undo-dialext-edit",
   "allow-execute",
   "allow-execute-proxy",
   "allow-execute-transaction",

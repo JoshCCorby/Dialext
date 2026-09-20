@@ -9,6 +9,8 @@ Default permissions for the plugin
 - `allow-attach-dialext-source-audio`
 - `allow-read-dialext-source-interval`
 - `allow-assign-dialext-speaker`
+- `allow-edit-dialext-passage`
+- `allow-undo-dialext-edit`
 - `allow-execute`
 - `allow-execute-proxy`
 - `allow-execute-transaction`
@@ -306,6 +308,32 @@ Enables the create_e2ee_identity command without any pre-configured scope.
 <td>
 
 Denies the create_e2ee_identity command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-edit-dialext-passage`
+
+</td>
+<td>
+
+Enables the edit_dialext_passage command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-edit-dialext-passage`
+
+</td>
+<td>
+
+Denies the edit_dialext_passage command without any pre-configured scope.
 
 </td>
 </tr>
@@ -1060,6 +1088,32 @@ Enables the sync_cloudsync_now command without any pre-configured scope.
 <td>
 
 Denies the sync_cloudsync_now command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-undo-dialext-edit`
+
+</td>
+<td>
+
+Enables the undo_dialext_edit command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-undo-dialext-edit`
+
+</td>
+<td>
+
+Denies the undo_dialext_edit command without any pre-configured scope.
 
 </td>
 </tr>

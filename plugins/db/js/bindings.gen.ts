@@ -134,6 +134,22 @@ async assignDialextSpeaker(sessionId: string, wordId: string, humanId: string | 
     else return { status: "error", error: e  as any };
 }
 },
+async editDialextPassage(sessionId: string, accountId: string, expectedContentVersion: string, wordIds: string[], text: string) : Promise<Result<DialextEditResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|edit_dialext_passage", { sessionId, accountId, expectedContentVersion, wordIds, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async undoDialextEdit(sessionId: string, accountId: string, expectedContentVersion: string) : Promise<Result<DialextEditResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|undo_dialext_edit", { sessionId, accountId, expectedContentVersion }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getE2eeIdentityStatus(accountUserId: string) : Promise<Result<E2eeIdentityStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|get_e2ee_identity_status", { accountUserId }) };
@@ -349,6 +365,12 @@ export type CloudsyncWorkspaceProjection = { accountUserId: string; personalWork
 export type CloudsyncWorkspaceProjectionEntry = { id: string; ownerUserId: string; kind: string; name: string; membershipId: string; role: string; membershipCreatedAt: string; membershipUpdatedAt: string; createdAt: string; updatedAt: string }
 export type DependencyAnalysis = { kind: "reactive"; data: { targets: DependencyTarget[] } } | { kind: "non_reactive"; data: { reason: string } }
 export type DependencyTarget = { kind: "table"; data: string } | { kind: "virtual_table"; data: string }
+/**
+ * The result of a version-pinned Dialext account edit. `outcome` is `applied`,
+ * `stale` or `unchanged`; a stale answer is an expected outcome, not an error, so
+ * the interface keeps what the reader typed and offers `contentVersion` to refresh.
+ */
+export type DialextEditResult = { outcome: string; contentVersion: string; editId: string | null; sequence: number | null }
 export type DialextSourceAudio = { sha256: string; durationMs: number }
 export type DialextSourceInterval = { sourceId: string; revision: number; evidenceSha256: string; startMs: number; endMs: number; evidenceText: string; providerLabel: string | null; speakerKey: string | null; speakerDisplayIndex: number | null; humanId: string | null; audio: DialextSourceIntervalAudio | null; audioUnavailable: string | null }
 export type DialextSourceIntervalAudio = { measuredDurationMs: number; clipWav: number[] }
