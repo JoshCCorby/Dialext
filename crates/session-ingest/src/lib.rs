@@ -8,6 +8,10 @@ mod apply;
 #[cfg(feature = "apply")]
 pub mod dialext;
 #[cfg(feature = "apply")]
+pub mod dialext_source;
+#[cfg(feature = "apply")]
+pub mod dialext_speakers;
+#[cfg(feature = "apply")]
 mod validate;
 
 #[cfg(feature = "apply")]

@@ -145,6 +145,37 @@ pub enum SessionIngestApplyResult {
 
 #[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+pub struct DialextSourceAudio {
+    pub sha256: String,
+    pub duration_ms: i64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextSourceIntervalAudio {
+    pub measured_duration_ms: i64,
+    pub clip_wav: Vec<u8>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextSourceInterval {
+    pub source_id: String,
+    pub revision: i64,
+    pub evidence_sha256: String,
+    pub start_ms: i64,
+    pub end_ms: i64,
+    pub evidence_text: String,
+    pub provider_label: Option<String>,
+    pub speaker_key: Option<String>,
+    pub speaker_display_index: Option<i64>,
+    pub human_id: Option<String>,
+    pub audio: Option<DialextSourceIntervalAudio>,
+    pub audio_unavailable: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct E2eeIdentityStatus {
     pub configured: bool,
     pub key_id: Option<String>,
@@ -338,6 +369,8 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::run_legacy_import,
             commands::apply_session_ingest<tauri::Wry>,
             commands::select_dialext_account,
+            commands::attach_dialext_source_audio::<tauri::Wry>,
+            commands::read_dialext_source_interval::<tauri::Wry>,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,

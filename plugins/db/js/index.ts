@@ -1,6 +1,8 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 
 import type {
+  DialextSourceAudio,
+  DialextSourceInterval,
   GetMeetingInput,
   GetMeetingTranscriptInput as GeneratedGetMeetingTranscriptInput,
   GetRecurringMeetingHistoryInput as GeneratedGetRecurringMeetingHistoryInput,
@@ -28,6 +30,9 @@ import type {
 
 export type {
   CloudsyncE2eeWitness,
+  DialextSourceAudio,
+  DialextSourceInterval,
+  DialextSourceIntervalAudio,
   CloudsyncTokenConfigurationResult,
   CloudsyncWorkspaceProjection,
   CloudsyncWorkspaceKeyGrant,
@@ -223,6 +228,27 @@ export async function selectDialextAccount(
     sessionId,
     accountId,
     expectedPreviousAccountId,
+  });
+}
+
+export async function attachDialextSourceAudio(
+  sessionId: string,
+  audio: number[],
+): Promise<DialextSourceAudio> {
+  return invoke("plugin:db|attach_dialext_source_audio", { sessionId, audio });
+}
+
+export async function readDialextSourceInterval(
+  sessionId: string,
+  sourceId: string,
+  startMs: number,
+  endMs: number,
+): Promise<DialextSourceInterval> {
+  return invoke("plugin:db|read_dialext_source_interval", {
+    sessionId,
+    sourceId,
+    startMs,
+    endMs,
   });
 }
 

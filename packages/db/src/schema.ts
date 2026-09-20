@@ -802,3 +802,41 @@ export const dialextAccounts = sqliteTable(
     ),
   ],
 );
+export const dialextSpeakers = sqliteTable(
+  "dialext_speakers",
+  {
+    id: text("id").primaryKey().notNull(),
+    sessionId: text("session_id").notNull().default(""),
+    speakerKey: text("speaker_key").notNull().default(""),
+    displayIndex: integer("display_index").notNull().default(0),
+    humanId: text("human_id"),
+    createdAt: text("created_at").notNull().default(currentTimestamp),
+    updatedAt: text("updated_at").notNull().default(currentTimestamp),
+  },
+  (table) => [
+    uniqueIndex("dialext_speakers_key").on(table.sessionId, table.speakerKey),
+    uniqueIndex("dialext_speakers_display").on(
+      table.sessionId,
+      table.displayIndex,
+    ),
+  ],
+);
+export const dialextSourceSpeakers = sqliteTable(
+  "dialext_source_speakers",
+  {
+    id: text("id").primaryKey().notNull(),
+    sessionId: text("session_id").notNull().default(""),
+    sourceId: text("source_id").notNull().default(""),
+    providerLabel: text("provider_label").notNull().default(""),
+    speakerId: text("speaker_id").notNull().default(""),
+    createdAt: text("created_at").notNull().default(currentTimestamp),
+    updatedAt: text("updated_at").notNull().default(currentTimestamp),
+  },
+  (table) => [
+    uniqueIndex("dialext_source_speakers_label").on(
+      table.sessionId,
+      table.sourceId,
+      table.providerLabel,
+    ),
+  ],
+);

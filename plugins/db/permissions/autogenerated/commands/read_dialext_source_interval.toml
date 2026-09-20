@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-read-dialext-source-interval"
+description = "Enables the read_dialext_source_interval command without any pre-configured scope."
+commands.allow = ["read_dialext_source_interval"]
+
+[[permission]]
+identifier = "deny-read-dialext-source-interval"
+description = "Denies the read_dialext_source_interval command without any pre-configured scope."
+commands.deny = ["read_dialext_source_interval"]

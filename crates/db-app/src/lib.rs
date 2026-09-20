@@ -546,6 +546,11 @@ pub const APP_MIGRATION_STEPS: &[anlg_db_migrate::MigrationStep] = &[
         },
         sql: include_str!("../migrations/20260917120200_dialext_transcript_ownership.sql"),
     },
+    anlg_db_migrate::MigrationStep {
+        id: "20260920120000_dialext_speakers",
+        scope: anlg_db_migrate::MigrationScope::Plain,
+        sql: include_str!("../migrations/20260920120000_dialext_speakers.sql"),
+    },
 ];
 
 pub fn schema() -> anlg_db_migrate::DbSchema {

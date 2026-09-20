@@ -110,6 +110,22 @@ async selectDialextAccount(sessionId: string, accountId: string, expectedPreviou
     else return { status: "error", error: e  as any };
 }
 },
+async attachDialextSourceAudio(sessionId: string, audio: number[]) : Promise<Result<DialextSourceAudio, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|attach_dialext_source_audio", { sessionId, audio }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readDialextSourceInterval(sessionId: string, sourceId: string, startMs: number, endMs: number) : Promise<Result<DialextSourceInterval, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|read_dialext_source_interval", { sessionId, sourceId, startMs, endMs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getE2eeIdentityStatus(accountUserId: string) : Promise<Result<E2eeIdentityStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|get_e2ee_identity_status", { accountUserId }) };
@@ -325,6 +341,9 @@ export type CloudsyncWorkspaceProjection = { accountUserId: string; personalWork
 export type CloudsyncWorkspaceProjectionEntry = { id: string; ownerUserId: string; kind: string; name: string; membershipId: string; role: string; membershipCreatedAt: string; membershipUpdatedAt: string; createdAt: string; updatedAt: string }
 export type DependencyAnalysis = { kind: "reactive"; data: { targets: DependencyTarget[] } } | { kind: "non_reactive"; data: { reason: string } }
 export type DependencyTarget = { kind: "table"; data: string } | { kind: "virtual_table"; data: string }
+export type DialextSourceAudio = { sha256: string; durationMs: number }
+export type DialextSourceInterval = { sourceId: string; revision: number; evidenceSha256: string; startMs: number; endMs: number; evidenceText: string; providerLabel: string | null; speakerKey: string | null; speakerDisplayIndex: number | null; humanId: string | null; audio: DialextSourceIntervalAudio | null; audioUnavailable: string | null }
+export type DialextSourceIntervalAudio = { measuredDurationMs: number; clipWav: number[] }
 export type Document = { id: string; kind: string; template_id: string; title: string; markdown: string; sort_order: number; created_at: string; updated_at: string }
 export type E2eeDeviceEnrollmentPackage = { ephemeralPublicKey: string; nonce: string; ciphertext: string }
 export type E2eeDeviceIdentity = { publicKey: string }

@@ -21,7 +21,7 @@ pub enum Error {
     #[error("{0}")]
     Invalid(String),
 }
-fn invalid(message: &str) -> Error {
+pub(crate) fn invalid(message: &str) -> Error {
     Error::Invalid(message.into())
 }
 pub fn sha256(bytes: &[u8]) -> String {
@@ -32,16 +32,28 @@ pub fn sha256(bytes: &[u8]) -> String {
 }
 
 // v1: compact serde_json Value (sorted object keys), UTF-8, no BOM/newline.
-fn artifact(mut v: Value) -> Result<Vec<u8>, Error> {
+pub(crate) fn artifact(mut v: Value) -> Result<Vec<u8>, Error> {
     crate::apply::sort_json_keys(&mut v);
     Ok(serde_json::to_vec(&v)?)
 }
-fn write_artifact(vault: &Path, bytes: &[u8]) -> Result<(String, String), Error> {
-    if bytes.len() > crate::MAX_SESSION_INGEST_BYTES {
+pub(crate) fn write_artifact(vault: &Path, bytes: &[u8]) -> Result<(String, String), Error> {
+    write_artifact_as(vault, bytes, "json", crate::MAX_SESSION_INGEST_BYTES)
+}
+
+pub(crate) fn write_artifact_as(
+    vault: &Path,
+    bytes: &[u8],
+    extension: &str,
+    limit: usize,
+) -> Result<(String, String), Error> {
+    if bytes.len() > limit {
         return Err(invalid("Dialext artefact exceeds the bounded import limit"));
     }
+    if !extension.chars().all(|c| c.is_ascii_lowercase()) {
+        return Err(invalid("Invalid Dialext artefact extension"));
+    }
     let digest = sha256(bytes);
-    let relative = format!("dialext/artifacts/v1/{digest}.json");
+    let relative = format!("dialext/artifacts/v1/{digest}.{extension}");
     let path = vault.join(&relative);
     let directory = path.parent().unwrap();
     fs::create_dir_all(directory)?;
@@ -49,7 +61,7 @@ fn write_artifact(vault: &Path, bytes: &[u8]) -> Result<(String, String), Error>
         return Err(invalid("Invalid Dialext artefact directory"));
     }
     if path.exists() {
-        read_artifact(vault, &relative, &digest)?;
+        read_artifact_bounded(vault, &relative, &digest, limit)?;
         return Ok((relative, digest));
     }
     let nonce = SystemTime::now()
@@ -67,7 +79,7 @@ fn write_artifact(vault: &Path, bytes: &[u8]) -> Result<(String, String), Error>
     match fs::hard_link(&temporary, &path) {
         Ok(()) => {}
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-            read_artifact(vault, &relative, &digest)?;
+            read_artifact_bounded(vault, &relative, &digest, limit)?;
         }
         Err(e) => return Err(e.into()),
     }
@@ -76,6 +88,15 @@ fn write_artifact(vault: &Path, bytes: &[u8]) -> Result<(String, String), Error>
     Ok((relative, digest))
 }
 pub fn read_artifact(vault: &Path, relative: &str, digest: &str) -> Result<Vec<u8>, Error> {
+    read_artifact_bounded(vault, relative, digest, crate::MAX_SESSION_INGEST_BYTES)
+}
+
+pub fn read_artifact_bounded(
+    vault: &Path,
+    relative: &str,
+    digest: &str,
+    limit: usize,
+) -> Result<Vec<u8>, Error> {
     if !relative.starts_with("dialext/artifacts/v1/")
         || Path::new(relative)
             .components()
@@ -85,9 +106,7 @@ pub fn read_artifact(vault: &Path, relative: &str, digest: &str) -> Result<Vec<u
     }
     let path = vault.join(relative);
     let base = vault.canonicalize()?;
-    if !path.canonicalize()?.starts_with(&base)
-        || fs::metadata(&path)?.len() > crate::MAX_SESSION_INGEST_BYTES as u64
-    {
+    if !path.canonicalize()?.starts_with(&base) || fs::metadata(&path)?.len() > limit as u64 {
         return Err(invalid("Invalid Dialext artefact location or size"));
     }
     let bytes = fs::read(path)?;
@@ -96,13 +115,13 @@ pub fn read_artifact(vault: &Path, relative: &str, digest: &str) -> Result<Vec<u
     }
     Ok(bytes)
 }
-fn array<'a>(value: &'a Value, key: &str) -> Result<&'a Vec<Value>, Error> {
+pub(crate) fn array<'a>(value: &'a Value, key: &str) -> Result<&'a Vec<Value>, Error> {
     value
         .get(key)
         .and_then(Value::as_array)
         .ok_or_else(|| invalid("Invalid prepared Dialext bundle"))
 }
-fn text<'a>(value: &'a Value, key: &str) -> Result<&'a str, Error> {
+pub(crate) fn text<'a>(value: &'a Value, key: &str) -> Result<&'a str, Error> {
     value
         .get(key)
         .and_then(Value::as_str)
@@ -328,6 +347,12 @@ pub async fn migrate_recording(
     .bind(if selected == "english" { "en" } else { "ga" })
     .execute(&mut *tx)
     .await?;
+    crate::dialext_speakers::insert(
+        &mut tx,
+        session_id,
+        &crate::dialext_speakers::derive(bundle)?,
+    )
+    .await?;
     sqlx::query("UPDATE sessions SET metadata_json = json_set(metadata_json,'$.dialext.registry_version',1) WHERE id = ?").bind(session_id).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(true)
@@ -338,7 +363,7 @@ pub async fn migrate_recordings(pool: &SqlitePool, vault: &Path) -> Result<(), E
     for id in ids {
         migrate_recording(pool, vault, &id).await?;
     }
-    Ok(())
+    crate::dialext_speakers::migrate_all_speakers(pool).await
 }
 
 #[cfg(test)]

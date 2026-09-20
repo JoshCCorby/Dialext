@@ -26,9 +26,33 @@ const account = z.object({
     .max(2000),
 });
 
+const declaredSpeakerId = z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/);
 const recordingBundle = z.object({
   format: z.literal("dialext-recording"),
   version: z.literal(1),
+  // Two readings diarise independently. A recording says which of their labels are
+  // one person; nothing here merges labels because their strings match.
+  speakers: z
+    .array(z.object({ id: declaredSpeakerId }))
+    .max(64)
+    .optional(),
+  source_speakers: z
+    .array(
+      z.object({
+        source_id: sourceId,
+        provider_label: z.string().min(1).max(200),
+        speaker_id: declaredSpeakerId,
+      }),
+    )
+    .max(256)
+    .optional(),
+  audio: z
+    .object({
+      filename: z.string().regex(/^[a-zA-Z0-9._-]{1,120}\.wav$/),
+      format: z.literal("wav"),
+      sha256: z.string().regex(/^[0-9a-f]{64}$/),
+    })
+    .optional(),
   recording: z.object({
     id: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
     title: z.string().min(1).max(1024),
@@ -92,6 +116,40 @@ export function prepareDialextImport(
     2
   ) {
     throw new Error("Both independent ASR readings are required.");
+  }
+  const providerLabels = new Set(
+    bundle.evidence.sources.flatMap((source) =>
+      source.segments
+        .filter((segment) => segment.speaker !== null)
+        .map((segment) => `${source.source_id}/${segment.speaker}`),
+    ),
+  );
+  const declaredSpeakers = new Set(
+    (bundle.speakers ?? []).map((speaker) => speaker.id),
+  );
+  if (declaredSpeakers.size !== (bundle.speakers ?? []).length) {
+    throw new Error("A speaker is declared twice.");
+  }
+  const attributed = new Set<string>();
+  const heard = new Set<string>();
+  for (const mapping of bundle.source_speakers ?? []) {
+    const label = `${mapping.source_id}/${mapping.provider_label}`;
+    if (!declaredSpeakers.has(mapping.speaker_id)) {
+      throw new Error("A speaker attribution names an undeclared speaker.");
+    }
+    if (!providerLabels.has(label)) {
+      throw new Error(
+        "A speaker attribution names a label this reading never used.",
+      );
+    }
+    if (attributed.has(label)) {
+      throw new Error("A provider label is attributed twice.");
+    }
+    attributed.add(label);
+    heard.add(mapping.speaker_id);
+  }
+  if (heard.size !== declaredSpeakers.size) {
+    throw new Error("A declared speaker is never heard in any reading.");
   }
   for (const [key, value] of Object.entries(bundle.accounts)) {
     if (!value) continue;
@@ -210,5 +268,5 @@ export function prepareDialextImport(
       "The prepared recording exceeds the 2 MB prototype import limit.",
     );
   }
-  return { sessionId, envelope };
+  return { sessionId, envelope, audio: bundle.audio ?? null };
 }

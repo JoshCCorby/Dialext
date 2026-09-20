@@ -3,6 +3,8 @@ description = "Default permissions for the plugin"
 permissions = [
   "allow-apply-session-ingest",
   "allow-select-dialext-account",
+  "allow-attach-dialext-source-audio",
+  "allow-read-dialext-source-interval",
   "allow-execute",
   "allow-execute-proxy",
   "allow-execute-transaction",

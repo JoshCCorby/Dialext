@@ -9,9 +9,11 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import fixture from "../../../../dialext/fixtures/language-practice.json";
+import sourceReview from "../../../../dialext/fixtures/source-review.json";
 
 const mocks = vi.hoisted(() => ({
   apply: vi.fn(),
+  attachAudio: vi.fn(),
   open: vi.fn(),
   read: vi.fn(),
   preferred: "en",
@@ -21,7 +23,10 @@ vi.mock("~/settings/queries", () => ({
   useSettingsReady: () => true,
   useStoredSettingValue: () => ({ value: mocks.preferred }),
 }));
-vi.mock("@anlg/plugin-db", () => ({ applySessionIngest: mocks.apply }));
+vi.mock("@anlg/plugin-db", () => ({
+  applySessionIngest: mocks.apply,
+  attachDialextSourceAudio: mocks.attachAudio,
+}));
 vi.mock("~/store/zustand/tabs", () => ({
   useTabs: (selector: (value: { openCurrent: typeof mocks.open }) => unknown) =>
     selector({ openCurrent: mocks.open }),
@@ -30,14 +35,23 @@ vi.mock("~/shared/utils", () => ({ DEFAULT_USER_ID: "local-user" }));
 
 import { ImportDialextRecording } from "./import-recording";
 
-function selectFile(content = JSON.stringify(fixture)) {
+function selectFile(content = JSON.stringify(fixture), extra: File[] = []) {
   const file = new File([content], "recording.json", {
     type: "application/json",
   });
   Object.defineProperty(file, "text", { value: async () => content });
   fireEvent.change(document.querySelector('input[type="file"]')!, {
-    target: { files: [file] },
+    target: { files: [file, ...extra] },
   });
+}
+
+// The committed fixture audio is not read here; the digest check is what matters.
+function audioFile(name: string, bytes: Uint8Array) {
+  const file = new File([bytes], name, { type: "audio/wav" });
+  Object.defineProperty(file, "arrayBuffer", {
+    value: async () => bytes.buffer.slice(0),
+  });
+  return file;
 }
 
 describe("ImportDialextRecording", () => {
@@ -103,6 +117,46 @@ describe("ImportDialextRecording", () => {
     ).toBe("english");
     expect(mocks.apply.mock.calls[0][1].transcripts[0].language).toBe("en");
   });
+  it("attaches declared source audio only when its bytes are the ones named", async () => {
+    const { readFileSync } = await import("node:fs");
+    const bytes = new Uint8Array(
+      readFileSync("../../dialext/fixtures/source-review.wav"),
+    );
+    selectFile(JSON.stringify(sourceReview), [
+      audioFile("source-review.wav", bytes),
+    ]);
+    await waitFor(() => expect(mocks.attachAudio).toHaveBeenCalled());
+    expect(mocks.attachAudio.mock.calls[0][0]).toBe(
+      "dialext-synthetic-source-review-v1",
+    );
+    expect(mocks.attachAudio.mock.calls[0][1]).toHaveLength(bytes.length);
+  });
+
+  it("imports the accounts and reports the audio it could not verify", async () => {
+    selectFile(JSON.stringify(sourceReview), [
+      audioFile("source-review.wav", new Uint8Array([1, 2, 3])),
+    ]);
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "is not the audio this recording names",
+      ),
+    );
+    expect(mocks.apply).toHaveBeenCalled();
+    expect(mocks.attachAudio).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    mocks.apply.mockResolvedValue("applied");
+    mocks.read.mockResolvedValue([]);
+    selectFile(JSON.stringify(sourceReview));
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "choose that file alongside",
+      ),
+    );
+    expect(mocks.apply).toHaveBeenCalled();
+    expect(mocks.attachAudio).not.toHaveBeenCalled();
+  });
+
   it("uses saved Irish preference for a new recording", async () => {
     cleanup();
     mocks.preferred = "ga";

@@ -6,6 +6,8 @@ Default permissions for the plugin
 
 - `allow-apply-session-ingest`
 - `allow-select-dialext-account`
+- `allow-attach-dialext-source-audio`
+- `allow-read-dialext-source-interval`
 - `allow-execute`
 - `allow-execute-proxy`
 - `allow-execute-transaction`
@@ -69,6 +71,32 @@ Enables the apply_session_ingest command without any pre-configured scope.
 <td>
 
 Denies the apply_session_ingest command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-attach-dialext-source-audio`
+
+</td>
+<td>
+
+Enables the attach_dialext_source_audio command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-attach-dialext-source-audio`
+
+</td>
+<td>
+
+Denies the attach_dialext_source_audio command without any pre-configured scope.
 
 </td>
 </tr>
@@ -693,6 +721,32 @@ Enables the list_meetings command without any pre-configured scope.
 <td>
 
 Denies the list_meetings command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-read-dialext-source-interval`
+
+</td>
+<td>
+
+Enables the read_dialext_source_interval command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-read-dialext-source-interval`
+
+</td>
+<td>
+
+Denies the read_dialext_source_interval command without any pre-configured scope.
 
 </td>
 </tr>

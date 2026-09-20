@@ -3,7 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 
-import { applySessionIngest } from "@anlg/plugin-db";
+import { applySessionIngest, attachDialextSourceAudio } from "@anlg/plugin-db";
 import { Button } from "@anlg/ui/components/ui/button";
 
 import { prepareDialextImport, type ReadingLanguage } from "./recording-import";
@@ -12,6 +12,34 @@ import { liveQueryClient } from "~/db";
 import { useSettingsReady, useStoredSettingValue } from "~/settings/queries";
 import { DEFAULT_USER_ID } from "~/shared/utils";
 import { useTabs } from "~/store/zustand/tabs";
+
+// The recording declares its source audio by name and digest; the bytes are checked
+// here and measured natively. A wrong or missing file leaves the accounts imported
+// and says so, rather than registering audio the recording never named.
+async function attachSourceAudio(
+  sessionId: string,
+  declared: { filename: string; sha256: string },
+  files: File[],
+) {
+  const chosen = files.find((file) => file.name === declared.filename);
+  if (!chosen) {
+    throw new Error(
+      `This recording names the source audio ${declared.filename}. The language accounts were imported; choose that file alongside the .json to add its audio.`,
+    );
+  }
+  const bytes = new Uint8Array(await chosen.arrayBuffer());
+  const digest = [
+    ...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
+  ]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  if (digest !== declared.sha256) {
+    throw new Error(
+      `${declared.filename} is not the audio this recording names. The language accounts were imported without it.`,
+    );
+  }
+  await attachDialextSourceAudio(sessionId, [...bytes]);
+}
 
 export function ImportDialextRecording() {
   const input = useRef<HTMLInputElement>(null);
@@ -29,7 +57,11 @@ export function ImportDialextRecording() {
     },
   });
   const mutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (files: File[]) => {
+      const file = files.find((candidate) => candidate.name.endsWith(".json"));
+      if (!file) {
+        throw new Error("Choose the recording's .json file.");
+      }
       if (file.size > 2 * 1024 * 1024) {
         throw new Error(
           "This recording bundle is larger than the 2 MB prototype import limit.",
@@ -63,6 +95,9 @@ export function ImportDialextRecording() {
           "This recording could not be imported. If it already exists, its saved edits have been preserved.",
         );
       }
+      if (prepared.audio) {
+        await attachSourceAudio(prepared.sessionId, prepared.audio, files);
+      }
       return prepared.sessionId;
     },
     onSuccess: async (sessionId) => {
@@ -80,7 +115,8 @@ export function ImportDialextRecording() {
         <Trans>
           Import prepared language accounts. Your original readings are
           preserved. Importing again keeps saved edits and the recording’s
-          selected language.
+          selected language. If the recording names a source audio file, choose
+          it alongside the .json file.
         </Trans>
       </p>
       <form.Field name="language">
@@ -104,11 +140,12 @@ export function ImportDialextRecording() {
       <input
         ref={input}
         type="file"
-        accept=".json"
+        multiple
+        accept=".json,.wav"
         className="hidden"
         onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) mutation.mutate(file);
+          const files = [...(event.target.files ?? [])];
+          if (files.length > 0) mutation.mutate(files);
           event.target.value = "";
         }}
       />

@@ -97,6 +97,8 @@ async fn migrations_apply_cleanly() {
             "dialext_accounts",
             "dialext_evidence",
             "dialext_recordings",
+            "dialext_source_speakers",
+            "dialext_speakers",
             "e2ee_apply_guard",
             "e2ee_ciphertext_archive",
             "e2ee_dirty_rows",
@@ -597,7 +599,13 @@ async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose(
             .await
             .unwrap();
     assert_eq!(saved, "[1]");
-    for name in ["dialext_recordings", "dialext_accounts", "dialext_evidence"] {
+    for name in [
+        "dialext_recordings",
+        "dialext_accounts",
+        "dialext_evidence",
+        "dialext_speakers",
+        "dialext_source_speakers",
+    ] {
         assert!(
             !cloudsync_table_registry()
                 .iter()
@@ -606,4 +614,69 @@ async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose(
                 .enabled
         );
     }
+}
+
+#[tokio::test]
+async fn dialext_speaker_identity_upgrades_and_keeps_attribution_immutable() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260920120000_dialext_speakers"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('kept')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO transcripts(id,session_id,words_json) VALUES('kept-reading','kept','[2]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    prepare_schema(&db).await.unwrap();
+    let saved: String =
+        sqlx::query_scalar("SELECT words_json FROM transcripts WHERE id = 'kept-reading'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(saved, "[2]");
+
+    sqlx::query("INSERT INTO humans(id,name) VALUES('gary','Gary')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO dialext_speakers(id,session_id,speaker_key,display_index) VALUES('s1','kept','irish-asr/voice-a',0)")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO dialext_source_speakers(id,session_id,source_id,provider_label,speaker_id) VALUES('m1','kept','irish-asr','voice-a','s1')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+
+    // Naming a person is the one thing that may change; who they spoke as is not.
+    sqlx::query("UPDATE dialext_speakers SET human_id = 'gary' WHERE id = 's1'")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    assert!(
+        sqlx::query("UPDATE dialext_speakers SET speaker_key = 'other' WHERE id = 's1'")
+            .execute(db.pool())
+            .await
+            .is_err()
+    );
+    assert!(
+        sqlx::query("UPDATE dialext_source_speakers SET speaker_id = 's1' WHERE id = 'm1'")
+            .execute(db.pool())
+            .await
+            .is_err()
+    );
+    assert!(
+        sqlx::query("INSERT INTO dialext_source_speakers(id,session_id,source_id,provider_label,speaker_id) VALUES('m2','other','irish-asr','voice-b','s1')")
+            .execute(db.pool())
+            .await
+            .is_err(),
+        "an attribution may not borrow another recording's speaker"
+    );
 }

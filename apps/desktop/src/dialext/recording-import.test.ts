@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import fixture from "../../../../dialext/fixtures/language-practice.json";
+import sourceReview from "../../../../dialext/fixtures/source-review.json";
 import { prepareDialextImport } from "./recording-import";
 
 import { isTranscriptWordSeekable } from "~/stt/timing";
@@ -89,6 +90,51 @@ describe("Dialext recording import", () => {
       duplicate.evidence.sources[0].segments[0],
     );
     expect(() => prepare(duplicate)).toThrow("ambiguous audio interval");
+  });
+
+  it("carries a declared source audio file without embedding its bytes", () => {
+    const prepared = prepareDialextImport(
+      JSON.stringify(sourceReview),
+      "english",
+      identity,
+    );
+    expect(prepared.audio).toEqual({
+      filename: "source-review.wav",
+      format: "wav",
+      sha256: sourceReview.audio.sha256,
+    });
+    expect(prepare().audio).toBeNull();
+    expect(JSON.stringify(prepared.envelope)).not.toContain("RIFF");
+  });
+
+  it("accepts a declared attribution and refuses one that names nothing real", () => {
+    expect(() =>
+      prepareDialextImport(JSON.stringify(sourceReview), "irish", identity),
+    ).not.toThrow();
+
+    const unheard = structuredClone(sourceReview);
+    unheard.speakers.push({ id: "never-spoke" });
+    expect(() =>
+      prepareDialextImport(JSON.stringify(unheard), "english", identity),
+    ).toThrow("never heard");
+
+    const unknownLabel = structuredClone(sourceReview);
+    unknownLabel.source_speakers[0].provider_label = "spk-9";
+    expect(() =>
+      prepareDialextImport(JSON.stringify(unknownLabel), "english", identity),
+    ).toThrow("never used");
+
+    const undeclared = structuredClone(sourceReview);
+    undeclared.source_speakers[0].speaker_id = "someone";
+    expect(() =>
+      prepareDialextImport(JSON.stringify(undeclared), "english", identity),
+    ).toThrow("undeclared speaker");
+
+    const twice = structuredClone(sourceReview);
+    twice.source_speakers.push(twice.source_speakers[0]);
+    expect(() =>
+      prepareDialextImport(JSON.stringify(twice), "english", identity),
+    ).toThrow("attributed twice");
   });
 
   it("rejects duplicate raw readings and oversized input", () => {

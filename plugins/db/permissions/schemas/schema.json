@@ -307,6 +307,18 @@
           "markdownDescription": "Denies the apply_session_ingest command without any pre-configured scope."
         },
         {
+          "description": "Enables the attach_dialext_source_audio command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-attach-dialext-source-audio",
+          "markdownDescription": "Enables the attach_dialext_source_audio command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the attach_dialext_source_audio command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-attach-dialext-source-audio",
+          "markdownDescription": "Denies the attach_dialext_source_audio command without any pre-configured scope."
+        },
+        {
           "description": "Enables the begin_cloudsync_activity command without any pre-configured scope.",
           "type": "string",
           "const": "allow-begin-cloudsync-activity",
@@ -595,6 +607,18 @@
           "markdownDescription": "Denies the list_meetings command without any pre-configured scope."
         },
         {
+          "description": "Enables the read_dialext_source_interval command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-read-dialext-source-interval",
+          "markdownDescription": "Enables the read_dialext_source_interval command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the read_dialext_source_interval command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-read-dialext-source-interval",
+          "markdownDescription": "Denies the read_dialext_source_interval command without any pre-configured scope."
+        },
+        {
           "description": "Enables the run_legacy_import command without any pre-configured scope.",
           "type": "string",
           "const": "allow-run-legacy-import",
@@ -751,10 +775,10 @@
           "markdownDescription": "Denies the wait_until_ready command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-apply-session-ingest`\n- `allow-select-dialext-account`\n- `allow-execute`\n- `allow-execute-proxy`\n- `allow-execute-transaction`\n- `allow-list-meetings`\n- `allow-get-meeting`\n- `allow-get-meeting-transcript`\n- `allow-get-recurring-meeting-history`\n- `allow-get-legacy-cleanup-status`\n- `allow-get-legacy-import-report`\n- `allow-cleanup-legacy-files`\n- `allow-run-legacy-import`\n- `allow-get-e2ee-identity-status`\n- `allow-inspect-e2ee-recovery-key`\n- `allow-create-e2ee-identity`\n- `allow-import-e2ee-identity`\n- `allow-get-or-create-e2ee-device-identity`\n- `allow-seal-e2ee-recovery-key-for-device`\n- `allow-seal-workspace-e2ee-key-for-recipients`\n- `allow-import-e2ee-device-enrollment`\n- `allow-subscribe`\n- `allow-unsubscribe`\n- `allow-bind-cloudsync-account`\n- `allow-configure-cloudsync-token`\n- `allow-configure-e2ee-replica`\n- `allow-stop-cloudsync`\n- `allow-suspend-cloudsync`\n- `allow-suspend-cloudsync-for-sign-out`\n- `allow-suspend-cloudsync-after-auth-loss`\n- `allow-get-cloudsync-status`\n- `allow-get-startup-status`\n- `allow-wait-until-ready`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-apply-session-ingest`\n- `allow-select-dialext-account`\n- `allow-attach-dialext-source-audio`\n- `allow-read-dialext-source-interval`\n- `allow-execute`\n- `allow-execute-proxy`\n- `allow-execute-transaction`\n- `allow-list-meetings`\n- `allow-get-meeting`\n- `allow-get-meeting-transcript`\n- `allow-get-recurring-meeting-history`\n- `allow-get-legacy-cleanup-status`\n- `allow-get-legacy-import-report`\n- `allow-cleanup-legacy-files`\n- `allow-run-legacy-import`\n- `allow-get-e2ee-identity-status`\n- `allow-inspect-e2ee-recovery-key`\n- `allow-create-e2ee-identity`\n- `allow-import-e2ee-identity`\n- `allow-get-or-create-e2ee-device-identity`\n- `allow-seal-e2ee-recovery-key-for-device`\n- `allow-seal-workspace-e2ee-key-for-recipients`\n- `allow-import-e2ee-device-enrollment`\n- `allow-subscribe`\n- `allow-unsubscribe`\n- `allow-bind-cloudsync-account`\n- `allow-configure-cloudsync-token`\n- `allow-configure-e2ee-replica`\n- `allow-stop-cloudsync`\n- `allow-suspend-cloudsync`\n- `allow-suspend-cloudsync-for-sign-out`\n- `allow-suspend-cloudsync-after-auth-loss`\n- `allow-get-cloudsync-status`\n- `allow-get-startup-status`\n- `allow-wait-until-ready`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-apply-session-ingest`\n- `allow-select-dialext-account`\n- `allow-execute`\n- `allow-execute-proxy`\n- `allow-execute-transaction`\n- `allow-list-meetings`\n- `allow-get-meeting`\n- `allow-get-meeting-transcript`\n- `allow-get-recurring-meeting-history`\n- `allow-get-legacy-cleanup-status`\n- `allow-get-legacy-import-report`\n- `allow-cleanup-legacy-files`\n- `allow-run-legacy-import`\n- `allow-get-e2ee-identity-status`\n- `allow-inspect-e2ee-recovery-key`\n- `allow-create-e2ee-identity`\n- `allow-import-e2ee-identity`\n- `allow-get-or-create-e2ee-device-identity`\n- `allow-seal-e2ee-recovery-key-for-device`\n- `allow-seal-workspace-e2ee-key-for-recipients`\n- `allow-import-e2ee-device-enrollment`\n- `allow-subscribe`\n- `allow-unsubscribe`\n- `allow-bind-cloudsync-account`\n- `allow-configure-cloudsync-token`\n- `allow-configure-e2ee-replica`\n- `allow-stop-cloudsync`\n- `allow-suspend-cloudsync`\n- `allow-suspend-cloudsync-for-sign-out`\n- `allow-suspend-cloudsync-after-auth-loss`\n- `allow-get-cloudsync-status`\n- `allow-get-startup-status`\n- `allow-wait-until-ready`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-apply-session-ingest`\n- `allow-select-dialext-account`\n- `allow-attach-dialext-source-audio`\n- `allow-read-dialext-source-interval`\n- `allow-execute`\n- `allow-execute-proxy`\n- `allow-execute-transaction`\n- `allow-list-meetings`\n- `allow-get-meeting`\n- `allow-get-meeting-transcript`\n- `allow-get-recurring-meeting-history`\n- `allow-get-legacy-cleanup-status`\n- `allow-get-legacy-import-report`\n- `allow-cleanup-legacy-files`\n- `allow-run-legacy-import`\n- `allow-get-e2ee-identity-status`\n- `allow-inspect-e2ee-recovery-key`\n- `allow-create-e2ee-identity`\n- `allow-import-e2ee-identity`\n- `allow-get-or-create-e2ee-device-identity`\n- `allow-seal-e2ee-recovery-key-for-device`\n- `allow-seal-workspace-e2ee-key-for-recipients`\n- `allow-import-e2ee-device-enrollment`\n- `allow-subscribe`\n- `allow-unsubscribe`\n- `allow-bind-cloudsync-account`\n- `allow-configure-cloudsync-token`\n- `allow-configure-e2ee-replica`\n- `allow-stop-cloudsync`\n- `allow-suspend-cloudsync`\n- `allow-suspend-cloudsync-for-sign-out`\n- `allow-suspend-cloudsync-after-auth-loss`\n- `allow-get-cloudsync-status`\n- `allow-get-startup-status`\n- `allow-wait-until-ready`"
         }
       ]
     }

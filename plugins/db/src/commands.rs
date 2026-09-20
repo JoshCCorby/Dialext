@@ -202,6 +202,84 @@ pub(crate) async fn select_dialext_account(
 
 #[tauri::command]
 #[specta::specta]
+pub(crate) async fn attach_dialext_source_audio<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    audio: Vec<u8>,
+) -> Result<crate::DialextSourceAudio, String> {
+    let vault = crate::import::resolve_startup_vault_base(&app).map_err(|e| e.to_string())?;
+    let stored = anlg_session_ingest::dialext_source::attach_source_audio(
+        state.pool(),
+        &vault,
+        &session_id,
+        &audio,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    Ok(crate::DialextSourceAudio {
+        sha256: stored.sha256,
+        duration_ms: stored.duration_ms,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn read_dialext_source_interval<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    source_id: String,
+    start_ms: i64,
+    end_ms: i64,
+) -> Result<crate::DialextSourceInterval, String> {
+    let vault = crate::import::resolve_startup_vault_base(&app).map_err(|e| e.to_string())?;
+    let resolved = anlg_session_ingest::dialext_source::read_source_interval(
+        state.pool(),
+        &vault,
+        &session_id,
+        &source_id,
+        start_ms,
+        end_ms,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    Ok(crate::DialextSourceInterval {
+        source_id: resolved.source_id,
+        revision: resolved.revision,
+        evidence_sha256: resolved.evidence_sha256,
+        start_ms: resolved.start_ms,
+        end_ms: resolved.end_ms,
+        evidence_text: resolved.evidence_text,
+        provider_label: resolved.provider_label,
+        speaker_key: resolved.speaker_key,
+        speaker_display_index: resolved.speaker_display_index,
+        human_id: resolved.human_id,
+        audio: resolved
+            .audio
+            .map(|audio| crate::DialextSourceIntervalAudio {
+                measured_duration_ms: audio.measured_duration_ms,
+                clip_wav: audio.clip_wav,
+            }),
+        audio_unavailable: resolved.audio_unavailable.map(|reason| {
+            match reason {
+                anlg_session_ingest::dialext_source::AudioUnavailable::NoSourceAudio => {
+                    "no_source_audio"
+                }
+                anlg_session_ingest::dialext_source::AudioUnavailable::AudioMissingOrCorrupt => {
+                    "audio_missing_or_corrupt"
+                }
+                anlg_session_ingest::dialext_source::AudioUnavailable::IntervalBeyondMeasuredAudio => {
+                    "interval_beyond_measured_audio"
+                }
+            }
+            .to_string()
+        }),
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     state: tauri::State<'_, ManagedState>,

@@ -1,0 +1,233 @@
+{
+  "format": "dialext-recording",
+  "version": 1,
+  "recording": {
+    "id": "synthetic-source-review-v1",
+    "title": "Sample · Source review with audio",
+    "created_at": "2026-09-20T09:00:00.000Z",
+    "duration_ms": 12000
+  },
+  "speakers": [
+    {
+      "id": "gary"
+    },
+    {
+      "id": "nuala"
+    }
+  ],
+  "source_speakers": [
+    {
+      "source_id": "irish-asr",
+      "provider_label": "spk-1",
+      "speaker_id": "gary"
+    },
+    {
+      "source_id": "english-asr",
+      "provider_label": "A",
+      "speaker_id": "gary"
+    },
+    {
+      "source_id": "irish-asr",
+      "provider_label": "spk-2",
+      "speaker_id": "nuala"
+    },
+    {
+      "source_id": "english-asr",
+      "provider_label": "B",
+      "speaker_id": "nuala"
+    }
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "source_id": "irish-asr",
+        "segments": [
+          {
+            "start_ms": 0,
+            "end_ms": 4000,
+            "speaker": "spk-1",
+            "text": "Ba mhaith liom dhá thicéad, le do thoil."
+          },
+          {
+            "start_ms": 4000,
+            "end_ms": 6500,
+            "speaker": "spk-2",
+            "text": "Tá go maith, dhá thicéad."
+          },
+          {
+            "start_ms": 6500,
+            "end_ms": 10000,
+            "speaker": "spk-1",
+            "text": "Go raibh míle maith agat."
+          },
+          {
+            "start_ms": 10000,
+            "end_ms": 12000,
+            "speaker": null,
+            "text": "Hmm."
+          }
+        ]
+      },
+      {
+        "source_id": "english-asr",
+        "segments": [
+          {
+            "start_ms": 0,
+            "end_ms": 4000,
+            "speaker": "A",
+            "text": "Ba what liom two tickets le do hall."
+          },
+          {
+            "start_ms": 4000,
+            "end_ms": 6500,
+            "speaker": "B",
+            "text": "That is fine, two tickets."
+          },
+          {
+            "start_ms": 6500,
+            "end_ms": 10000,
+            "speaker": "A",
+            "text": "Go rev mee la ma ha gut."
+          },
+          {
+            "start_ms": 10000,
+            "end_ms": 12000,
+            "speaker": null,
+            "text": "Hmm."
+          }
+        ]
+      }
+    ]
+  },
+  "accounts": {
+    "english": {
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 4000,
+          "speaker": "spk-1",
+          "text": "I would like two tickets, please.",
+          "anchors": [
+            {
+              "source_id": "irish-asr",
+              "start_ms": 0,
+              "end_ms": 4000
+            }
+          ],
+          "spoken_language": "irish"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6500,
+          "speaker": "B",
+          "text": "That is fine, two tickets.",
+          "anchors": [
+            {
+              "source_id": "english-asr",
+              "start_ms": 4000,
+              "end_ms": 6500
+            }
+          ],
+          "spoken_language": "english"
+        },
+        {
+          "start_ms": 6500,
+          "end_ms": 10000,
+          "speaker": "spk-1",
+          "text": "Thank you very much.",
+          "anchors": [
+            {
+              "source_id": "irish-asr",
+              "start_ms": 6500,
+              "end_ms": 10000
+            }
+          ],
+          "spoken_language": "irish"
+        },
+        {
+          "start_ms": 10000,
+          "end_ms": 12000,
+          "speaker": null,
+          "text": "Hmm.",
+          "anchors": [
+            {
+              "source_id": "english-asr",
+              "start_ms": 10000,
+              "end_ms": 12000
+            }
+          ],
+          "spoken_language": "unknown"
+        }
+      ]
+    },
+    "irish": {
+      "segments": [
+        {
+          "start_ms": 0,
+          "end_ms": 4000,
+          "speaker": "spk-1",
+          "text": "Ba mhaith liom dhá thicéad, le do thoil.",
+          "anchors": [
+            {
+              "source_id": "irish-asr",
+              "start_ms": 0,
+              "end_ms": 4000
+            }
+          ],
+          "spoken_language": "irish"
+        },
+        {
+          "start_ms": 4000,
+          "end_ms": 6500,
+          "speaker": "B",
+          "text": "Tá sé sin go breá, dhá thicéad.",
+          "anchors": [
+            {
+              "source_id": "english-asr",
+              "start_ms": 4000,
+              "end_ms": 6500
+            }
+          ],
+          "spoken_language": "english"
+        },
+        {
+          "start_ms": 6500,
+          "end_ms": 10000,
+          "speaker": "spk-1",
+          "text": "Go raibh míle maith agat.",
+          "anchors": [
+            {
+              "source_id": "irish-asr",
+              "start_ms": 6500,
+              "end_ms": 10000
+            }
+          ],
+          "spoken_language": "irish"
+        },
+        {
+          "start_ms": 10000,
+          "end_ms": 12000,
+          "speaker": null,
+          "text": "Hmm.",
+          "anchors": [
+            {
+              "source_id": "english-asr",
+              "start_ms": 10000,
+              "end_ms": 12000
+            }
+          ],
+          "spoken_language": "unknown"
+        }
+      ]
+    }
+  },
+  "summaries": {
+    "english": "## Buying tickets\n\n- Two tickets are requested and confirmed.\n\n*This is a hand-authored sample with synthetic tones for audio, not a real recording or an evaluated model output.*",
+    "irish": "## Ticéid a cheannach\n\n- Iarrtar dhá thicéad agus deimhnítear iad.\n\n*Sampla saorga é seo; toin shintéiseacha atá san fhuaim.*"
+  },
+  "audio": {
+    "filename": "source-review.wav",
+    "format": "wav",
+    "sha256": "e790f1754757585018b5e2220ca1fdee1170fb528f69db8e68035c89a2253514"
+  }
+}
