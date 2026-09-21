@@ -267,11 +267,7 @@ export function validateProviderEnvelope(value, expectedStage) {
       `Provider returned ${value.stage || "no stage"}; expected ${expectedStage}.`,
     );
   }
-  if (
-    !value.result ||
-    typeof value.result !== "object" ||
-    Array.isArray(value.result)
-  ) {
+  if (!value.result || typeof value.result !== "object") {
     throw new Error("Provider result is missing.");
   }
   return value.result;

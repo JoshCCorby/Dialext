@@ -411,6 +411,93 @@ pub(crate) async fn apply_dialext_proposal(
         .map_err(|error| error.to_string())
 }
 
+fn provider_helper_path() -> Result<std::path::PathBuf, String> {
+    let path = std::env::var_os("DIALEXT_PROVIDER_HELPER")
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| "The Dialext development provider helper is not configured".to_string())?;
+    path.canonicalize()
+        .map_err(|_| "The Dialext development provider helper is unavailable".to_string())
+}
+
+fn run_dialext_provider_task(
+    pool: sqlx::SqlitePool,
+    vault: std::path::PathBuf,
+    helper: std::path::PathBuf,
+    task_id: String,
+) {
+    tauri::async_runtime::spawn(async move {
+        if let Err(error) =
+            anlg_session_ingest::dialext_provider::run_task(&pool, &vault, &helper, &task_id).await
+        {
+            tracing::warn!(%task_id, %error, "Dialext provider task failed");
+        }
+    });
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn create_dialext_provider_task<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    state: tauri::State<'_, ManagedState>,
+    title: String,
+    target_language: String,
+    audio: Vec<u8>,
+) -> Result<crate::DialextProviderTaskStart, String> {
+    let helper = provider_helper_path()?;
+    let vault =
+        crate::import::resolve_startup_vault_base(&app).map_err(|error| error.to_string())?;
+    let started = anlg_session_ingest::dialext_provider::create_recording_task(
+        state.pool(),
+        &vault,
+        &title,
+        &target_language,
+        &audio,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    run_dialext_provider_task(state.pool().clone(), vault, helper, started.task_id.clone());
+    Ok(crate::DialextProviderTaskStart {
+        task_id: started.task_id,
+        session_id: started.session_id,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn start_dialext_provider_task<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    target_language: String,
+) -> Result<crate::DialextProviderTaskStart, String> {
+    let helper = provider_helper_path()?;
+    let vault =
+        crate::import::resolve_startup_vault_base(&app).map_err(|error| error.to_string())?;
+    let started = anlg_session_ingest::dialext_provider::create_alternate_task(
+        state.pool(),
+        &session_id,
+        &target_language,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    run_dialext_provider_task(state.pool().clone(), vault, helper, started.task_id.clone());
+    Ok(crate::DialextProviderTaskStart {
+        task_id: started.task_id,
+        session_id: started.session_id,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn cancel_dialext_provider_task(
+    state: tauri::State<'_, ManagedState>,
+    task_id: String,
+) -> Result<(), String> {
+    anlg_session_ingest::dialext_provider::cancel_task(state.pool(), &task_id)
+        .await
+        .map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(

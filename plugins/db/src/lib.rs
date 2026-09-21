@@ -201,6 +201,13 @@ pub struct DialextProposalResult {
 
 #[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+pub struct DialextProviderTaskStart {
+    pub task_id: String,
+    pub session_id: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct E2eeIdentityStatus {
     pub configured: bool,
     pub key_id: Option<String>,
@@ -400,6 +407,9 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::edit_dialext_passage,
             commands::undo_dialext_edit,
             commands::apply_dialext_proposal,
+            commands::create_dialext_provider_task::<tauri::Wry>,
+            commands::start_dialext_provider_task::<tauri::Wry>,
+            commands::cancel_dialext_provider_task,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,
@@ -453,6 +463,11 @@ async fn bootstrap_app_database<R: tauri::Runtime>(
     let vault = import::resolve_startup_vault_base(&app).map_err(|error| error.to_string())?;
     if let Err(error) = anlg_session_ingest::dialext::migrate_recordings(db.pool(), &vault).await {
         tracing::error!(%error, "Dialext account adoption incomplete; saved transcripts retained");
+    }
+    if let Err(error) =
+        anlg_session_ingest::dialext_provider::recover_interrupted_tasks(db.pool()).await
+    {
+        tracing::error!(%error, "Dialext provider task recovery incomplete");
     }
     if let Some(config) = startup_config {
         runtime.set_startup_status_if_running(StartupStatus::for_phase(

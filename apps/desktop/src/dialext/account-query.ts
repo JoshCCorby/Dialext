@@ -6,6 +6,7 @@ type AccountRow = {
   transcript_id: string | null;
   target_language: string | null;
   usable: number;
+  has_source_audio: number;
 };
 
 export function useDialextAccounts(sessionId: string) {
@@ -13,6 +14,8 @@ export function useDialextAccounts(sessionId: string) {
     sql: `
       SELECT dialext_recordings.active_account_id, dialext_accounts.id,
         dialext_accounts.transcript_id, dialext_accounts.target_language,
+        EXISTS(SELECT 1 FROM dialext_evidence WHERE session_id=sessions.id
+          AND kind='audio' AND source_id='source-audio') AS has_source_audio,
         CASE WHEN transcripts.deleted_at IS NULL AND json_valid(transcripts.words_json)
           AND json_type(transcripts.words_json) = 'array' AND json_array_length(transcripts.words_json) > 0
           THEN 1 ELSE 0 END AS usable

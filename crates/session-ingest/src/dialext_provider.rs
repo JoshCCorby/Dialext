@@ -41,6 +41,26 @@ struct Stage {
     result_sha256: String,
 }
 
+type SourceInterval = (String, i64, i64);
+type SourceIndex = BTreeMap<SourceInterval, Option<String>>;
+
+struct StageSpec<'a> {
+    kind: &'a str,
+    source_locale: &'a str,
+    target_language: &'a str,
+    model: &'a str,
+    prompt_version: &'a str,
+    request_key: &'a str,
+    evidence: Option<(&'a str, i64)>,
+}
+
+struct AsrSpec<'a> {
+    source_locale: &'a str,
+    source_id: &'a str,
+    audio_path: &'a str,
+    duration_ms: i64,
+}
+
 #[derive(Debug, Deserialize)]
 struct HelperResponse {
     protocol_version: i64,
@@ -52,7 +72,9 @@ fn validate_language(language: &str) -> Result<(), Error> {
     if ["en", "ga"].contains(&language) {
         Ok(())
     } else {
-        Err(invalid("Dialext supports fixture generation only in English and Irish"))
+        Err(invalid(
+            "Dialext supports fixture generation only in English and Irish",
+        ))
     }
 }
 
@@ -81,8 +103,7 @@ pub async fn create_recording_task(
         return Err(invalid("Source audio has no measurable duration"));
     }
     let audio_sha256 = sha256(audio);
-    let (audio_path, _) =
-        write_artifact_as(vault, audio, "wav", MAX_SOURCE_AUDIO_BYTES)?;
+    let (audio_path, _) = write_artifact_as(vault, audio, "wav", MAX_SOURCE_AUDIO_BYTES)?;
     let session_id = format!("dialext-generated-{}", uuid::Uuid::new_v4());
     let task_id = uuid::Uuid::new_v4().to_string();
     let mut tx = pool.begin_with("BEGIN IMMEDIATE").await?;
@@ -97,13 +118,11 @@ pub async fn create_recording_task(
     .bind(json!({"dialext":{"provider_bridge":1,"provider":"fixture"}}).to_string())
     .execute(&mut *tx)
     .await?;
-    sqlx::query(
-        "INSERT INTO dialext_recordings(id,preferred_language) VALUES(?,?)",
-    )
-    .bind(&session_id)
-    .bind(target_language)
-    .execute(&mut *tx)
-    .await?;
+    sqlx::query("INSERT INTO dialext_recordings(id,preferred_language) VALUES(?,?)")
+        .bind(&session_id)
+        .bind(target_language)
+        .execute(&mut *tx)
+        .await?;
     sqlx::query(
         "INSERT INTO dialext_evidence(id,session_id,kind,source_id,revision,sha256,artifact_path,duration_ms)
          VALUES(?,?,'audio',?,1,?,?,?)",
@@ -282,10 +301,7 @@ async fn claim_task(pool: &SqlitePool, task: &Task) -> Result<bool, Error> {
         == 1)
 }
 
-async fn fenced_running(
-    connection: &mut SqliteConnection,
-    task: &Task,
-) -> Result<bool, Error> {
+async fn fenced_running(connection: &mut SqliteConnection, task: &Task) -> Result<bool, Error> {
     Ok(sqlx::query_scalar::<_, i64>(
         "SELECT count(*) FROM dialext_provider_tasks
          WHERE id=? AND attempt=? AND input_revision=? AND audio_sha256=? AND status='running'",
@@ -327,13 +343,44 @@ async fn advance(pool: &SqlitePool, task: &Task, stage: &str) -> Result<bool, Er
     Ok(false)
 }
 
-async fn read_limited<R: tokio::io::AsyncRead + Unpin>(reader: R, limit: usize) -> std::io::Result<Vec<u8>> {
+async fn read_limited<R: tokio::io::AsyncRead + Unpin>(
+    reader: R,
+    limit: usize,
+) -> std::io::Result<Vec<u8>> {
     let mut bytes = Vec::new();
-    reader.take((limit + 1) as u64).read_to_end(&mut bytes).await?;
+    reader
+        .take((limit + 1) as u64)
+        .read_to_end(&mut bytes)
+        .await?;
     Ok(bytes)
 }
 
-async fn invoke_helper(helper_path: &Path, stage: &str, request: Value) -> Result<Value, Error> {
+async fn wait_until_task_stops(pool: &SqlitePool, task: &Task) -> Result<(), Error> {
+    loop {
+        let status = sqlx::query_scalar::<_, String>(
+            "SELECT status FROM dialext_provider_tasks
+             WHERE id=? AND attempt=? AND input_revision=? AND audio_sha256=?",
+        )
+        .bind(&task.id)
+        .bind(task.attempt)
+        .bind(task.input_revision)
+        .bind(&task.audio_sha256)
+        .fetch_optional(pool)
+        .await?;
+        if status.as_deref() != Some("running") {
+            return Ok(());
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+}
+
+async fn invoke_helper(
+    pool: &SqlitePool,
+    task: &Task,
+    helper_path: &Path,
+    stage: &str,
+    request: Value,
+) -> Result<Value, Error> {
     let input = serde_json::to_vec(&json!({
         "protocol_version": PROTOCOL_VERSION,
         "stage": stage,
@@ -350,14 +397,30 @@ async fn invoke_helper(helper_path: &Path, stage: &str, request: Value) -> Resul
         .stderr(Stdio::piped())
         .kill_on_drop(true)
         .spawn()?;
-    let mut stdin = child.stdin.take().ok_or_else(|| invalid("Provider stdin unavailable"))?;
-    let stdout = child.stdout.take().ok_or_else(|| invalid("Provider stdout unavailable"))?;
-    let stderr = child.stderr.take().ok_or_else(|| invalid("Provider stderr unavailable"))?;
+    let mut stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| invalid("Provider stdin unavailable"))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| invalid("Provider stdout unavailable"))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| invalid("Provider stderr unavailable"))?;
     let stdout_task = tokio::spawn(read_limited(stdout, MAX_PROTOCOL_BYTES));
     let stderr_task = tokio::spawn(read_limited(stderr, 32 * 1024));
     stdin.write_all(&input).await?;
     drop(stdin);
-    let status = child.wait().await?;
+    let (status, stopped) = tokio::select! {
+        status = child.wait() => (status?, false),
+        result = wait_until_task_stops(pool, task) => {
+            result?;
+            child.start_kill()?;
+            (child.wait().await?, true)
+        }
+    };
     let stdout = stdout_task
         .await
         .map_err(|_| invalid("Provider output reader stopped"))??;
@@ -366,6 +429,9 @@ async fn invoke_helper(helper_path: &Path, stage: &str, request: Value) -> Resul
         .map_err(|_| invalid("Provider diagnostic reader stopped"))??;
     if stdout.len() > MAX_PROTOCOL_BYTES {
         return Err(invalid("Provider protocol output exceeds 2 MiB"));
+    }
+    if stopped {
+        return Err(invalid("Provider task stopped"));
     }
     if !status.success() {
         let diagnostic = String::from_utf8_lossy(&stderr);
@@ -376,7 +442,9 @@ async fn invoke_helper(helper_path: &Path, stage: &str, request: Value) -> Resul
     }
     let response: HelperResponse = serde_json::from_slice(&stdout)?;
     if response.protocol_version != PROTOCOL_VERSION || response.stage != stage {
-        return Err(invalid("Provider helper returned an unsupported protocol message"));
+        return Err(invalid(
+            "Provider helper returned an unsupported protocol message",
+        ));
     }
     Ok(response.result)
 }
@@ -414,7 +482,7 @@ fn validate_source(value: &Value, expected_source: &str, duration_ms: i64) -> Re
     Ok(())
 }
 
-fn source_segments(sources: &[Value]) -> Result<BTreeMap<(String, i64, i64), Option<String>>, Error> {
+fn source_segments(sources: &[Value]) -> Result<SourceIndex, Error> {
     let mut result = BTreeMap::new();
     for source in sources {
         let source_id = source["source_id"]
@@ -427,7 +495,10 @@ fn source_segments(sources: &[Value]) -> Result<BTreeMap<(String, i64, i64), Opt
             let start = segment["start_ms"].as_i64().unwrap_or(-1);
             let end = segment["end_ms"].as_i64().unwrap_or(-1);
             let speaker = segment["speaker"].as_str().map(str::to_string);
-            if result.insert((source_id.to_string(), start, end), speaker).is_some() {
+            if result
+                .insert((source_id.to_string(), start, end), speaker)
+                .is_some()
+            {
                 return Err(invalid("ASR source intervals are ambiguous"));
             }
         }
@@ -441,7 +512,11 @@ fn validate_account(result: &Value, sources: &[Value], target_language: &str) ->
         .filter(|segments| !segments.is_empty() && segments.len() <= 2000)
         .ok_or_else(|| invalid("Provider reconstruction has no bounded passages"))?;
     let evidence = source_segments(sources)?;
-    let expected_language = if target_language == "ga" { "irish" } else { "english" };
+    let expected_language = if target_language == "ga" {
+        "irish"
+    } else {
+        "english"
+    };
     let mut previous = -1;
     for segment in segments {
         let start = segment["start_ms"].as_i64().unwrap_or(-1);
@@ -467,20 +542,28 @@ fn validate_account(result: &Value, sources: &[Value], target_language: &str) ->
             let source = anchor["source_id"].as_str().unwrap_or("");
             let anchor_start = anchor["start_ms"].as_i64().unwrap_or(-1);
             let anchor_end = anchor["end_ms"].as_i64().unwrap_or(-1);
-            let Some(source_speaker) = evidence.get(&(source.to_string(), anchor_start, anchor_end)) else {
-                return Err(invalid("Provider reconstruction anchor does not exactly resolve"));
+            let Some(source_speaker) =
+                evidence.get(&(source.to_string(), anchor_start, anchor_end))
+            else {
+                return Err(invalid(
+                    "Provider reconstruction anchor does not exactly resolve",
+                ));
             };
             if let (Some(passage_speaker), Some(source_speaker)) =
                 (segment["speaker"].as_str(), source_speaker.as_deref())
                 && passage_speaker != source_speaker
             {
-                return Err(invalid("Provider reconstruction speaker contradicts its evidence"));
+                return Err(invalid(
+                    "Provider reconstruction speaker contradicts its evidence",
+                ));
             }
             first = first.min(anchor_start);
             last = last.max(anchor_end);
         }
         if first != start || last != end {
-            return Err(invalid("Provider reconstruction interval disagrees with its anchors"));
+            return Err(invalid(
+                "Provider reconstruction interval disagrees with its anchors",
+            ));
         }
     }
     Ok(())
@@ -506,7 +589,12 @@ async fn task_audio(pool: &SqlitePool, vault: &Path, task: &Task) -> Result<(Str
     Ok((path, duration))
 }
 
-async fn load_stage(pool: &SqlitePool, vault: &Path, session_id: &str, key: &str) -> Result<Option<Stage>, Error> {
+async fn load_stage(
+    pool: &SqlitePool,
+    vault: &Path,
+    session_id: &str,
+    key: &str,
+) -> Result<Option<Stage>, Error> {
     let Some((digest, path)) = sqlx::query_as::<_, (String, String)>(
         "SELECT result_sha256,result_artifact_path FROM dialext_provider_stages
          WHERE session_id=? AND request_key=?",
@@ -529,14 +617,8 @@ async fn persist_stage(
     pool: &SqlitePool,
     vault: &Path,
     task: &Task,
-    kind: &str,
-    source_locale: &str,
-    target_language: &str,
-    model: &str,
-    prompt_version: &str,
-    key: &str,
+    spec: StageSpec<'_>,
     result: &Value,
-    evidence: Option<(&str, i64)>,
 ) -> Result<Option<Stage>, Error> {
     let bytes = artifact(result.clone())?;
     let (path, digest) = write_artifact(vault, &bytes)?;
@@ -544,7 +626,7 @@ async fn persist_stage(
     if !fenced_running(&mut tx, task).await? {
         return Ok(None);
     }
-    if let Some((source_id, duration_ms)) = evidence {
+    if let Some((source_id, duration_ms)) = spec.evidence {
         sqlx::query(
             "INSERT OR IGNORE INTO dialext_evidence(
                id,session_id,kind,source_id,revision,sha256,artifact_path,duration_ms)
@@ -580,22 +662,27 @@ async fn persist_stage(
     .bind(&task.id)
     .bind(task.attempt)
     .bind(task.input_revision)
-    .bind(kind)
-    .bind(source_locale)
-    .bind(target_language)
+    .bind(spec.kind)
+    .bind(spec.source_locale)
+    .bind(spec.target_language)
     .bind(PROVIDER)
-    .bind(model)
-    .bind(prompt_version)
-    .bind(key)
+    .bind(spec.model)
+    .bind(spec.prompt_version)
+    .bind(spec.request_key)
     .bind(&digest)
     .bind(&path)
     .execute(&mut *tx)
     .await?;
     tx.commit().await?;
-    load_stage(pool, vault, &task.session_id, key).await
+    load_stage(pool, vault, &task.session_id, spec.request_key).await
 }
 
-async fn stored_source(pool: &SqlitePool, vault: &Path, task: &Task, source_id: &str) -> Result<Option<Stage>, Error> {
+async fn stored_source(
+    pool: &SqlitePool,
+    vault: &Path,
+    task: &Task,
+    source_id: &str,
+) -> Result<Option<Stage>, Error> {
     let Some((digest, path, duration)) = sqlx::query_as::<_, (String, String, i64)>(
         "SELECT sha256,artifact_path,duration_ms FROM dialext_evidence
          WHERE session_id=? AND kind='asr' AND source_id=? AND revision=1",
@@ -622,46 +709,47 @@ async fn asr_stage(
     vault: &Path,
     helper_path: &Path,
     task: &Task,
-    source_locale: &str,
-    source_id: &str,
-    audio_path: &str,
-    duration_ms: i64,
+    spec: AsrSpec<'_>,
 ) -> Result<Option<Stage>, Error> {
-    if let Some(source) = stored_source(pool, vault, task, source_id).await? {
+    if let Some(source) = stored_source(pool, vault, task, spec.source_id).await? {
         return Ok(Some(source));
     }
     let key = request_key(json!({
-        "audio_sha256":task.audio_sha256,"source_locale":source_locale,
+        "audio_sha256":task.audio_sha256,"source_locale":spec.source_locale,
         "provider":PROVIDER,"model":ASR_MODEL
     }))?;
     if let Some(stage) = load_stage(pool, vault, &task.session_id, &key).await? {
-        validate_source(&stage.result, source_id, duration_ms)?;
+        validate_source(&stage.result, spec.source_id, spec.duration_ms)?;
         return Ok(Some(stage));
     }
     let result = invoke_helper(
+        pool,
+        task,
         helper_path,
         "asr",
         json!({
-            "source_locale":source_locale,"model":ASR_MODEL,
-            "audio_path":vault.join(audio_path),"audio_sha256":task.audio_sha256,
-            "duration_ms":duration_ms
+            "source_locale":spec.source_locale,"model":ASR_MODEL,
+            "audio_path":vault.join(spec.audio_path),"audio_sha256":task.audio_sha256,
+            "duration_ms":spec.duration_ms
         }),
     )
     .await?;
-    validate_source(&result, source_id, duration_ms)?;
+    validate_source(&result, spec.source_id, spec.duration_ms)?;
     let wrapped = json!({"format":"dialext-asr-evidence","version":1,"source":result});
     let stage = persist_stage(
         pool,
         vault,
         task,
-        "asr",
-        source_locale,
-        "",
-        ASR_MODEL,
-        "",
-        &key,
+        StageSpec {
+            kind: "asr",
+            source_locale: spec.source_locale,
+            target_language: "",
+            model: ASR_MODEL,
+            prompt_version: "",
+            request_key: &key,
+            evidence: Some((spec.source_id, spec.duration_ms)),
+        },
         &wrapped,
-        Some((source_id, duration_ms)),
     )
     .await?;
     Ok(stage.map(|mut stage| {
@@ -732,8 +820,14 @@ async fn store_account(
     .bind(&task.target_language)
     .fetch_one(&mut *tx)
     .await?;
-    let account_id = format!("{}:account:{}:{generation}", task.session_id, task.target_language);
-    let transcript_id = format!("{}:reading:{}:{generation}", task.session_id, task.target_language);
+    let account_id = format!(
+        "{}:account:{}:{generation}",
+        task.session_id, task.target_language
+    );
+    let transcript_id = format!(
+        "{}:reading:{}:{generation}",
+        task.session_id, task.target_language
+    );
     let (workspace, owner): (String, String) = sqlx::query_as(
         "SELECT workspace_id,owner_user_id FROM sessions WHERE id=? AND deleted_at IS NULL",
     )
@@ -794,7 +888,12 @@ async fn store_account(
     Ok(true)
 }
 
-async fn run_inner(pool: &SqlitePool, vault: &Path, helper_path: &Path, task: &Task) -> Result<(), Error> {
+async fn run_inner(
+    pool: &SqlitePool,
+    vault: &Path,
+    helper_path: &Path,
+    task: &Task,
+) -> Result<(), Error> {
     let (audio_path, duration_ms) = task_audio(pool, vault, task).await?;
     let mut sources = Vec::new();
     for (stage_name, locale, source_id) in [
@@ -809,10 +908,12 @@ async fn run_inner(pool: &SqlitePool, vault: &Path, helper_path: &Path, task: &T
             vault,
             helper_path,
             task,
-            locale,
-            source_id,
-            &audio_path,
-            duration_ms,
+            AsrSpec {
+                source_locale: locale,
+                source_id,
+                audio_path: &audio_path,
+                duration_ms,
+            },
         )
         .await?
         else {
@@ -832,8 +933,11 @@ async fn run_inner(pool: &SqlitePool, vault: &Path, helper_path: &Path, task: &T
     let account = if let Some(stage) = load_stage(pool, vault, &task.session_id, &key).await? {
         stage.result
     } else {
-        let source_values: Vec<Value> = sources.iter().map(|source| source.result.clone()).collect();
+        let source_values: Vec<Value> =
+            sources.iter().map(|source| source.result.clone()).collect();
         let result = invoke_helper(
+            pool,
+            task,
             helper_path,
             "reconstruct",
             json!({
@@ -847,14 +951,16 @@ async fn run_inner(pool: &SqlitePool, vault: &Path, helper_path: &Path, task: &T
             pool,
             vault,
             task,
-            "reconstruction",
-            "",
-            &task.target_language,
-            RECONSTRUCTION_MODEL,
-            PROMPT_VERSION,
-            &key,
+            StageSpec {
+                kind: "reconstruction",
+                source_locale: "",
+                target_language: &task.target_language,
+                model: RECONSTRUCTION_MODEL,
+                prompt_version: PROMPT_VERSION,
+                request_key: &key,
+                evidence: None,
+            },
             &result,
-            None,
         )
         .await?
         else {
@@ -870,26 +976,35 @@ async fn run_inner(pool: &SqlitePool, vault: &Path, helper_path: &Path, task: &T
     Ok(())
 }
 
-pub async fn run_task(pool: &SqlitePool, vault: &Path, helper_path: &Path, task_id: &str) -> Result<(), Error> {
+pub async fn run_task(
+    pool: &SqlitePool,
+    vault: &Path,
+    helper_path: &Path,
+    task_id: &str,
+) -> Result<(), Error> {
     let task = load_task(pool, task_id).await?;
     if !claim_task(pool, &task).await? {
         return Ok(());
     }
     if let Err(error) = run_inner(pool, vault, helper_path, &task).await {
         let message = error.to_string();
-        sqlx::query(
+        let settled = sqlx::query_scalar::<_, String>(
             "UPDATE dialext_provider_tasks SET
                status=CASE status WHEN 'cancel_requested' THEN 'cancelled' ELSE 'failed' END,
                error=CASE status WHEN 'cancel_requested' THEN '' ELSE ? END,
                completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
-             WHERE id=? AND attempt=? AND input_revision=? AND status IN ('running','cancel_requested')",
+             WHERE id=? AND attempt=? AND input_revision=? AND status IN ('running','cancel_requested')
+             RETURNING status",
         )
         .bind(message)
         .bind(&task.id)
         .bind(task.attempt)
         .bind(task.input_revision)
-        .execute(pool)
+        .fetch_optional(pool)
         .await?;
+        if settled.as_deref() == Some("cancelled") {
+            return Ok(());
+        }
         return Err(error);
     }
     Ok(())
@@ -906,8 +1021,17 @@ mod tests {
     }
 
     fn helper() -> std::path::PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../dialext/engine/provider-helper.mjs")
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dialext/engine/provider-helper.mjs")
+    }
+
+    fn slow_helper(directory: &Path) -> std::path::PathBuf {
+        let path = directory.join("slow-provider.mjs");
+        std::fs::write(
+            &path,
+            "process.stdin.resume(); setInterval(() => {}, 1_000);",
+        )
+        .unwrap();
+        path
     }
 
     fn wav(duration_ms: usize) -> Vec<u8> {
@@ -947,10 +1071,17 @@ mod tests {
         run_task(db.pool(), vault.path(), &helper(), &first.task_id)
             .await
             .unwrap();
-        assert_eq!(status(db.pool(), &first.task_id).await, ("succeeded".into(), "done".into()));
         assert_eq!(
-            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM dialext_provider_stages WHERE kind='asr'")
-                .fetch_one(db.pool()).await.unwrap(),
+            status(db.pool(), &first.task_id).await,
+            ("succeeded".into(), "done".into())
+        );
+        assert_eq!(
+            sqlx::query_scalar::<_, i64>(
+                "SELECT count(*) FROM dialext_provider_stages WHERE kind='asr'"
+            )
+            .fetch_one(db.pool())
+            .await
+            .unwrap(),
             2
         );
 
@@ -962,8 +1093,12 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM dialext_provider_stages WHERE kind='asr'")
-                .fetch_one(db.pool()).await.unwrap(),
+            sqlx::query_scalar::<_, i64>(
+                "SELECT count(*) FROM dialext_provider_stages WHERE kind='asr'"
+            )
+            .fetch_one(db.pool())
+            .await
+            .unwrap(),
             2,
             "an alternate reconstruction must not rerun successful ASR"
         );
@@ -978,6 +1113,44 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn cancellation_stops_an_in_flight_helper() {
+        let db = database().await;
+        let vault = tempfile::tempdir().unwrap();
+        let helper_directory = tempfile::tempdir().unwrap();
+        let started =
+            create_recording_task(db.pool(), vault.path(), "Cancel helper", "en", &wav(1_000))
+                .await
+                .unwrap();
+        let pool = db.pool().clone();
+        let vault_path = vault.path().to_path_buf();
+        let helper_path = slow_helper(helper_directory.path());
+        let task_id = started.task_id.clone();
+        let worker =
+            tokio::spawn(async move { run_task(&pool, &vault_path, &helper_path, &task_id).await });
+        for _ in 0..100 {
+            if status(db.pool(), &started.task_id).await.0 == "running" {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        assert_eq!(status(db.pool(), &started.task_id).await.0, "running");
+        cancel_task(db.pool(), &started.task_id).await.unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(2), worker)
+            .await
+            .expect("cancelled helper did not stop")
+            .unwrap()
+            .unwrap();
+        assert_eq!(status(db.pool(), &started.task_id).await.0, "cancelled");
+        assert_eq!(
+            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM dialext_provider_stages")
+                .fetch_one(db.pool())
+                .await
+                .unwrap(),
+            0
+        );
+    }
+
+    #[tokio::test]
     async fn cancellation_and_restart_fence_late_work_but_keep_finished_asr() {
         let db = database().await;
         let vault = tempfile::tempdir().unwrap();
@@ -989,7 +1162,16 @@ mod tests {
         let (audio_path, duration) = task_audio(db.pool(), vault.path(), &task).await.unwrap();
         assert!(
             asr_stage(
-                db.pool(), vault.path(), &helper(), &task, "ga-IE", "irish-asr", &audio_path, duration,
+                db.pool(),
+                vault.path(),
+                &helper(),
+                &task,
+                AsrSpec {
+                    source_locale: "ga-IE",
+                    source_id: "irish-asr",
+                    audio_path: &audio_path,
+                    duration_ms: duration,
+                },
             )
             .await
             .unwrap()
@@ -1000,7 +1182,9 @@ mod tests {
         assert_eq!(status(db.pool(), &task.id).await.0, "cancelled");
         assert_eq!(
             sqlx::query_scalar::<_, i64>("SELECT count(*) FROM dialext_evidence WHERE kind='asr'")
-                .fetch_one(db.pool()).await.unwrap(),
+                .fetch_one(db.pool())
+                .await
+                .unwrap(),
             1
         );
 
@@ -1011,7 +1195,16 @@ mod tests {
         assert!(claim_task(db.pool(), &restarted_task).await.unwrap());
         assert!(
             asr_stage(
-                db.pool(), vault.path(), &helper(), &restarted_task, "ga-IE", "irish-asr", &audio_path, duration,
+                db.pool(),
+                vault.path(),
+                &helper(),
+                &restarted_task,
+                AsrSpec {
+                    source_locale: "ga-IE",
+                    source_id: "irish-asr",
+                    audio_path: &audio_path,
+                    duration_ms: duration,
+                },
             )
             .await
             .unwrap()
@@ -1019,7 +1212,9 @@ mod tests {
         );
         assert_eq!(
             sqlx::query_scalar::<_, i64>("SELECT count(*) FROM dialext_evidence WHERE kind='asr'")
-                .fetch_one(db.pool()).await.unwrap(),
+                .fetch_one(db.pool())
+                .await
+                .unwrap(),
             1,
             "the successful pre-cancel stage is reused"
         );
@@ -1039,7 +1234,16 @@ mod tests {
         let (audio_path, duration) = task_audio(db.pool(), vault.path(), &task).await.unwrap();
         for (locale, source) in [("ga-IE", "irish-asr"), ("en-IE", "english-asr")] {
             asr_stage(
-                db.pool(), vault.path(), &helper(), &task, locale, source, &audio_path, duration,
+                db.pool(),
+                vault.path(),
+                &helper(),
+                &task,
+                AsrSpec {
+                    source_locale: locale,
+                    source_id: source,
+                    audio_path: &audio_path,
+                    duration_ms: duration,
+                },
             )
             .await
             .unwrap();
@@ -1049,9 +1253,16 @@ mod tests {
             .execute(db.pool())
             .await
             .unwrap();
-        assert!(run_task(db.pool(), vault.path(), Path::new("/missing/helper.mjs"), &task.id)
+        assert!(
+            run_task(
+                db.pool(),
+                vault.path(),
+                Path::new("/missing/helper.mjs"),
+                &task.id
+            )
             .await
-            .is_err());
+            .is_err()
+        );
         assert_eq!(status(db.pool(), &task.id).await.0, "failed");
 
         let retry = create_alternate_task(db.pool(), &task.session_id, "en")
@@ -1062,8 +1273,12 @@ mod tests {
             .unwrap();
         assert_eq!(status(db.pool(), &retry.task_id).await.0, "succeeded");
         assert_eq!(
-            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM dialext_provider_stages WHERE kind='asr'")
-                .fetch_one(db.pool()).await.unwrap(),
+            sqlx::query_scalar::<_, i64>(
+                "SELECT count(*) FROM dialext_provider_stages WHERE kind='asr'"
+            )
+            .fetch_one(db.pool())
+            .await
+            .unwrap(),
             2
         );
     }

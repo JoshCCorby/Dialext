@@ -14,6 +14,14 @@ msgstr ""
 "Plural-Forms: \n"
 
 #: src/dialext/reading-selector.tsx
+msgid " (generate)"
+msgstr ""
+
+#: src/dialext/reading-selector.tsx
+msgid " (generating…)"
+msgstr ""
+
+#: src/dialext/reading-selector.tsx
 msgid " (unavailable)"
 msgstr ""
 
@@ -905,6 +913,8 @@ msgid "Can view"
 msgstr ""
 
 #: src/calendar/components/apple/permission.tsx
+#: src/dialext/provider-generation.tsx
+#: src/dialext/reading-selector.tsx
 #: src/imports/screen.tsx
 #: src/resource-sharing/library.tsx
 #: src/session-sharing/comments.tsx
@@ -1178,6 +1188,10 @@ msgstr ""
 
 #: src/settings/general/audio-settings.tsx
 msgid "Choose the microphone that captures your voice."
+msgstr ""
+
+#: src/dialext/provider-generation.tsx
+msgid "Choose WAV recording"
 msgstr ""
 
 #: src/settings/general/week-start.tsx
@@ -2401,6 +2415,10 @@ msgstr ""
 msgid "Finishing connection…"
 msgstr ""
 
+#: src/dialext/provider-generation.tsx
+msgid "First reading"
+msgstr ""
+
 #: src/settings/stats/badge-collection.tsx
 msgid "First Words"
 msgstr ""
@@ -2479,6 +2497,10 @@ msgstr ""
 
 #: src/session-sharing/general-access.tsx
 msgid "General access"
+msgstr ""
+
+#: src/dialext/provider-generation.tsx
+msgid "Generate a Dialext reading"
 msgstr ""
 
 #: src/session/components/note-input/enhanced/streaming.tsx
@@ -3749,6 +3771,10 @@ msgstr ""
 msgid "Open on GitHub"
 msgstr ""
 
+#: src/dialext/provider-generation.tsx
+msgid "Open recording"
+msgstr ""
+
 #: src/settings/todo/github.tsx
 msgid "Open repository on GitHub"
 msgstr ""
@@ -4148,6 +4174,10 @@ msgstr ""
 msgid "Recording status prompts"
 msgstr ""
 
+#: src/dialext/provider-generation.tsx
+msgid "Recording title"
+msgstr ""
+
 #: src/main/windows-title-bar.tsx
 msgid "Redo"
 msgstr ""
@@ -4398,6 +4428,7 @@ msgid "Retention (days)"
 msgstr ""
 
 #: src/chat/components/message/error.tsx
+#: src/dialext/provider-generation.tsx
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 #: src/settings/general/storage/legacy-cleanup.tsx
 #: src/settings/sync/index.tsx
@@ -4419,6 +4450,10 @@ msgstr ""
 
 #: src/settings/developers/api-key-row.tsx
 msgid "Revoke"
+msgstr ""
+
+#: src/dialext/provider-generation.tsx
+msgid "Run the deterministic development provider on a WAV recording. It makes no paid call and does not assess transcription quality."
 msgstr ""
 
 #: src/settings/ai/shared/index.tsx
@@ -5181,6 +5216,7 @@ msgid "Starting your trial..."
 msgstr ""
 
 #: src/chat/components/input/index.tsx
+#: src/dialext/provider-generation.tsx
 msgid "Starting…"
 msgstr ""
 

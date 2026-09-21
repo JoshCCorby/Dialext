@@ -158,6 +158,30 @@ async applyDialextProposal(proposalId: string) : Promise<Result<DialextProposalR
     else return { status: "error", error: e  as any };
 }
 },
+async createDialextProviderTask(title: string, targetLanguage: string, audio: number[]) : Promise<Result<DialextProviderTaskStart, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|create_dialext_provider_task", { title, targetLanguage, audio }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startDialextProviderTask(sessionId: string, targetLanguage: string) : Promise<Result<DialextProviderTaskStart, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|start_dialext_provider_task", { sessionId, targetLanguage }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async cancelDialextProviderTask(taskId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|cancel_dialext_provider_task", { taskId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getE2eeIdentityStatus(accountUserId: string) : Promise<Result<E2eeIdentityStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|get_e2ee_identity_status", { accountUserId }) };
@@ -385,6 +409,7 @@ export type DialextEditResult = { outcome: string; contentVersion: string; editI
  * untouched, so the reader can refresh and review rather than losing the proposal.
  */
 export type DialextProposalResult = { outcome: string; documentVersion: string | null; transcriptVersion: string | null; blocksChanged: number | null; status: string | null }
+export type DialextProviderTaskStart = { taskId: string; sessionId: string }
 export type DialextSourceAudio = { sha256: string; durationMs: number }
 export type DialextSourceInterval = { sourceId: string; revision: number; evidenceSha256: string; startMs: number; endMs: number; evidenceText: string; providerLabel: string | null; speakerKey: string | null; speakerDisplayIndex: number | null; humanId: string | null; audio: DialextSourceIntervalAudio | null; audioUnavailable: string | null }
 export type DialextSourceIntervalAudio = { measuredDurationMs: number; clipWav: number[] }

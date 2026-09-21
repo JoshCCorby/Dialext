@@ -12,6 +12,9 @@ Default permissions for the plugin
 - `allow-edit-dialext-passage`
 - `allow-undo-dialext-edit`
 - `allow-apply-dialext-proposal`
+- `allow-create-dialext-provider-task`
+- `allow-start-dialext-provider-task`
+- `allow-cancel-dialext-provider-task`
 - `allow-execute`
 - `allow-execute-proxy`
 - `allow-execute-transaction`
@@ -212,6 +215,32 @@ Denies the bind_cloudsync_account command without any pre-configured scope.
 <tr>
 <td>
 
+`db:allow-cancel-dialext-provider-task`
+
+</td>
+<td>
+
+Enables the cancel_dialext_provider_task command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-cancel-dialext-provider-task`
+
+</td>
+<td>
+
+Denies the cancel_dialext_provider_task command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `db:allow-cleanup-legacy-files`
 
 </td>
@@ -309,6 +338,32 @@ Enables the configure_e2ee_replica command without any pre-configured scope.
 <td>
 
 Denies the configure_e2ee_replica command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-create-dialext-provider-task`
+
+</td>
+<td>
+
+Enables the create_dialext_provider_task command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-create-dialext-provider-task`
+
+</td>
+<td>
+
+Denies the create_dialext_provider_task command without any pre-configured scope.
 
 </td>
 </tr>
@@ -959,6 +1014,32 @@ Enables the start_cloudsync command without any pre-configured scope.
 <td>
 
 Denies the start_cloudsync command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-start-dialext-provider-task`
+
+</td>
+<td>
+
+Enables the start_dialext_provider_task command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-start-dialext-provider-task`
+
+</td>
+<td>
+
+Denies the start_dialext_provider_task command without any pre-configured scope.
 
 </td>
 </tr>

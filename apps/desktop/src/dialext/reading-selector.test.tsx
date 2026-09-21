@@ -10,16 +10,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   select: vi.fn(),
+  start: vi.fn(),
+  cancel: vi.fn(),
   flush: vi.fn(),
+  latest: null,
   rows: [] as Array<{
     active_account_id: string | null;
     id: string;
     transcript_id: string;
     target_language: string;
     usable: number;
+    has_source_audio: number;
   }>,
 }));
-vi.mock("@anlg/plugin-db", () => ({ selectDialextAccount: mocks.select }));
+vi.mock("@anlg/plugin-db", () => ({
+  selectDialextAccount: mocks.select,
+  startDialextProviderTask: mocks.start,
+  cancelDialextProviderTask: mocks.cancel,
+}));
 vi.mock("./account-query", () => ({
   useDialextAccounts: () => ({ data: mocks.rows }),
 }));
@@ -27,6 +35,10 @@ vi.mock("~/db/write-queue", () => ({ flushDatabaseWrites: mocks.flush }));
 vi.mock("./checked-edit", () => ({
   undoDialextPassageEdit: vi.fn(),
   useDialextEditVersion: () => "version-on-screen",
+}));
+vi.mock("./provider-task", () => ({
+  useLatestDialextProviderTask: () => mocks.latest,
+  providerTaskLabel: () => "Provider task status",
 }));
 import { ReadingSelector } from "./reading-selector";
 
@@ -45,6 +57,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.select.mockResolvedValue(undefined);
   mocks.flush.mockResolvedValue(undefined);
+  mocks.start.mockResolvedValue({ taskId: "task", sessionId: "recording" });
+  mocks.cancel.mockResolvedValue(undefined);
+  mocks.latest = null;
   mocks.rows = [
     {
       active_account_id: "english",
@@ -52,6 +67,7 @@ beforeEach(() => {
       transcript_id: "en-work",
       target_language: "en",
       usable: 1,
+      has_source_audio: 1,
     },
     {
       active_account_id: "english",
@@ -59,6 +75,7 @@ beforeEach(() => {
       transcript_id: "ga-work",
       target_language: "ga",
       usable: 1,
+      has_source_audio: 1,
     },
   ];
 });
@@ -127,6 +144,7 @@ describe("saved account selection", () => {
   it("makes missing alternates unavailable and does not substitute another account for a missing selection", () => {
     mocks.rows = [mocks.rows[0]];
     mocks.rows[0].active_account_id = null;
+    mocks.rows[0].has_source_audio = 0;
     mount();
     expect(
       screen
@@ -143,6 +161,15 @@ describe("saved account selection", () => {
     expect(screen.getByRole("status").textContent).toContain(
       "no usable selected reading",
     );
+  });
+  it("starts an on-demand alternate from retained source audio", async () => {
+    mocks.rows = [mocks.rows[0]];
+    mount();
+    fireEvent.click(screen.getByRole("button", { name: "Gaeilge (generate)" }));
+    await waitFor(() =>
+      expect(mocks.start).toHaveBeenCalledWith("recording", "ga"),
+    );
+    expect(mocks.select).not.toHaveBeenCalled();
   });
   it("leaves ordinary recordings in the existing interface", () => {
     mocks.rows = [];
