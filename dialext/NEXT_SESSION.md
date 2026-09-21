@@ -11,13 +11,19 @@ push to upstream. Compare against `origin/codex/dialext-personal-prototype`, not
 see unpushed work. Agent pushes have been refused before, so ask Joshua to push rather than working
 around it.
 
-**Milestone 4 is complete.** Read “Milestone 4 — native provider bridge” at the end of
-`HANDOFF.md` before making changes. The real `app.dialext.prototype` window generated English from
-`source-review.wav`, generated Gaeilge on demand, and retained both accounts plus the active Irish
-selection after a full Quit and fresh `node dialext/dev.mjs`. Read-only inspection found two
-succeeded tasks and four independently durable stages. Automated tests prove in-flight helper
-cancellation, cancel/restart preservation and reconstruction retry without duplicate ASR. No live
-or paid provider call was made.
+**Milestone 5 is implemented but not accepted.** Read "Milestone 5" at the end of `HANDOFF.md`
+first. Its automated checks all pass and its migration ran on the live prototype without changing
+saved work, but the real-window journey was not driven (window control was declined). Your first
+job is that section's acceptance checklist, driven in the real `app.dialext.prototype` window, or
+with Joshua by hand if window control is unavailable. Record each outcome individually. Fix only
+defects the checklist exposes.
+
+Questions are answered through the app's existing provider-agnostic model setting. Joshua approved
+Apple's on-device model for testing only; do not tie anything to it, and do not make a hosted or
+paid call without his explicit approval.
+
+Milestone 4 remains complete: the native provider bridge, fixture helper and durable stages are
+recorded in `HANDOFF.md`. No live or paid provider call has been made.
 
 Carry forward these boundaries:
 
@@ -40,20 +46,9 @@ Carry forward these boundaries:
   recording and its queue/stage/vault artefacts. The temporary pre-migration comparison backup is
   `/tmp/dialext-pre-m4.mCbuVJ/app.backup.db`; do not assume `/tmp` is durable.
 
-Now begin **milestone 5 only: coherent personal workflow**. `ARCHITECTURE.md` defines the bounded
-scope: quiet source controls on stable summary blocks, a footer question input, corrected-text
-retrieval and simple TXT/Markdown sharing. Acceptance is that a question months later uses the
-chosen effective account, refuses missing evidence, opens the same source panel, and exports match
-what the reader sees.
-
-Start by tracing the existing `dialextBlock` identity, summary proposal evidence shape, source
-panel/audio interval command, selected-account query path, chat context pipeline and current
-export implementations. Design the smallest evidence record that is pinned at output generation
-and invalidated when block text changes; do not infer provenance from bullet position or pretend an
-edited block is still verified. Reuse the existing source panel and chat surface rather than
-creating a second chat product. Questions must retrieve corrected text from the active account and
-refuse when required evidence is absent. TXT/Markdown exports must match the same selected reading
-and visible names/content.
+After milestone 5 is accepted, agree the next bounded step with Joshua (for example the approved
+short live-provider sample, or improving retrieval beyond lexical matching). Do not start one
+unasked.
 
 Use synthetic samples until a live-provider test is explicitly approved. Drive the real desktop
 with `node dialext/dev.mjs`, never a release build or browser mock. Keep `dialext/HANDOFF.md`

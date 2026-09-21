@@ -1,6 +1,6 @@
 # Personal Dialext: implementation decisions
 
-Updated 18 September 2026. Native baseline and milestone 1 are implemented and verified; [HANDOFF.md](HANDOFF.md) records the completed checks. Later milestones below remain implementation direction, not completed features. The user's [product brief](product/product-vision.md) is authoritative. Build one milestone at a time; prove it in the desktop interface before adding the next.
+Updated 22 September 2026. Native baseline and milestones 1–4 are implemented and verified; milestone 5 is implemented with its real-window acceptance outstanding. [HANDOFF.md](HANDOFF.md) records the completed checks. Later milestones below remain implementation direction, not completed features. The user's [product brief](product/product-vision.md) is authoritative. Build one milestone at a time; prove it in the desktop interface before adding the next.
 
 ## Product and reuse boundary
 
@@ -93,7 +93,7 @@ Read the existing `session/queries/proposals.ts` before extending it. It current
 
 A new template is a separate output/version. Auto should adapt headings to the recording; do not transplant the old mandatory decisions/actions minutes schema.
 
-Store summary evidence alongside stable blocks when generating them. An edited block must not keep an apparently verified source association unless its text still matches the pinned content. Do not infer provenance later from bullet position, and do not let Markdown round-trips silently discard block identity. Expose one source/detail control on hover, focus or selection; transcript marks and chat citations reuse the same source-audio panel.
+Store summary evidence alongside stable blocks when generating them. An edited block must not keep an apparently verified source association unless its text still matches the pinned content. Do not infer provenance later from bullet position, and do not let Markdown round-trips silently discard block identity. Expose one source/detail control on hover, focus or selection; transcript marks and chat citations reuse the same source-audio panel. Milestone 5 stores this evidence natively when an output is generated (`dialext_block_evidence`), and re-pins it only inside an accepted, version-checked proposal. Questions go through the existing, provider-agnostic chat model setting (Joshua, 21 September: on-device for testing, never locked to one provider); retrieval, refusal and citation validation stay deterministic and model-independent.
 
 ## Processing boundary
 

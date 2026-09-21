@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 21 September 2026. Native baseline and milestones 1–**4** are complete and verified in the isolated native app. **Milestone 4 — provider bridge — now has a native-owned durable queue, a bounded stateless fixture helper, independently durable stages, immediate cancellation of an in-flight helper, preferred-language generation and on-demand alternate generation.** Its real-window acceptance and exact limitations are at the end of this file. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 22 September 2026. **Milestone 5 — coherent personal workflow — is implemented and passes its automated checks, but its real-window acceptance is still outstanding** (window control was declined this session; see “Milestone 5” at the end). Native baseline and milestones 1–**4** are complete and verified in the isolated native app. **Milestone 4 — provider bridge — now has a native-owned durable queue, a bounded stateless fixture helper, independently durable stages, immediate cancellation of an in-flight helper, preferred-language generation and on-demand alternate generation.** Its real-window acceptance and exact limitations are at the end of this file. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -33,13 +33,14 @@ The user wants a working personal tool based on Anarlog's layout, not another en
 11. Atomic, block-targeted summary proposals. A Dialext proposal is applied by native `apply_dialext_proposal`, which compares the summary's and the account's `content_version`, replaces only the named `dialextBlock`s and settles the proposal in one transaction. A correction creates the proposal inside its own edit transaction.
 12. Deterministic Dialext outputs through the existing template picker, one `dialextBlock` per passage of the selected reading, with no model call. A template is another output, never a replacement of the one on screen.
 13. A milestone-4 provider bridge. Rust owns the durable `dialext_provider_tasks` lifecycle, cancellation, protocol/result validation, immutable stage writes and final account transaction. The development-only Node helper is a stateless fixture subprocess with bounded JSON stdin/stdout and stderr diagnostics; it has no HTTP listener, database access or workspace-write authority. Settings → Imports generates the preferred reading from a WAV, and the existing language selector generates the missing alternate on demand.
+14. Milestone 5 (automated checks only; native acceptance outstanding): stored per-block evidence for generated outputs, a quiet source control on each summary block, grounded questions through the existing chat, and a Dialext export regression. See the end of this file.
 
 The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. It has **no source audio**, no actual ASR output, and no evaluated translation quality. Do not describe opening it as a successful live transcription test.
 
 ## What is not implemented
 
 - A live Azure/other speech provider, provider credentials, quality claims or packaged helper runtime. Only the deterministic development fixture provider is offered. One approved short live sample remains a separate assessment.
-- Stored summary evidence per block (pinned source intervals, verified-while-unchanged), the quiet source control on summary blocks, and the requested footer question surface. Milestone 3 gives blocks stable identity only; provenance is milestone 5.
+- Real-window acceptance of milestone 5. Its code and automated checks are in place; the checklist is at the end of this file.
 - A real summary. The Dialext outputs are deterministic, fixture-grade copies of the selected reading's passages, for checking corrections and proposals end to end.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 - Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
@@ -54,10 +55,10 @@ Do not fill these gaps with inert controls. Complete one visible journey at a ti
 | --- | --- |
 | Pinned dependency install and shared UI build | Passed |
 | Desktop TypeScript check | Passed |
-| Full desktop test suite | Milestone 4 boundary (21 September): 473 files, 4,452 tests passed. Milestone 3: 472 / 4,449 |
+| Full desktop test suite | Milestone 5 (22 September): 476 files, 4,483 tests passed. Milestone 4 boundary (21 September): 473 files, 4,452 tests passed. Milestone 3: 472 / 4,449 |
 | Focused import/UI tests | 13 tests passed on 17 September, including the final timing metadata refinement |
 | Provider protocol/helper and source-anchor validator | 19 tests passed |
-| Native tests | Milestone 4: session-ingest 52; db-app 248 unit + 2 integration (3 existing ignored); db plugin 162. Milestone 3 desktop native suite: 57 |
+| Native tests | Milestone 5: session-ingest 58; db-app 249 unit + 2 integration; db plugin 162. Milestone 4: session-ingest 52; db-app 248 unit + 2 integration (3 existing ignored); db plugin 162. Milestone 3 desktop native suite: 57 |
 | Editor package | 27 files, 204 tests passed (block-identity round-trip, markdown export and "never invented for markdown" added) |
 | Common repository Node tests | 82 tests passed (rerun 21 September); original validator 13 passed |
 | Licence-boundary tests/check | 9 tests and boundary check passed (rerun 21 September) |
@@ -102,7 +103,7 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–4 have passed; next undertake **milestone 5 only**: coherent personal workflow — quiet source controls on stable summary blocks, the footer question input, corrected-text retrieval and simple TXT/Markdown sharing. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–4 have passed; milestone 5 is implemented; **first complete its real-window acceptance** (checklist at the end of this file), then choose the next bounded step with Joshua. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -748,3 +749,146 @@ live prototype. They were left in place as acceptance evidence.
 One parallel plugin-test run transiently timed out in an existing CloudSync activity timing test
 while db-app's full suite was consuming the same machine. The required isolated rerun passed all
 162 tests; this was load-induced test scheduling, not a retained failure.
+
+## Milestone 5 — coherent personal workflow (implemented; real-window acceptance outstanding)
+
+Built on 22 September 2026. **This milestone is not accepted yet.** Every automated check
+below passed, the additive migration ran against the live prototype database without
+changing saved work, but the real-window journey was not driven: window control of
+`Dialext Prototype` was declined for this session and was not retried. Do the checklist at the
+end of this section before calling milestone 5 complete.
+
+### Decision recorded with Joshua
+
+Questions are answered through the app's **existing, provider-agnostic model setting**. Apple's
+on-device model (the prototype's configured `current_llm_provider = apple_foundation`) is
+approved for testing only. Nothing is tied to it. A hosted model (Mistral Small, OpenAI, Claude,
+…) must keep working through the same path, because Joshua may share the app later. A hosted or
+paid call still needs his explicit approval.
+
+### What was built
+
+- **Stored per-block evidence.** The additive migration `20260923120000_dialext_block_evidence`
+  adds a personal-only, CloudSync-disabled table with a TEXT `id` and a unique
+  `(document_id, block_id)`. Each row stores the account, the account `content_version`, the
+  passage word id, the block's pinned text, the passage's exact anchors, and the spoken and
+  target languages.
+- **Native output generation.** Output generation moved from TypeScript to native
+  `dialext_outputs::generate_output` (plugin command `generate_dialext_output`). One
+  `BEGIN IMMEDIATE` transaction reads the **active** account, writes the deterministic output
+  only if it is still empty, and pins every block's evidence. The TypeScript document builder
+  and passage loader, with their test, were removed rather than left as a second owner.
+- **Accepted proposals re-pin evidence.** `apply_dialext_proposal` re-pins the evidence of
+  exactly the blocks it replaces, in its existing atomic transaction, using the proposal's
+  pinned account version. A stale proposal leaves evidence untouched.
+- **Block source control.** It is a `dialextBlock` node view supplied through the note
+  editor's existing `extraNodeViews`, so the editor package knows nothing about Dialext. It is
+  quiet: it appears on hover or focus within the block. It is **absent** when a block has no
+  stored evidence, and it never borrows a neighbour's evidence.
+  - If the block's current text differs from the pinned text, the control reads
+    `edited · source`. The panel then says the passage supports the generated wording, not
+    the reader's edit.
+  - **Outputs generated before milestone 5 have no evidence and show no control.** Evidence is
+    never backfilled by guessing, and the migration test asserts zero backfilled rows.
+- **One source panel for the whole app.** The reveal is now one small store, and the
+  provider and slot sit once per recording workspace, below whichever tab is showing. Transcript
+  marks, summary blocks and chat citations all open that same panel. It states where the reveal
+  came from: a summary block, an edited block, or an answer's quotation.
+- **Grounded questions in the existing chat.** No second chat product was added.
+  - When the last question references **exactly one** recording (normally the `auto-current`
+    ref) and that recording is Dialext, the transport hands it to `answerRecordingQuestion`.
+    Every other conversation keeps the existing tool agent unchanged.
+  - Retrieval reads the effective transcript and the speaker rendering that chat context,
+    export and the panel already use (`renderSessionSegments`, extracted from the hydrator).
+    It therefore uses the **selected, corrected reading** and the names the reader sees.
+  - Evidence is refused, and **no model is called**, when there is no usable selected reading,
+    when the effective projection is not the selected account, or when the question names
+    something specific that no passage mentions.
+  - Otherwise, passages sharing a term come first, within a 2,400-character budget sized for an
+    on-device context window.
+  - The model returns `{answer, citations[{passage, quote}], insufficient_evidence}` through
+    `generateText` + `Output.object`. Validation uses the original Dialext answer rules: an
+    answer must cite, a refusal must not, each cited passage must have been supplied, and each
+    quotation must be contiguous passage text (case- and whitespace-insensitive).
+  - An answer that fails validation shows **no model prose**. A model that cannot run at all
+    surfaces as an error, not a quiet refusal.
+  - Refusal text follows the reading's language: English or Irish. The Irish strings are
+    hand-written and unreviewed; Joshua should check them.
+  - Citations are stored as a `data-dialext-answer` part of the chat message. It carries the
+    passage anchors, so a citation reopens the same panel after a restart, and the native
+    interval read re-checks the anchors every time. The chat shows the answer as model-written
+    and each quotation apart from it.
+- **Sharing.** The existing More → Export TXT/Markdown already takes the effective transcript
+  segments and serialises `dialextBlock` content without identity. A regression now proves that
+  a Dialext output plus transcript exports the visible block text, including a hand edit, and
+  `Speaker: text` lines, with no block ids.
+
+### Verification (22 September)
+
+| Check | Result |
+| --- | --- |
+| session-ingest (`--features apply`) | 58 passed (52 before). Clippy `-D warnings` passed |
+| db-app | 249 unit + 2 integration passed (3 existing ignored). Clippy `-D warnings` passed. Includes an upgrade test (existing summary's `content_version` unchanged, no backfill) and the CloudSync registry at 32 |
+| db plugin | 162 passed; bindings/permissions regenerated through `export_types` and the build |
+| Desktop | typecheck passed; full suite **476 files / 4,483 tests** passed; changed-file ESLint and dprint clean; Oxlint 207 inherited warnings, 0 errors |
+| Node | CI node tests 82; Dialext engine 19; licence 9 + boundary check |
+| Lingui | extract + strict compile passed; ten new strings |
+| Live DB | migration applied on launch; `dialext_block_evidence` empty; the fingerprint of every Dialext transcript, account, selection, document, evidence row and contact is byte-identical before and after (`39a0f71d…`) |
+
+Negative controls, each seen red and then restored:
+
+- no evidence re-pin on accept
+- pinning from any account instead of the active one
+- never detecting an edited block
+- lending evidence by position
+- removing the deterministic no-match refusal
+- not checking quotations
+- taking the grounded path for multi-ref questions
+- answering from an effective transcript that is not the selected account
+
+The pre-milestone backup is at
+`/private/tmp/claude-501/-Users-joshuacorbett-Coding-Dialext-Anarlog/4ade5935-a86a-4c05-a140-7a25f26f2d03/scratchpad/db-before-m5/app.backup.db`
+(integrity `ok`; session scratch, not a durable backup). The fingerprint query sits beside it as
+`fingerprint.sql`.
+
+### Limitations, stated exactly
+
+- **Real-window acceptance outstanding**, including whether Apple's on-device model returns
+  parseable answer JSON. If it often does not, the reader sees the "did not check out" refusal,
+  never unsupported prose.
+- Retrieval is lexical: shared terms, a four-letter shared stem, and English/Irish stopwords.
+  A paraphrased question about a long recording can be refused as no-match. Short recordings
+  get the whole reading within the budget.
+- Grounded questions are single-turn; earlier messages are not used. While a Dialext recording
+  is the only context, the chat's edit tools (edit_summary, apply_session_correction, …) are not
+  offered for it. Add another reference to use the ordinary agent.
+- A citation opens its recording tab if another tab is in front. It is not otherwise
+  scrolled into view.
+- The block control appears on hover or focus-within. Reaching it by keyboard inside the
+  editor was not verified.
+- Exports stay plain, with no source annotations. Share means a TXT/Markdown file, not a
+  hosted link.
+
+### Real-window acceptance checklist (do this next)
+
+Launch with `node dialext/dev.mjs`, never a release build. Use `Sample · Source review with audio`.
+
+1. Summary ▾ → choose a template not yet applied to this recording (for example Interview). A
+   new output appears. Hover a block and check for `source · translated · Irish`, then click it.
+   The panel should say "generated from this passage of the English reading", show the Irish
+   words, and offer a 0:04 clip. Confirm that the older Lecture output shows **no** block
+   controls.
+2. Edit that block's text. The control should read `edited · source`, and the panel should say
+   it supports the generated wording, not your edit.
+3. Correct the same passage in the transcript, then apply the proposal. The control should go
+   back to `source · …`.
+4. Ask anything: "How many tickets did Gary want?" Expect an answer with a quoted citation whose
+   source control opens the same panel. Then ask "What is the capital of France?" Expect "The
+   recording does not answer that." and "no model was asked".
+5. Switch to Gaeilge and ask an Irish question. Check that the citations are Irish passages.
+6. Quit fully and relaunch. Reopen the chat and confirm the earlier citation still opens the
+   panel.
+7. More → Export the new output with the transcript as TXT and as Markdown. Check the bytes:
+   visible block text, `Gary:` lines, no `dialextBlock` or passage ids.
+8. Re-run the fingerprint query and compare it to the backup, expecting differences only from
+   steps 1–5. Inspect `dialext_block_evidence` for the new output.
