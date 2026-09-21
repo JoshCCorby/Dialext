@@ -623,6 +623,14 @@ msgstr ""
 msgid "Animals & Nature"
 msgstr ""
 
+#: src/dialext/answer-citations.tsx
+msgid "Answer written by the model from these passages of the {reading} reading:"
+msgstr ""
+
+#: src/dialext/answer-citations.tsx
+msgid "Answer written by the model from these passages:"
+msgstr ""
+
 #: src/session-sharing/general-access.tsx
 msgid "Anyone with the link"
 msgstr ""
@@ -3649,6 +3657,10 @@ msgstr ""
 msgid "Notes stay in All notes. Materials in this folder will be deleted."
 msgstr ""
 
+#: src/dialext/answer-citations.tsx
+msgid "Nothing in the selected reading mentions this, so no model was asked."
+msgstr ""
+
 #. placeholder {0}: latestResult.conflicts
 #. placeholder {1}: latestResult.errors
 #: src/imports/screen.tsx
@@ -4652,6 +4664,10 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
+#: src/dialext/answer-citations.tsx
+msgid "Select an available reading to ask about this recording."
+msgstr ""
+
 #: src/contacts/organization-details.tsx
 msgid "Select an organization to view details"
 msgstr ""
@@ -5488,12 +5504,24 @@ msgstr ""
 msgid "Test runs are not available yet."
 msgstr ""
 
+#: src/dialext/source-panel.tsx
+msgid "The answer quoted this passage:"
+msgstr ""
+
 #: src/onboarding/folder-location.tsx
 msgid "The app will restart after onboarding to apply your storage changes"
 msgstr ""
 
 #: src/shared-notes/index.tsx
 msgid "The link may have expired or its access may have changed."
+msgstr ""
+
+#: src/dialext/answer-citations.tsx
+msgid "The model found no passage that answers this."
+msgstr ""
+
+#: src/dialext/answer-citations.tsx
+msgid "The model's answer did not check out against the reading, so it is not shown."
 msgstr ""
 
 #: src/shared-notes/index.tsx
@@ -5612,6 +5640,14 @@ msgstr ""
 
 #: src/settings/plan-gate.tsx
 msgid "This requires Anarlog Team"
+msgstr ""
+
+#: src/dialext/source-panel.tsx
+msgid "This summary block was generated from this passage of the {reading} reading."
+msgstr ""
+
+#: src/dialext/source-panel.tsx
+msgid "This summary block was generated from this passage."
 msgstr ""
 
 #. placeholder {0}: status.fileCount
@@ -6152,6 +6188,10 @@ msgstr ""
 
 #: src/onboarding/account/after-login.tsx
 msgid "You have an active plan"
+msgstr ""
+
+#: src/dialext/source-panel.tsx
+msgid "You have edited this summary block since it was generated. The passage below supports the generated wording, not your edit."
 msgstr ""
 
 #: src/settings/team/index.tsx

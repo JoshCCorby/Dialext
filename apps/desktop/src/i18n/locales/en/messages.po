@@ -623,6 +623,14 @@ msgstr "Anarlog will sync your calendar to get meeting reminders"
 msgid "Animals & Nature"
 msgstr "Animals & Nature"
 
+#: src/dialext/answer-citations.tsx
+msgid "Answer written by the model from these passages of the {reading} reading:"
+msgstr "Answer written by the model from these passages of the {reading} reading:"
+
+#: src/dialext/answer-citations.tsx
+msgid "Answer written by the model from these passages:"
+msgstr "Answer written by the model from these passages:"
+
 #: src/session-sharing/general-access.tsx
 msgid "Anyone with the link"
 msgstr "Anyone with the link"
@@ -3649,6 +3657,10 @@ msgstr "Notes list"
 msgid "Notes stay in All notes. Materials in this folder will be deleted."
 msgstr "Notes stay in All notes. This folder, its nested folders, and all their materials will be deleted."
 
+#: src/dialext/answer-citations.tsx
+msgid "Nothing in the selected reading mentions this, so no model was asked."
+msgstr "Nothing in the selected reading mentions this, so no model was asked."
+
 #. placeholder {0}: latestResult.conflicts
 #. placeholder {1}: latestResult.errors
 #: src/imports/screen.tsx
@@ -4652,6 +4664,10 @@ msgstr "Select a provider"
 msgid "Select All"
 msgstr "Select All"
 
+#: src/dialext/answer-citations.tsx
+msgid "Select an available reading to ask about this recording."
+msgstr "Select an available reading to ask about this recording."
+
 #: src/contacts/organization-details.tsx
 msgid "Select an organization to view details"
 msgstr "Select an organization to view details"
@@ -5488,6 +5504,10 @@ msgstr "Test failed ({0})"
 msgid "Test runs are not available yet."
 msgstr "Test runs are not available yet."
 
+#: src/dialext/source-panel.tsx
+msgid "The answer quoted this passage:"
+msgstr "The answer quoted this passage:"
+
 #: src/onboarding/folder-location.tsx
 msgid "The app will restart after onboarding to apply your storage changes"
 msgstr "The app will restart after onboarding to apply your storage changes"
@@ -5495,6 +5515,14 @@ msgstr "The app will restart after onboarding to apply your storage changes"
 #: src/shared-notes/index.tsx
 msgid "The link may have expired or its access may have changed."
 msgstr "The link may have expired or its access may have changed."
+
+#: src/dialext/answer-citations.tsx
+msgid "The model found no passage that answers this."
+msgstr "The model found no passage that answers this."
+
+#: src/dialext/answer-citations.tsx
+msgid "The model's answer did not check out against the reading, so it is not shown."
+msgstr "The model's answer did not check out against the reading, so it is not shown."
 
 #: src/shared-notes/index.tsx
 msgid "The note may have been unshared or moved out of a workspace you can access."
@@ -5613,6 +5641,14 @@ msgstr "This requires Anarlog Pro"
 #: src/settings/plan-gate.tsx
 msgid "This requires Anarlog Team"
 msgstr "This requires Anarlog Team"
+
+#: src/dialext/source-panel.tsx
+msgid "This summary block was generated from this passage of the {reading} reading."
+msgstr "This summary block was generated from this passage of the {reading} reading."
+
+#: src/dialext/source-panel.tsx
+msgid "This summary block was generated from this passage."
+msgstr "This summary block was generated from this passage."
 
 #. placeholder {0}: status.fileCount
 #. placeholder {1}: formatBytes(status.totalBytes)
@@ -6153,6 +6189,10 @@ msgstr "You can use up to three example summaries."
 #: src/onboarding/account/after-login.tsx
 msgid "You have an active plan"
 msgstr "You have an active plan"
+
+#: src/dialext/source-panel.tsx
+msgid "You have edited this summary block since it was generated. The passage below supports the generated wording, not your edit."
+msgstr "You have edited this summary block since it was generated. The passage below supports the generated wording, not your edit."
 
 #: src/settings/team/index.tsx
 msgid "You will become the owner of {workspaceName}, with control over its members, billing, and deletion. The current owner will become an admin."
