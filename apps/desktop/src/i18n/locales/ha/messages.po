@@ -1588,6 +1588,10 @@ msgstr ""
 msgid "Copy this signing secret now — it is only shown once."
 msgstr ""
 
+#: src/dialext/undo-correction.tsx
+msgid "Correction undone."
+msgstr ""
+
 #. placeholder {0}: error.message
 #: src/settings/developers/cli.tsx
 msgid "Could not check the CLI: {0}"
@@ -3418,6 +3422,10 @@ msgstr ""
 
 #: src/task/resource-view.tsx
 msgid "No content."
+msgstr ""
+
+#: src/dialext/undo-correction.tsx
+msgid "No correction to undo in this reading."
 msgstr ""
 
 #: src/task/resource-view.tsx
@@ -5533,6 +5541,10 @@ msgstr ""
 msgid "This passage names no source interval."
 msgstr ""
 
+#: src/dialext/undo-correction.tsx
+msgid "This reading changed in another window. Nothing was undone."
+msgstr ""
+
 #: src/session/components/note-input/transcript/renderer/segment.tsx
 msgid "This reading changed in another window. Your text is still here. Refresh and review it before saving."
 msgstr ""
@@ -5705,6 +5717,14 @@ msgstr ""
 #: src/main/windows-title-bar.tsx
 #: src/sidebar/toast/undo-delete-toast.tsx
 msgid "Undo"
+msgstr ""
+
+#: src/dialext/undo-correction.tsx
+msgid "Undo last correction"
+msgstr ""
+
+#: src/dialext/undo-correction.tsx
+msgid "Undoing…"
 msgstr ""
 
 #: src/session/components/note-input/transcript/renderer/speaker-assign.tsx

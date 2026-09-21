@@ -24,6 +24,7 @@ vi.mock("./account-query", () => ({
   useDialextAccounts: () => ({ data: mocks.rows }),
 }));
 vi.mock("~/db/write-queue", () => ({ flushDatabaseWrites: mocks.flush }));
+vi.mock("./checked-edit", () => ({ undoDialextPassageEdit: vi.fn() }));
 import { ReadingSelector } from "./reading-selector";
 
 function mount(editing = false) {

@@ -6,6 +6,7 @@ import { Button } from "@anlg/ui/components/ui/button";
 import { ButtonGroup } from "@anlg/ui/components/ui/button-group";
 
 import { useDialextAccounts } from "./account-query";
+import { UndoCorrection } from "./undo-correction";
 
 import { flushDatabaseWrites } from "~/db/write-queue";
 
@@ -72,6 +73,13 @@ export function ReadingSelector({
             <Trans>Saving…</Trans>
           </span>
         )}
+        {selected?.usable && selected.transcript_id ? (
+          <UndoCorrection
+            key={selected.transcript_id}
+            transcriptId={selected.transcript_id}
+            disabled={editing || mutation.isPending}
+          />
+        ) : null}
       </div>
       {editing && (
         <p className="text-muted-foreground">
