@@ -8,6 +8,7 @@ permissions = [
   "allow-assign-dialext-speaker",
   "allow-edit-dialext-passage",
   "allow-undo-dialext-edit",
+  "allow-apply-dialext-proposal",
   "allow-execute",
   "allow-execute-proxy",
   "allow-execute-transaction",

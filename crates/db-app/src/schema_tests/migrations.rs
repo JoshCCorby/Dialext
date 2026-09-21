@@ -763,3 +763,38 @@ async fn dialext_edit_history_upgrades_and_stays_append_only() {
         "an account's edit sequence is dense and unique"
     );
 }
+
+#[tokio::test]
+async fn dialext_proposal_pins_upgrade_without_disturbing_existing_proposals() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260921120100_dialext_proposal_versions"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query(
+        "INSERT INTO session_proposals(id,session_id,kind,target_id,base_updated_at,
+            current_markdown,proposed_markdown,status,source)
+         VALUES('old-1','s1','summary_replace','doc-1','2026-09-17T10:00:00.000Z',
+            'before','after','pending','chat')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+
+    // An inbox proposal made before the pins existed keeps its own behaviour: empty
+    // pins mean there is nothing to compare, so it still takes the existing path.
+    let (status, base, pins, blocks): (String, String, String, String) = sqlx::query_as(
+        "SELECT status, base_updated_at, base_document_version, target_blocks_json
+         FROM session_proposals WHERE id = 'old-1'",
+    )
+    .fetch_one(db.pool())
+    .await
+    .unwrap();
+    assert_eq!(status, "pending");
+    assert_eq!(base, "2026-09-17T10:00:00.000Z");
+    assert_eq!(pins, "");
+    assert_eq!(blocks, "[]");
+}

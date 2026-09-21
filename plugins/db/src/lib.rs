@@ -186,6 +186,19 @@ pub struct DialextEditResult {
     pub sequence: Option<i64>,
 }
 
+/// The result of applying a Dialext summary proposal. `outcome` is `applied`,
+/// `stale` or `settled`. A stale answer leaves both the summary and the proposal
+/// untouched, so the reader can refresh and review rather than losing the proposal.
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextProposalResult {
+    pub outcome: String,
+    pub document_version: Option<String>,
+    pub transcript_version: Option<String>,
+    pub blocks_changed: Option<u32>,
+    pub status: Option<String>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct E2eeIdentityStatus {
@@ -386,6 +399,7 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::assign_dialext_speaker,
             commands::edit_dialext_passage,
             commands::undo_dialext_edit,
+            commands::apply_dialext_proposal,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,

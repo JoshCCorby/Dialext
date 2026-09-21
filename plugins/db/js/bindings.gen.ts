@@ -150,6 +150,14 @@ async undoDialextEdit(sessionId: string, accountId: string, expectedContentVersi
     else return { status: "error", error: e  as any };
 }
 },
+async applyDialextProposal(proposalId: string) : Promise<Result<DialextProposalResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|apply_dialext_proposal", { proposalId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getE2eeIdentityStatus(accountUserId: string) : Promise<Result<E2eeIdentityStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|get_e2ee_identity_status", { accountUserId }) };
@@ -371,6 +379,12 @@ export type DependencyTarget = { kind: "table"; data: string } | { kind: "virtua
  * the interface keeps what the reader typed and offers `contentVersion` to refresh.
  */
 export type DialextEditResult = { outcome: string; contentVersion: string; editId: string | null; sequence: number | null }
+/**
+ * The result of applying a Dialext summary proposal. `outcome` is `applied`,
+ * `stale` or `settled`. A stale answer leaves both the summary and the proposal
+ * untouched, so the reader can refresh and review rather than losing the proposal.
+ */
+export type DialextProposalResult = { outcome: string; documentVersion: string | null; transcriptVersion: string | null; blocksChanged: number | null; status: string | null }
 export type DialextSourceAudio = { sha256: string; durationMs: number }
 export type DialextSourceInterval = { sourceId: string; revision: number; evidenceSha256: string; startMs: number; endMs: number; evidenceText: string; providerLabel: string | null; speakerKey: string | null; speakerDisplayIndex: number | null; humanId: string | null; audio: DialextSourceIntervalAudio | null; audioUnavailable: string | null }
 export type DialextSourceIntervalAudio = { measuredDurationMs: number; clipWav: number[] }

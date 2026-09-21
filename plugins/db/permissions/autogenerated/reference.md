@@ -11,6 +11,7 @@ Default permissions for the plugin
 - `allow-assign-dialext-speaker`
 - `allow-edit-dialext-passage`
 - `allow-undo-dialext-edit`
+- `allow-apply-dialext-proposal`
 - `allow-execute`
 - `allow-execute-proxy`
 - `allow-execute-transaction`
@@ -51,6 +52,32 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`db:allow-apply-dialext-proposal`
+
+</td>
+<td>
+
+Enables the apply_dialext_proposal command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-apply-dialext-proposal`
+
+</td>
+<td>
+
+Denies the apply_dialext_proposal command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>

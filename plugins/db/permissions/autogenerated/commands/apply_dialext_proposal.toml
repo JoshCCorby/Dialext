@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-apply-dialext-proposal"
+description = "Enables the apply_dialext_proposal command without any pre-configured scope."
+commands.allow = ["apply_dialext_proposal"]
+
+[[permission]]
+identifier = "deny-apply-dialext-proposal"
+description = "Denies the apply_dialext_proposal command without any pre-configured scope."
+commands.deny = ["apply_dialext_proposal"]

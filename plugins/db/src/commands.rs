@@ -372,6 +372,47 @@ pub(crate) async fn undo_dialext_edit(
 
 #[tauri::command]
 #[specta::specta]
+pub(crate) async fn apply_dialext_proposal(
+    state: tauri::State<'_, ManagedState>,
+    proposal_id: String,
+) -> Result<crate::DialextProposalResult, String> {
+    use anlg_session_ingest::dialext_proposals::ProposalOutcome;
+    anlg_session_ingest::dialext_proposals::apply_proposal(state.pool(), &proposal_id)
+        .await
+        .map(|outcome| match outcome {
+            ProposalOutcome::Applied {
+                document_version,
+                blocks_changed,
+            } => crate::DialextProposalResult {
+                outcome: "applied".to_string(),
+                document_version: Some(document_version),
+                transcript_version: None,
+                blocks_changed: Some(blocks_changed as u32),
+                status: None,
+            },
+            ProposalOutcome::Stale {
+                document_version,
+                transcript_version,
+            } => crate::DialextProposalResult {
+                outcome: "stale".to_string(),
+                document_version: Some(document_version),
+                transcript_version: Some(transcript_version),
+                blocks_changed: None,
+                status: None,
+            },
+            ProposalOutcome::Settled { status } => crate::DialextProposalResult {
+                outcome: "settled".to_string(),
+                document_version: None,
+                transcript_version: None,
+                blocks_changed: None,
+                status: Some(status),
+            },
+        })
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     state: tauri::State<'_, ManagedState>,

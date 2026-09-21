@@ -17,6 +17,7 @@ const COMMANDS: &[&str] = &[
     "assign_dialext_speaker",
     "edit_dialext_passage",
     "undo_dialext_edit",
+    "apply_dialext_proposal",
     "get_e2ee_identity_status",
     "inspect_e2ee_recovery_key",
     "create_e2ee_identity",

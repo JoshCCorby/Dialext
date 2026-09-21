@@ -177,11 +177,180 @@ async fn write_edit(
     .execute(&mut *tx)
     .await?;
 
+    propose_summary_corrections(
+        tx,
+        session_id,
+        account_id,
+        &result_version,
+        &edit_id,
+        changes,
+    )
+    .await?;
+
     Ok(EditOutcome::Applied {
         edit_id,
         sequence,
         content_version: result_version,
     })
+}
+
+/// The text of a generated summary block, as the reader currently sees it.
+fn block_text(node: &Value) -> String {
+    node["content"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|paragraph| {
+            paragraph["content"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|inline| inline["text"].as_str())
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+/// Offer each generated summary of this recording a proposal for the blocks this
+/// correction affects, in the same transaction as the correction, so the proposal is
+/// pinned to exactly the account version the correction produced.
+///
+/// A block is only targeted while it still reads as generated: its text equals the
+/// passage before this edit, or an earlier correction's proposal for it is still
+/// pending against an untouched summary. A block the reader rewrote by hand is theirs
+/// and is never proposed over. Nothing in the summary changes until a proposal is
+/// accepted.
+async fn propose_summary_corrections(
+    tx: &mut sqlx::SqliteConnection,
+    session_id: &str,
+    account_id: &str,
+    result_version: &str,
+    edit_id: &str,
+    changes: &[WordChange],
+) -> Result<(), Error> {
+    let documents = sqlx::query_as::<_, (String, String, String)>(
+        "SELECT id, body, content_version FROM session_documents
+         WHERE session_id = ? AND deleted_at IS NULL
+           AND kind IN ('summary', 'template_output') AND body_format = 'prosemirror_json'
+         ORDER BY id",
+    )
+    .bind(session_id)
+    .fetch_all(&mut *tx)
+    .await?;
+
+    for (document_id, body, document_version) in documents {
+        let Ok(body) = serde_json::from_str::<Value>(&body) else {
+            continue;
+        };
+        let blocks: Vec<(String, String)> = body["content"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|node| node["type"].as_str() == Some("dialextBlock"))
+            .filter_map(|node| Some((node["attrs"]["id"].as_str()?.to_string(), block_text(node))))
+            .collect();
+        if blocks.is_empty() {
+            continue;
+        }
+
+        // A pending correction proposal for this summary still describes it only while
+        // the summary is unchanged since; otherwise it is left to be refused as stale.
+        let pending = sqlx::query_as::<_, (String, String)>(
+            "SELECT id, target_blocks_json FROM session_proposals
+             WHERE session_id = ? AND target_id = ? AND account_id = ? AND source = 'dialext'
+               AND status = 'pending' AND base_document_version = ?",
+        )
+        .bind(session_id)
+        .bind(&document_id)
+        .bind(account_id)
+        .bind(&document_version)
+        .fetch_all(&mut *tx)
+        .await?;
+        let mut targets: Vec<(String, String)> = Vec::new();
+        for (_, json) in &pending {
+            let earlier: Value = serde_json::from_str(json).unwrap_or(Value::Array(Vec::new()));
+            for block in earlier.as_array().into_iter().flatten() {
+                if let (Some(id), Some(text)) = (block["block_id"].as_str(), block["text"].as_str())
+                {
+                    targets.retain(|(existing, _)| existing != id);
+                    targets.push((id.to_string(), text.to_string()));
+                }
+            }
+        }
+
+        for change in changes {
+            let Some((_, current)) = blocks.iter().find(|(id, _)| *id == change.word_id) else {
+                continue;
+            };
+            let awaiting = targets.iter().any(|(id, _)| *id == change.word_id);
+            if *current != change.previous_text && !awaiting {
+                continue;
+            }
+            targets.retain(|(id, _)| *id != change.word_id);
+            targets.push((change.word_id.clone(), change.next_text.clone()));
+        }
+        // A target that would leave its block as it already reads proposes nothing.
+        targets.retain(|(id, text)| {
+            blocks
+                .iter()
+                .any(|(block, current)| block == id && current != text)
+        });
+
+        if pending.is_empty() && targets.is_empty() {
+            continue;
+        }
+        for (id, _) in &pending {
+            sqlx::query(
+                "UPDATE session_proposals SET status = 'superseded',
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+                 WHERE id = ? AND status = 'pending'",
+            )
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        }
+        if targets.is_empty() {
+            continue;
+        }
+
+        let current_markdown = targets
+            .iter()
+            .filter_map(|(id, _)| blocks.iter().find(|(block, _)| block == id))
+            .map(|(_, text)| text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        let proposed_markdown = targets
+            .iter()
+            .map(|(_, text)| text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        let target_blocks = Value::Array(
+            targets
+                .iter()
+                .map(|(id, text)| json!({ "block_id": id, "text": text }))
+                .collect(),
+        );
+        sqlx::query(
+            "INSERT INTO session_proposals (id, workspace_id, session_id, kind, target_id,
+               account_id, base_document_version, base_transcript_version, target_blocks_json,
+               current_markdown, proposed_markdown, status, source)
+             SELECT ?, workspace_id, id, 'summary_replace', ?, ?, ?, ?, ?, ?, ?, 'pending', 'dialext'
+             FROM sessions WHERE id = ?",
+        )
+        .bind(format!("{edit_id}:{document_id}"))
+        .bind(&document_id)
+        .bind(account_id)
+        .bind(&document_version)
+        .bind(result_version)
+        .bind(target_blocks.to_string())
+        .bind(current_markdown)
+        .bind(proposed_markdown)
+        .bind(session_id)
+        .execute(&mut *tx)
+        .await?;
+    }
+    Ok(())
 }
 
 /// Replace the text of one passage's words, pinned to `expected_content_version`.
@@ -678,5 +847,241 @@ mod tests {
             "undo must refuse rather than discard a change it did not record, got: {error}"
         );
         assert_eq!(words(&db, &account).await[0].1, "Typed somewhere else.");
+    }
+
+    async fn generated_summary(db: &anlg_db_core::Db, session: &str, account: &str) {
+        let content: Vec<Value> = words(db, account)
+            .await
+            .into_iter()
+            .map(|(id, text)| {
+                json!({
+                    "type": "dialextBlock",
+                    "attrs": { "id": id },
+                    "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": text }] }],
+                })
+            })
+            .collect();
+        sqlx::query(
+            "INSERT INTO session_documents(id,session_id,kind,template_id,body,body_format)
+             VALUES('lecture',?,'template_output','lecture-template',?,'prosemirror_json')",
+        )
+        .bind(session)
+        .bind(json!({ "type": "doc", "content": content }).to_string())
+        .execute(db.pool())
+        .await
+        .unwrap();
+    }
+
+    async fn pending(db: &anlg_db_core::Db) -> Vec<(String, Value)> {
+        sqlx::query_as::<_, (String, String)>(
+            "SELECT id, target_blocks_json FROM session_proposals
+             WHERE status = 'pending' ORDER BY created_at, id",
+        )
+        .fetch_all(db.pool())
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|(id, json)| (id, serde_json::from_str(&json).unwrap()))
+        .collect()
+    }
+
+    async fn summary_block(db: &anlg_db_core::Db, index: usize) -> String {
+        let body: Value = serde_json::from_str(
+            &sqlx::query_scalar::<_, String>(
+                "SELECT body FROM session_documents WHERE id = 'lecture'",
+            )
+            .fetch_one(db.pool())
+            .await
+            .unwrap(),
+        )
+        .unwrap();
+        block_text(&body["content"][index])
+    }
+
+    async fn set_summary_block(db: &anlg_db_core::Db, index: usize, text: &str) {
+        let mut body: Value = serde_json::from_str(
+            &sqlx::query_scalar::<_, String>(
+                "SELECT body FROM session_documents WHERE id = 'lecture'",
+            )
+            .fetch_one(db.pool())
+            .await
+            .unwrap(),
+        )
+        .unwrap();
+        body["content"][index]["content"][0]["content"][0]["text"] = json!(text);
+        sqlx::query("UPDATE session_documents SET body = ? WHERE id = 'lecture'")
+            .bind(body.to_string())
+            .execute(db.pool())
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_correction_proposes_only_its_block_and_acceptance_keeps_manual_edits() {
+        let vault = tempfile::tempdir().unwrap();
+        let (db, session, _) = adopted(vault.path()).await;
+        // The harness's selected reading holds one saved word; the generated alternate
+        // carries the fixture's own passages.
+        let mut account = String::new();
+        let mut passages = Vec::new();
+        for (candidate,) in sqlx::query_as::<_, (String,)>(
+            "SELECT id FROM dialext_accounts WHERE session_id = ? ORDER BY id",
+        )
+        .bind(&session)
+        .fetch_all(db.pool())
+        .await
+        .unwrap()
+        {
+            let found = words(&db, &candidate).await;
+            if found.len() > passages.len() {
+                account = candidate;
+                passages = found;
+            }
+        }
+        assert!(passages.len() >= 2, "the fixture needs two passages");
+        generated_summary(&db, &session, &account).await;
+
+        // The reader rewrites the second block by hand before correcting the first passage.
+        set_summary_block(&db, 1, "My own wording.").await;
+
+        let pinned = version(&db, &account).await;
+        let EditOutcome::Applied {
+            content_version, ..
+        } = edit_passage(
+            db.pool(),
+            &session,
+            &account,
+            &pinned,
+            std::slice::from_ref(&passages[0].0),
+            "I would like to order tea.",
+        )
+        .await
+        .unwrap()
+        else {
+            panic!("expected the correction to apply");
+        };
+
+        let proposals = pending(&db).await;
+        assert_eq!(proposals.len(), 1);
+        assert_eq!(
+            proposals[0].1,
+            json!([{ "block_id": passages[0].0, "text": "I would like to order tea." }]),
+            "only the corrected passage's block is proposed"
+        );
+        let (pin, base): (String, String) = sqlx::query_as(
+            "SELECT base_transcript_version, base_document_version FROM session_proposals",
+        )
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+        assert_eq!(
+            pin, content_version,
+            "pinned to the version this correction produced"
+        );
+        assert_eq!(
+            summary_block(&db, 0).await,
+            passages[0].1,
+            "proposing changes nothing until the reader accepts"
+        );
+        assert!(!base.is_empty());
+
+        let outcome = crate::dialext_proposals::apply_proposal(db.pool(), &proposals[0].0)
+            .await
+            .unwrap();
+        assert!(matches!(
+            outcome,
+            crate::dialext_proposals::ProposalOutcome::Applied {
+                blocks_changed: 1,
+                ..
+            }
+        ));
+        assert_eq!(summary_block(&db, 0).await, "I would like to order tea.");
+        assert_eq!(
+            summary_block(&db, 1).await,
+            "My own wording.",
+            "accepting a targeted proposal keeps the unrelated manual edit"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_block_the_reader_rewrote_is_never_proposed_over() {
+        let vault = tempfile::tempdir().unwrap();
+        let (db, session, account) = adopted(vault.path()).await;
+        generated_summary(&db, &session, &account).await;
+        let target = words(&db, &account).await[0].0.clone();
+        set_summary_block(&db, 0, "Written by hand.").await;
+
+        let pinned = version(&db, &account).await;
+        edit_passage(
+            db.pool(),
+            &session,
+            &account,
+            &pinned,
+            std::slice::from_ref(&target),
+            "Corrected.",
+        )
+        .await
+        .unwrap();
+        assert!(pending(&db).await.is_empty());
+        assert_eq!(summary_block(&db, 0).await, "Written by hand.");
+    }
+
+    #[tokio::test]
+    async fn a_second_correction_supersedes_the_first_proposal_and_undo_withdraws_it() {
+        let vault = tempfile::tempdir().unwrap();
+        let (db, session, account) = adopted(vault.path()).await;
+        generated_summary(&db, &session, &account).await;
+        let (target, original) = words(&db, &account).await[0].clone();
+
+        let pinned = version(&db, &account).await;
+        edit_passage(
+            db.pool(),
+            &session,
+            &account,
+            &pinned,
+            std::slice::from_ref(&target),
+            "One.",
+        )
+        .await
+        .unwrap();
+        let pinned = version(&db, &account).await;
+        edit_passage(
+            db.pool(),
+            &session,
+            &account,
+            &pinned,
+            std::slice::from_ref(&target),
+            "Two.",
+        )
+        .await
+        .unwrap();
+
+        let proposals = pending(&db).await;
+        assert_eq!(
+            proposals.len(),
+            1,
+            "one live proposal per summary, not a stale pile"
+        );
+        assert_eq!(proposals[0].1[0]["text"], json!("Two."));
+        let superseded: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM session_proposals WHERE status = 'superseded'",
+        )
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+        assert_eq!(superseded, 1);
+
+        // Undoing both corrections brings the passage back to what the summary says,
+        // so nothing is left to propose.
+        let pinned = version(&db, &account).await;
+        undo_last_edit(db.pool(), &session, &account, &pinned)
+            .await
+            .unwrap();
+        let pinned = version(&db, &account).await;
+        undo_last_edit(db.pool(), &session, &account, &pinned)
+            .await
+            .unwrap();
+        assert!(pending(&db).await.is_empty());
+        assert_eq!(summary_block(&db, 0).await, original);
     }
 }
