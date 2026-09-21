@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   notes: [] as Array<Record<string, any>>,
   ensureSummaryDocument: vi.fn(),
   discardPendingAutoEnhanceJob: vi.fn().mockResolvedValue(undefined),
-  write: vi.fn().mockResolvedValue(true),
+  write: vi.fn().mockResolvedValue("written"),
   generate: vi.fn().mockResolvedValue(undefined),
   getTemplateById: vi.fn(),
 }));
@@ -34,11 +34,7 @@ vi.mock("~/store/zustand/listener/instance", () => ({
 vi.mock("~/dialext/summary", async (importOriginal) => ({
   ...(await importOriginal<typeof import("~/dialext/summary")>()),
   isDialextRecording: vi.fn().mockResolvedValue(true),
-  loadDialextSummaryPassages: vi.fn().mockResolvedValue([
-    { wordId: "passage-a", text: "I would like two tickets, please." },
-    { wordId: "passage-b", text: "Thank you very much." },
-  ]),
-  writeDialextSummaryIfEmpty: mocks.write,
+  generateDialextOutputIfEmpty: mocks.write,
 }));
 
 function service(getModel: () => unknown = () => undefined) {
@@ -106,16 +102,11 @@ describe("Dialext deterministic outputs", () => {
       "supplied-summary",
       "output-lecture-template",
     ]);
-    const [{ noteId, body }] = mocks.write.mock.calls[0];
-    expect(noteId).toBe("output-lecture-template");
-    const doc = JSON.parse(body);
-    expect(doc.content[0].content[0].text).toBe("Lecture");
-    expect(
-      doc.content.slice(1).map((block: any) => [block.type, block.attrs.id]),
-    ).toEqual([
-      ["dialextBlock", "passage-a"],
-      ["dialextBlock", "passage-b"],
-    ]);
+    expect(mocks.write).toHaveBeenCalledWith({
+      sessionId: "recording",
+      noteId: "output-lecture-template",
+      title: "Lecture",
+    });
     expect(mocks.generate).not.toHaveBeenCalled();
   });
 
@@ -127,6 +118,14 @@ describe("Dialext deterministic outputs", () => {
     });
     expect(mocks.write).not.toHaveBeenCalled();
     expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it("reports a reading with no anchored passage as too short", async () => {
+    mocks.write.mockResolvedValueOnce("no_passages");
+    const result = await service().enhance("recording", {
+      templateId: "lecture-template",
+    });
+    expect(result).toEqual({ type: "too_short" });
   });
 
   it("clears a pending auto-enhance record it will never resume", async () => {

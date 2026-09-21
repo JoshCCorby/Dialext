@@ -158,6 +158,14 @@ async applyDialextProposal(proposalId: string) : Promise<Result<DialextProposalR
     else return { status: "error", error: e  as any };
 }
 },
+async generateDialextOutput(sessionId: string, documentId: string, title: string) : Promise<Result<DialextOutputResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|generate_dialext_output", { sessionId, documentId, title }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async createDialextProviderTask(title: string, targetLanguage: string, audio: number[]) : Promise<Result<DialextProviderTaskStart, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|create_dialext_provider_task", { title, targetLanguage, audio }) };
@@ -403,6 +411,11 @@ export type DependencyTarget = { kind: "table"; data: string } | { kind: "virtua
  * the interface keeps what the reader typed and offers `contentVersion` to refresh.
  */
 export type DialextEditResult = { outcome: string; contentVersion: string; editId: string | null; sequence: number | null }
+/**
+ * The result of generating a deterministic Dialext output. `outcome` is `written`,
+ * `already_has_text` (nothing was replaced) or `no_passages`.
+ */
+export type DialextOutputResult = { outcome: string; documentVersion: string | null; blocks: number | null }
 /**
  * The result of applying a Dialext summary proposal. `outcome` is `applied`,
  * `stale` or `settled`. A stale answer leaves both the summary and the proposal

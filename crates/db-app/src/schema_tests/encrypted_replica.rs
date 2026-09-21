@@ -9,11 +9,12 @@ fn cloudsync_registry_enables_only_the_encrypted_replica() {
         .map(|table| table.table_name.as_str())
         .collect();
 
-    assert_eq!(registry.len(), 31);
+    assert_eq!(registry.len(), 32);
     for name in [
         "dialext_recordings",
         "dialext_accounts",
         "dialext_account_edits",
+        "dialext_block_evidence",
         "dialext_evidence",
         "dialext_provider_stages",
         "dialext_provider_tasks",

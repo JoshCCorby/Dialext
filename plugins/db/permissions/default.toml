@@ -9,6 +9,7 @@ permissions = [
   "allow-edit-dialext-passage",
   "allow-undo-dialext-edit",
   "allow-apply-dialext-proposal",
+  "allow-generate-dialext-output",
   "allow-create-dialext-provider-task",
   "allow-start-dialext-provider-task",
   "allow-cancel-dialext-provider-task",

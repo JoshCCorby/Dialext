@@ -195,6 +195,17 @@ pub async fn apply_proposal(
         return Err(invalid("That proposal was already answered."));
     }
 
+    // The replaced blocks now read exactly as the corrected passages at the pinned
+    // account version, so their stored evidence moves with them in this transaction.
+    crate::dialext_outputs::repin_accepted_blocks(
+        &mut tx,
+        &proposal.target_id,
+        &proposal.account_id,
+        &proposal.base_transcript_version,
+        &proposal.target_blocks,
+    )
+    .await?;
+
     let document_version = sqlx::query_scalar::<_, String>(
         "SELECT content_version FROM session_documents WHERE id = ?",
     )
@@ -392,6 +403,85 @@ mod tests {
             after["content"][1]["attrs"]["id"],
             json!("b2"),
             "the replaced block keeps its identity"
+        );
+    }
+
+    async fn pin_evidence(db: &anlg_db_core::Db, version: &str) {
+        for (block, text) in [("b1", "Gary asked for two tickets."), ("b2", "He ordered coffee.")] {
+            sqlx::query(
+                "INSERT INTO dialext_block_evidence(id,document_id,block_id,session_id,account_id,
+                    account_content_version,passage_word_id,block_text,anchors_json)
+                 VALUES(?,'summary-1',?,'recording','account-en',?,?,?,'[]')",
+            )
+            .bind(format!("evidence-{block}"))
+            .bind(block)
+            .bind(version)
+            .bind(block)
+            .bind(text)
+            .execute(db.pool())
+            .await
+            .unwrap();
+        }
+    }
+
+    async fn pinned(db: &anlg_db_core::Db, block: &str) -> (String, String) {
+        sqlx::query_as(
+            "SELECT block_text, account_content_version FROM dialext_block_evidence
+             WHERE document_id = 'summary-1' AND block_id = ?",
+        )
+        .bind(block)
+        .fetch_one(db.pool())
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn accepting_moves_only_the_replaced_blocks_evidence_with_them() {
+        let (db, _) = seeded().await;
+        pin_evidence(&db, "generated-version").await;
+        let corrected = transcript_version(&db).await;
+        insert_proposal(
+            &db,
+            &document_version(&db).await,
+            &corrected,
+            json!([{ "block_id": "b2", "text": "He ordered tea." }]),
+        )
+        .await;
+
+        apply_proposal(db.pool(), "proposal-1").await.unwrap();
+
+        assert_eq!(
+            pinned(&db, "b2").await,
+            ("He ordered tea.".to_string(), corrected),
+            "the replaced block is verified against the corrected reading"
+        );
+        assert_eq!(
+            pinned(&db, "b1").await,
+            (
+                "Gary asked for two tickets.".to_string(),
+                "generated-version".to_string()
+            ),
+            "an untargeted block keeps the evidence it was generated with"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_stale_proposal_leaves_evidence_as_it_was() {
+        let (db, _) = seeded().await;
+        pin_evidence(&db, "generated-version").await;
+        insert_proposal(
+            &db,
+            "an-older-document",
+            &transcript_version(&db).await,
+            json!([{ "block_id": "b2", "text": "He ordered tea." }]),
+        )
+        .await;
+
+        let outcome = apply_proposal(db.pool(), "proposal-1").await.unwrap();
+        assert!(matches!(outcome, ProposalOutcome::Stale { .. }));
+        assert_eq!(
+            pinned(&db, "b2").await,
+            ("He ordered coffee.".to_string(), "generated-version".to_string())
         );
     }
 

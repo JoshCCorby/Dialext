@@ -18,6 +18,7 @@ const COMMANDS: &[&str] = &[
     "edit_dialext_passage",
     "undo_dialext_edit",
     "apply_dialext_proposal",
+    "generate_dialext_output",
     "create_dialext_provider_task",
     "start_dialext_provider_task",
     "cancel_dialext_provider_task",

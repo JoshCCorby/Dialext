@@ -9,10 +9,6 @@ import { TranscriptListeningState } from "./screens/listening";
 import { useTranscriptScreen } from "./state";
 
 import { ReadingSelector } from "~/dialext/reading-selector";
-import {
-  DialextSourcePanelSlot,
-  DialextSourceProvider,
-} from "~/dialext/source-panel";
 import { useListener } from "~/stt/contexts";
 import { useUploadFile } from "~/stt/useUploadFile";
 
@@ -58,60 +54,55 @@ function TranscriptContent({
   }, [sessionId, stopTranscription]);
 
   return (
-    <DialextSourceProvider sessionId={sessionId}>
-      <div className="relative flex h-full flex-col overflow-hidden">
-        <ReadingSelector
-          sessionId={sessionId}
-          editing={
-            editMode ||
-            screen.kind === "listening" ||
-            screen.kind === "running_batch"
+    <div className="relative flex h-full flex-col overflow-hidden">
+      <ReadingSelector
+        sessionId={sessionId}
+        editing={
+          editMode ||
+          screen.kind === "listening" ||
+          screen.kind === "running_batch"
+        }
+      />
+      {screen.kind === "running_batch" && (
+        <TranscriptEmptyState
+          isBatching
+          percentage={screen.percentage}
+          phase={screen.phase}
+          onStopTranscription={
+            screen.phase === "importing" ? undefined : handleStopTranscription
           }
         />
-        {screen.kind === "running_batch" && (
-          <TranscriptEmptyState
-            isBatching
-            percentage={screen.percentage}
-            phase={screen.phase}
-            onStopTranscription={
-              screen.phase === "importing" ? undefined : handleStopTranscription
-            }
-          />
-        )}
-        {screen.kind === "batch_fallback" && (
-          <BatchState
-            requestedLiveTranscription={screen.requestedLiveTranscription}
-            error={screen.error}
-          />
-        )}
-        {screen.kind === "listening" && (
-          <TranscriptListeningState status={screen.status} />
-        )}
-        {screen.kind === "empty" && (
-          <TranscriptEmptyState
-            isBatching={false}
-            hasAudio={screen.hasAudio}
-            error={screen.error}
-            onRetranscribe={regenerateTranscript}
-            onUploadAudio={uploadAudio}
-            onUploadTranscript={uploadTranscript}
-          />
-        )}
-        {screen.kind === "ready" && (
-          <TranscriptViewer
-            transcriptIds={screen.transcriptIds}
-            liveSegments={screen.liveSegments}
-            currentActive={screen.currentActive}
-            captureGeneration={screen.captureGeneration}
-            scrollRef={scrollRef}
-            editMode={editMode && !screen.currentActive}
-            onEditModeChange={
-              screen.currentActive ? undefined : onEditModeChange
-            }
-          />
-        )}
-        <DialextSourcePanelSlot />
-      </div>
-    </DialextSourceProvider>
+      )}
+      {screen.kind === "batch_fallback" && (
+        <BatchState
+          requestedLiveTranscription={screen.requestedLiveTranscription}
+          error={screen.error}
+        />
+      )}
+      {screen.kind === "listening" && (
+        <TranscriptListeningState status={screen.status} />
+      )}
+      {screen.kind === "empty" && (
+        <TranscriptEmptyState
+          isBatching={false}
+          hasAudio={screen.hasAudio}
+          error={screen.error}
+          onRetranscribe={regenerateTranscript}
+          onUploadAudio={uploadAudio}
+          onUploadTranscript={uploadTranscript}
+        />
+      )}
+      {screen.kind === "ready" && (
+        <TranscriptViewer
+          transcriptIds={screen.transcriptIds}
+          liveSegments={screen.liveSegments}
+          currentActive={screen.currentActive}
+          captureGeneration={screen.captureGeneration}
+          scrollRef={scrollRef}
+          editMode={editMode && !screen.currentActive}
+          onEditModeChange={screen.currentActive ? undefined : onEditModeChange}
+        />
+      )}
+    </div>
   );
 }

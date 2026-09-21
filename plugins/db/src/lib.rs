@@ -206,6 +206,16 @@ pub struct DialextProviderTaskStart {
     pub session_id: String,
 }
 
+/// The result of generating a deterministic Dialext output. `outcome` is `written`,
+/// `already_has_text` (nothing was replaced) or `no_passages`.
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextOutputResult {
+    pub outcome: String,
+    pub document_version: Option<String>,
+    pub blocks: Option<u32>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct E2eeIdentityStatus {
@@ -407,6 +417,7 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::edit_dialext_passage,
             commands::undo_dialext_edit,
             commands::apply_dialext_proposal,
+            commands::generate_dialext_output,
             commands::create_dialext_provider_task::<tauri::Wry>,
             commands::start_dialext_provider_task::<tauri::Wry>,
             commands::cancel_dialext_provider_task,

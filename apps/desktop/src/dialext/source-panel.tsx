@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { create } from "zustand";
 
 import { readDialextSourceInterval } from "@anlg/plugin-db";
 import { cn } from "@anlg/utils";
@@ -28,26 +29,67 @@ export type DialextPassage = {
   targetLanguage: string;
 };
 
+/// Where a reveal came from, when that changes what the panel must say. A summary
+/// block's stored evidence supports the wording it was generated with; once the
+/// reader rewrites the block, the panel says so rather than implying it still
+/// supports their text. An answer's quotation is shown apart from the passage.
+export type DialextRevealOrigin =
+  | { kind: "passage" }
+  | { kind: "summary"; edited: boolean }
+  | { kind: "answer"; quote: string };
+
 type Reveal = {
   sessionId: string;
   passage: DialextPassage;
+  origin: DialextRevealOrigin;
   requestedAt: number;
 };
 
-const DialextSourceContext = createContext<{
-  reveal: (passage: DialextPassage) => void;
-  close: () => void;
-  revealed: string | null;
+/// One reveal for the whole application. A transcript mark, a summary block's source
+/// control and a question's citation all set this, and the recording workspace shows
+/// it in its one panel, so no surface grows a playback panel of its own.
+const useRevealStore = create<{
   current: Reveal | null;
-} | null>(null);
+  reveal: (reveal: Omit<Reveal, "requestedAt">) => void;
+  close: () => void;
+}>((set) => ({
+  current: null,
+  reveal: (reveal) => set({ current: { ...reveal, requestedAt: Date.now() } }),
+  close: () => set({ current: null }),
+}));
 
-export function useDialextSource() {
-  return useContext(DialextSourceContext);
+export function revealDialextSource(
+  sessionId: string,
+  passage: DialextPassage,
+  origin: DialextRevealOrigin = { kind: "passage" },
+) {
+  useRevealStore.getState().reveal({ sessionId, passage, origin });
 }
 
-/// One panel for the whole recording workspace. A transcript mark, and later a summary
-/// source control or a chat citation, all resolve to the same reveal rather than each
-/// growing a playback surface of its own.
+const DialextSessionContext = createContext<string | null>(null);
+
+export function useDialextSource() {
+  const sessionId = useContext(DialextSessionContext);
+  const current = useRevealStore((state) => state.current);
+  const close = useRevealStore((state) => state.close);
+  return useMemo(() => {
+    if (!sessionId) return null;
+    const mine = current?.sessionId === sessionId ? current : null;
+    return {
+      sessionId,
+      reveal: (
+        passage: DialextPassage,
+        origin: DialextRevealOrigin = { kind: "passage" },
+      ) => revealDialextSource(sessionId, passage, origin),
+      close,
+      revealed: mine?.passage.wordId ?? null,
+      current: mine,
+    };
+  }, [close, current, sessionId]);
+}
+
+/// Scopes the reveal to one recording workspace. A reveal for another recording is
+/// never shown here, and leaving the recording closes what it had open.
 export function DialextSourceProvider({
   sessionId,
   children,
@@ -55,24 +97,17 @@ export function DialextSourceProvider({
   sessionId: string;
   children: ReactNode;
 }) {
-  const [reveal, setReveal] = useState<Reveal | null>(null);
-  useEffect(() => setReveal(null), [sessionId]);
-
-  const value = useMemo(
-    () => ({
-      reveal: (passage: DialextPassage) =>
-        setReveal({ sessionId, passage, requestedAt: Date.now() }),
-      close: () => setReveal(null),
-      revealed: reveal?.passage.wordId ?? null,
-      current: reveal && reveal.sessionId === sessionId ? reveal : null,
-    }),
-    [reveal, sessionId],
+  useEffect(
+    () => () => {
+      const { current, close } = useRevealStore.getState();
+      if (current?.sessionId === sessionId) close();
+    },
+    [sessionId],
   );
-
   return (
-    <DialextSourceContext.Provider value={value}>
+    <DialextSessionContext.Provider value={sessionId}>
       {children}
-    </DialextSourceContext.Provider>
+    </DialextSessionContext.Provider>
   );
 }
 
@@ -124,6 +159,7 @@ function SourcePanel({
           <Trans>Close</Trans>
         </button>
       </div>
+      <RevealOrigin origin={reveal.origin} passage={reveal.passage} />
       <p className="text-muted-foreground">{describeOrigin(reveal.passage)}</p>
       <blockquote className="border-l-2 pl-3">{reveal.passage.text}</blockquote>
       {reveal.passage.anchors.length === 0 ? (
@@ -141,6 +177,48 @@ function SourcePanel({
       )}
     </section>
   );
+}
+
+function RevealOrigin({
+  origin,
+  passage,
+}: {
+  origin: DialextRevealOrigin;
+  passage: DialextPassage;
+}) {
+  const reading = describeLanguage(passage.targetLanguage);
+  if (origin.kind === "summary") {
+    return origin.edited ? (
+      <p role="status" className="text-muted-foreground">
+        <Trans>
+          You have edited this summary block since it was generated. The passage
+          below supports the generated wording, not your edit.
+        </Trans>
+      </p>
+    ) : (
+      <p className="text-muted-foreground">
+        {reading ? (
+          <Trans>
+            This summary block was generated from this passage of the {reading}{" "}
+            reading.
+          </Trans>
+        ) : (
+          <Trans>This summary block was generated from this passage.</Trans>
+        )}
+      </p>
+    );
+  }
+  if (origin.kind === "answer") {
+    return (
+      <div className="flex flex-col gap-1">
+        <p className="text-muted-foreground">
+          <Trans>The answer quoted this passage:</Trans>
+        </p>
+        <q className="italic">{origin.quote}</q>
+      </div>
+    );
+  }
+  return null;
 }
 
 function SourceAnchor({

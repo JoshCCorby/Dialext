@@ -96,6 +96,7 @@ async fn migrations_apply_cleanly() {
             "daily_notes",
             "dialext_account_edits",
             "dialext_accounts",
+            "dialext_block_evidence",
             "dialext_evidence",
             "dialext_provider_stages",
             "dialext_provider_tasks",
@@ -656,6 +657,51 @@ async fn dialext_provider_queue_upgrades_without_touching_saved_work() {
                 .any(|entry| entry.table_name == table && !entry.enabled)
         );
     }
+}
+
+#[tokio::test]
+async fn dialext_block_evidence_upgrades_without_touching_saved_summaries() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260923120000_dialext_block_evidence"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('kept')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO session_documents(id,session_id,kind,body,body_format)
+         VALUES('kept-summary','kept','summary','{\"type\":\"doc\"}','prosemirror_json')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    let before: String =
+        sqlx::query_scalar("SELECT content_version FROM session_documents WHERE id = 'kept-summary'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+
+    let after: String =
+        sqlx::query_scalar("SELECT content_version FROM session_documents WHERE id = 'kept-summary'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(before, after, "the migration must not rewrite an existing summary");
+    let rows: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM dialext_block_evidence")
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+    assert_eq!(rows, 0, "evidence is never backfilled by guessing");
+    assert!(
+        cloudsync_table_registry()
+            .iter()
+            .any(|entry| entry.table_name == "dialext_block_evidence" && !entry.enabled)
+    );
 }
 
 #[tokio::test]

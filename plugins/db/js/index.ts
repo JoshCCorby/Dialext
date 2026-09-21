@@ -2,6 +2,7 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 
 import type {
   DialextEditResult,
+  DialextOutputResult,
   DialextProposalResult,
   DialextProviderTaskStart,
   DialextSourceAudio,
@@ -34,6 +35,7 @@ import type {
 export type {
   CloudsyncE2eeWitness,
   DialextEditResult,
+  DialextOutputResult,
   DialextProposalResult,
   DialextProviderTaskStart,
   DialextSourceAudio,
@@ -330,6 +332,18 @@ export async function startDialextProviderTask(
 
 export async function cancelDialextProviderTask(taskId: string): Promise<void> {
   return invoke("plugin:db|cancel_dialext_provider_task", { taskId });
+}
+
+export async function generateDialextOutput(
+  sessionId: string,
+  documentId: string,
+  title: string,
+): Promise<DialextOutputResult> {
+  return invoke("plugin:db|generate_dialext_output", {
+    sessionId,
+    documentId,
+    title,
+  });
 }
 
 export async function applySessionIngest(

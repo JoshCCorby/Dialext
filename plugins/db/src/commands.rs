@@ -411,6 +411,45 @@ pub(crate) async fn apply_dialext_proposal(
         .map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn generate_dialext_output(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    document_id: String,
+    title: String,
+) -> Result<crate::DialextOutputResult, String> {
+    use anlg_session_ingest::dialext_outputs::OutputOutcome;
+    anlg_session_ingest::dialext_outputs::generate_output(
+        state.pool(),
+        &session_id,
+        &document_id,
+        &title,
+    )
+    .await
+    .map(|outcome| match outcome {
+        OutputOutcome::Written {
+            document_version,
+            blocks,
+        } => crate::DialextOutputResult {
+            outcome: "written".to_string(),
+            document_version: Some(document_version),
+            blocks: Some(blocks as u32),
+        },
+        OutputOutcome::AlreadyHasText => crate::DialextOutputResult {
+            outcome: "already_has_text".to_string(),
+            document_version: None,
+            blocks: None,
+        },
+        OutputOutcome::NoPassages => crate::DialextOutputResult {
+            outcome: "no_passages".to_string(),
+            document_version: None,
+            blocks: None,
+        },
+    })
+    .map_err(|error| error.to_string())
+}
+
 fn provider_helper_path() -> Result<std::path::PathBuf, String> {
     let path = std::env::var_os("DIALEXT_PROVIDER_HELPER")
         .map(std::path::PathBuf::from)

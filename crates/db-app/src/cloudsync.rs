@@ -104,6 +104,7 @@ static CLOUDSYNC_TABLE_REGISTRY: LazyLock<Vec<CloudsyncTableSpec>> = LazyLock::n
         ("dialext_recordings", false),
         ("dialext_accounts", false),
         ("dialext_account_edits", false),
+        ("dialext_block_evidence", false),
         ("dialext_evidence", false),
         ("dialext_provider_stages", false),
         ("dialext_provider_tasks", false),

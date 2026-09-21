@@ -22,6 +22,10 @@ import { useSearch } from "./search/context";
 import { Transcript } from "./transcript";
 
 import {
+  DialextSourcePanelSlot,
+  DialextSourceProvider,
+} from "~/dialext/source-panel";
+import {
   registerCanonicalSessionEditor,
   unregisterCanonicalSessionEditor,
 } from "~/session-sharing/editor-activity";
@@ -333,79 +337,82 @@ const NoteInputContent = forwardRef<
     );
 
     return (
-      <div className="-mx-2 flex h-full flex-col">
-        {!hideHeader && (
-          <div className="relative px-2">
-            <div className="flex items-center justify-between gap-1">
-              <SessionViewSwitcher
-                sessionId={sessionId}
-                editorTabs={editorTabs}
-                currentTab={renderedCurrentTab}
-                handleTabChange={handleTabChange}
-                isTranscribing={shouldShowTranscriptSpinner}
+      <DialextSourceProvider sessionId={sessionId}>
+        <div className="-mx-2 flex h-full flex-col">
+          {!hideHeader && (
+            <div className="relative px-2">
+              <div className="flex items-center justify-between gap-1">
+                <SessionViewSwitcher
+                  sessionId={sessionId}
+                  editorTabs={editorTabs}
+                  currentTab={renderedCurrentTab}
+                  handleTabChange={handleTabChange}
+                  isTranscribing={shouldShowTranscriptSpinner}
+                />
+                <Header sessionId={sessionId} />
+              </div>
+            </div>
+          )}
+
+          {showSearchBar && isSearchableTab && (
+            <div className="px-3 pt-1">
+              <SearchBar
+                editorRef={internalEditorRef}
+                allowReplace={isEditableTab}
               />
-              <Header sessionId={sessionId} />
+            </div>
+          )}
+
+          <div className="relative flex-1 overflow-hidden">
+            <div
+              ref={scrollRef}
+              onMouseDown={handleContainerMouseDown}
+              onScroll={onScroll}
+              className={cn([
+                "h-full px-3",
+                "pt-2",
+                renderedCurrentTab.type === "transcript"
+                  ? "overflow-hidden pb-0"
+                  : "overflow-x-hidden overflow-y-auto pb-6",
+              ])}
+            >
+              {renderedCurrentTab.type === "enhanced" && (
+                <Enhanced
+                  ref={internalEditorRef}
+                  sessionId={sessionId}
+                  sessionTitle={sessionTitle}
+                  enhancedNoteId={renderedCurrentTab.id}
+                  onNavigateToTitle={onNavigateToTitle}
+                  onViewReady={handleSessionViewReady}
+                  onViewDisposed={handleSessionViewDisposed}
+                />
+              )}
+              {renderedCurrentTab.type === "raw" && (
+                <RawEditor
+                  ref={internalEditorRef}
+                  sessionId={sessionId}
+                  rawMd={rawMd}
+                  sessionTitle={sessionTitle}
+                  eventTitle={eventTitle}
+                  eventDescription={eventDescription}
+                  onNavigateToTitle={onNavigateToTitle}
+                  onViewReady={handleSessionViewReady}
+                  onViewDisposed={handleSessionViewDisposed}
+                />
+              )}
+              {renderedCurrentTab.type === "transcript" && (
+                <Transcript
+                  sessionId={sessionId}
+                  scrollRef={scrollRef}
+                  editMode={transcriptEditMode}
+                  onEditModeChange={onTranscriptEditModeChange}
+                />
+              )}
             </div>
           </div>
-        )}
-
-        {showSearchBar && isSearchableTab && (
-          <div className="px-3 pt-1">
-            <SearchBar
-              editorRef={internalEditorRef}
-              allowReplace={isEditableTab}
-            />
-          </div>
-        )}
-
-        <div className="relative flex-1 overflow-hidden">
-          <div
-            ref={scrollRef}
-            onMouseDown={handleContainerMouseDown}
-            onScroll={onScroll}
-            className={cn([
-              "h-full px-3",
-              "pt-2",
-              renderedCurrentTab.type === "transcript"
-                ? "overflow-hidden pb-0"
-                : "overflow-x-hidden overflow-y-auto pb-6",
-            ])}
-          >
-            {renderedCurrentTab.type === "enhanced" && (
-              <Enhanced
-                ref={internalEditorRef}
-                sessionId={sessionId}
-                sessionTitle={sessionTitle}
-                enhancedNoteId={renderedCurrentTab.id}
-                onNavigateToTitle={onNavigateToTitle}
-                onViewReady={handleSessionViewReady}
-                onViewDisposed={handleSessionViewDisposed}
-              />
-            )}
-            {renderedCurrentTab.type === "raw" && (
-              <RawEditor
-                ref={internalEditorRef}
-                sessionId={sessionId}
-                rawMd={rawMd}
-                sessionTitle={sessionTitle}
-                eventTitle={eventTitle}
-                eventDescription={eventDescription}
-                onNavigateToTitle={onNavigateToTitle}
-                onViewReady={handleSessionViewReady}
-                onViewDisposed={handleSessionViewDisposed}
-              />
-            )}
-            {renderedCurrentTab.type === "transcript" && (
-              <Transcript
-                sessionId={sessionId}
-                scrollRef={scrollRef}
-                editMode={transcriptEditMode}
-                onEditModeChange={onTranscriptEditModeChange}
-              />
-            )}
-          </div>
+          <DialextSourcePanelSlot />
         </div>
-      </div>
+      </DialextSourceProvider>
     );
   },
 );

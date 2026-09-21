@@ -12,6 +12,7 @@ Default permissions for the plugin
 - `allow-edit-dialext-passage`
 - `allow-undo-dialext-edit`
 - `allow-apply-dialext-proposal`
+- `allow-generate-dialext-output`
 - `allow-create-dialext-provider-task`
 - `allow-start-dialext-provider-task`
 - `allow-cancel-dialext-provider-task`
@@ -520,6 +521,32 @@ Enables the execute_transaction command without any pre-configured scope.
 <td>
 
 Denies the execute_transaction command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:allow-generate-dialext-output`
+
+</td>
+<td>
+
+Enables the generate_dialext_output command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`db:deny-generate-dialext-output`
+
+</td>
+<td>
+
+Denies the generate_dialext_output command without any pre-configured scope.
 
 </td>
 </tr>

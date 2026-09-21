@@ -12,6 +12,10 @@ import {
 import { AudioDropTarget } from "../audio-drop-target";
 import { useNoteFileHandlerConfig } from "../file-handler";
 
+import {
+  DialextBlockView,
+  DialextOutputEvidence,
+} from "~/dialext/summary-block";
 import { AppLinkView } from "~/editor-bridge/app-link-view";
 import { useMentionConfig } from "~/editor-bridge/mention-config";
 import { openEditorLink } from "~/editor-bridge/open-editor-link";
@@ -30,7 +34,11 @@ import {
   documentTitlePlaceholder,
 } from "~/session/title-content";
 
-const extraNodeViews = { appLink: AppLinkView, session: SessionNodeView };
+const extraNodeViews = {
+  appLink: AppLinkView,
+  session: SessionNodeView,
+  dialextBlock: DialextBlockView,
+};
 
 function isCanonicalEmptyDocument(
   content: JSONContent,
@@ -148,38 +156,40 @@ const EnhancedEditorInner = forwardRef<
         isActive={isAudioDragActive}
       >
         <div ref={comments.containerRef} className="relative h-full">
-          <NoteEditor
-            ref={ref}
-            className="session-note-editor enhanced-summary-editor"
-            key={editorKey}
-            initialContent={initialContent}
-            resolveAttachment={resolveAttachment}
-            handleChange={persistChanges ? handleChange : undefined}
-            placeholderComponent={documentTitlePlaceholder}
-            mentionConfig={mentionConfig}
-            sessionMentionDropConfig={sessionMentionDropConfig}
-            onNavigateToTitle={onNavigateToTitle}
-            onLinkOpen={openEditorLink}
-            fileHandlerConfig={fileHandlerConfig}
-            taskSource={taskSource}
-            extraNodeViews={extraNodeViews}
-            commentAnchorsEnabled
-            onCommentAnchorsEvent={comments.onCommentAnchorsEvent}
-            onCommentSelection={
-              comments.selection && !comments.draft
-                ? comments.startDraft
-                : undefined
-            }
-            onViewReady={(view) => {
-              comments.onViewReady(view);
-              onViewReady?.(view);
-            }}
-            onViewDisposed={(view) => {
-              comments.onViewDisposed(view);
-              onViewDisposed?.(view);
-            }}
-            syncContentWhenFocused={!persistChanges}
-          />
+          <DialextOutputEvidence documentId={enhancedNoteId}>
+            <NoteEditor
+              ref={ref}
+              className="session-note-editor enhanced-summary-editor"
+              key={editorKey}
+              initialContent={initialContent}
+              resolveAttachment={resolveAttachment}
+              handleChange={persistChanges ? handleChange : undefined}
+              placeholderComponent={documentTitlePlaceholder}
+              mentionConfig={mentionConfig}
+              sessionMentionDropConfig={sessionMentionDropConfig}
+              onNavigateToTitle={onNavigateToTitle}
+              onLinkOpen={openEditorLink}
+              fileHandlerConfig={fileHandlerConfig}
+              taskSource={taskSource}
+              extraNodeViews={extraNodeViews}
+              commentAnchorsEnabled
+              onCommentAnchorsEvent={comments.onCommentAnchorsEvent}
+              onCommentSelection={
+                comments.selection && !comments.draft
+                  ? comments.startDraft
+                  : undefined
+              }
+              onViewReady={(view) => {
+                comments.onViewReady(view);
+                onViewReady?.(view);
+              }}
+              onViewDisposed={(view) => {
+                comments.onViewDisposed(view);
+                onViewDisposed?.(view);
+              }}
+              syncContentWhenFocused={!persistChanges}
+            />
+          </DialextOutputEvidence>
           <SessionCommentsLayer controller={comments} />
         </div>
       </AudioDropTarget>

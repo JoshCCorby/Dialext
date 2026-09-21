@@ -10,6 +10,8 @@ pub mod dialext;
 #[cfg(feature = "apply")]
 pub mod dialext_edits;
 #[cfg(feature = "apply")]
+pub mod dialext_outputs;
+#[cfg(feature = "apply")]
 pub mod dialext_proposals;
 #[cfg(feature = "apply")]
 pub mod dialext_provider;

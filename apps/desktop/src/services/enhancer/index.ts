@@ -17,10 +17,8 @@ import {
 import { trackAnalyticsEvent } from "~/analytics";
 import { retryDatabaseLock } from "~/db/retry";
 import {
-  buildDialextSummaryDocument,
+  generateDialextOutputIfEmpty,
   isDialextRecording,
-  loadDialextSummaryPassages,
-  writeDialextSummaryIfEmpty,
 } from "~/dialext/summary";
 import {
   loadSessionContentSnapshot,
@@ -616,20 +614,21 @@ export class EnhancerService {
     if (note.content.trim()) {
       return { type: "already_active", noteId: note.id };
     }
-    const passages = await loadDialextSummaryPassages(sessionId);
-    if (passages.length === 0) {
-      return { type: "too_short" };
-    }
     const title =
       opts?.templateTitle?.trim() ||
       (templateId ? (await getTemplateById(templateId))?.title?.trim() : "") ||
       "Summary";
-    await writeDialextSummaryIfEmpty({
+    const outcome = await generateDialextOutputIfEmpty({
       sessionId,
       noteId: note.id,
-      body: JSON.stringify(buildDialextSummaryDocument(title, passages)),
+      title,
     });
-    return { type: "started", noteId: note.id };
+    if (outcome === "no_passages") {
+      return { type: "too_short" };
+    }
+    return outcome === "written"
+      ? { type: "started", noteId: note.id }
+      : { type: "already_active", noteId: note.id };
   }
 
   async ensureNote(sessionId: string, templateId?: string): Promise<string> {

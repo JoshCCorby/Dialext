@@ -195,7 +195,7 @@ async fn write_edit(
 }
 
 /// The text of a generated summary block, as the reader currently sees it.
-fn block_text(node: &Value) -> String {
+pub(crate) fn block_text(node: &Value) -> String {
     node["content"]
         .as_array()
         .into_iter()
