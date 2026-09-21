@@ -1,12 +1,16 @@
 # Start here: Dialext handover
 
-Updated 20 September 2026. Native baseline and milestone 1 are complete and verified in the isolated native app. **Milestone 2's acceptance is now complete**: every step passed in the real interface, including speaker naming across both readings, per-language TXT export, restart, a second recording reusing the contact, and the original sample reporting no source audio. Two defects were found while doing it, both recorded under "Native acceptance completed on 20 September, evening": an unnamed-speaker display and export conflation, **now fixed and verified**, and baseline text that had moved across a passage boundary on 17 September, **deliberately left as found**. Read that section before starting milestone 3, which has not been started. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 21 September 2026. Native baseline and milestones 1, 2 and **3** are complete and verified in the isolated native app. **Milestone 3 — checked editing and proposals — passed all five acceptance steps in the real `app.dialext.prototype` window on 21 September**: a stale edit and a stale proposal each refuse with nothing written and the reader's text kept; undo survives a full quit and relaunch; accepting a targeted proposal keeps an unrelated manual edit; applying Lecture creates another output. Native acceptance also found a real defect in the desktop version pin, now fixed and re-verified. Read "Milestone 3 — checked editing and proposals" at the end of this file before starting milestone 4, which has not been started. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
 - Private repository: https://github.com/JoshCCorby/Dialext
 - Local checkout: `/Users/joshuacorbett/Coding/Dialext-Anarlog`
-- Working branch: `codex/dialext-personal-prototype`, tracking `origin/main`.
+- Working branch: `codex/dialext-personal-prototype`, tracking `origin/main`. That tracking is
+  misleading: `git log origin/main..HEAD` on this branch lists every commit since the baseline,
+  and run from `main` it lists nothing. Compare against `origin/codex/dialext-personal-prototype`
+  to see what is unpushed. On 21 September the local checkout was found on `main` (two commits);
+  all milestone work lives on the working branch.
 - `origin` is Joshua's new repository. `upstream` is `fastrepl/anarlog`; do not push there.
 - The initial community snapshot is `1f0643e`. Its parentless history is deliberate: it excludes the commercially licensed enterprise implementation. The original upstream revision and licence notices are retained. Local ignored enterprise files are upstream reference material, not part of the new repository.
 - The old `/Users/joshuacorbett/Coding/Transcip` checkout is intact, with pre-existing uncommitted changes. Do not reset it, import its live database, or assume those changes are all in its remote.
@@ -25,14 +29,17 @@ The user wants a working personal tool based on Anarlog's layout, not another en
 7. Durable personal-only recording/evidence/account tables, crash-safe metadata adoption and verified immutable vault artefacts. One effective-transcript view supplies the selected reading to the panel, export, search, enhancer/chat snapshots and native session access.
 8. English/Gaeilge selection in the existing Transcript workspace, checked by native transaction against the expected previous selection. Separate saved edits survive switching/restart. General settings remembers the preferred reading language, default English, for fresh prepared imports. Missing accounts are explicitly unavailable; switching is disabled while editing or processing. Existing summary documents are unchanged by switching.
 9. A native permissions-helper fix: an AppKit drag operation returning nil now restores the row state instead of panicking across an Objective-C callback. The app compiled successfully with this fix. The exact failed-drag interaction has not been reproduced after the fix.
+10. Version-pinned account edits with durable history (milestone 3). Dialext passage corrections and "Undo last correction" go through native `edit_dialext_passage` / `undo_dialext_edit`, pinned to the `content_version` of the reading on screen and compared in one `BEGIN IMMEDIATE` transaction; a stale base is refused with the reader's text kept. Every accepted edit, including an undo, is an append-only `dialext_account_edits` row.
+11. Atomic, block-targeted summary proposals. A Dialext proposal is applied by native `apply_dialext_proposal`, which compares the summary's and the account's `content_version`, replaces only the named `dialextBlock`s and settles the proposal in one transaction. A correction creates the proposal inside its own edit transaction.
+12. Deterministic Dialext outputs through the existing template picker, one `dialextBlock` per passage of the selected reading, with no model call. A template is another output, never a replacement of the one on screen.
 
 The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. It has **no source audio**, no actual ASR output, and no evaluated translation quality. Do not describe opening it as a successful live transcription test.
 
 ## What is not implemented
 
 - Generating a language account or running Azure/another speech provider in the new app.
-- A correction history for imported accounts.
-- Atomic correction-driven summary proposals, stable summary-block provenance, or the requested footer question surface.
+- Stored summary evidence per block (pinned source intervals, verified-while-unchanged), the quiet source control on summary blocks, and the requested footer question surface. Milestone 3 gives blocks stable identity only; provenance is milestone 5.
+- A real summary. The Dialext outputs are deterministic, fixture-grade copies of the selected reading's passages, for checking corrections and proposals end to end.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 - Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
   `session_attachments`, so the ordinary audio-retention sweep and the Delete recording
@@ -46,14 +53,15 @@ Do not fill these gaps with inert controls. Complete one visible journey at a ti
 | --- | --- |
 | Pinned dependency install and shared UI build | Passed |
 | Desktop TypeScript check | Passed |
-| Full desktop test suite | Milestone boundary: 466 files, 4,421 tests passed |
+| Full desktop test suite | Milestone 3 boundary (21 September): 472 files, 4,449 tests passed. Milestone 2: 468 / 4,434 |
 | Focused import/UI tests | 13 tests passed on 17 September, including the final timing metadata refinement |
 | Original source-anchor validator | 13 tests passed |
-| Native tests | session-ingest 15; db-app 244 unit + 2 integration (3 existing ignored); db plugin 162; desktop 57 passed |
-| Common repository Node tests | 82 tests passed |
-| Licence-boundary tests/check | 9 tests and boundary check passed |
+| Native tests | Milestone 3: session-ingest 48; db-app 247 unit + 2 integration (3 existing ignored); db plugin 162; desktop 57 passed |
+| Editor package | 27 files, 204 tests passed (block-identity round-trip, markdown export and "never invented for markdown" added) |
+| Common repository Node tests | 82 tests passed (rerun 21 September); original validator 13 passed |
+| Licence-boundary tests/check | 9 tests and boundary check passed (rerun 21 September) |
 | Lingui extraction and strict compilation | Passed; generated catalog changes are committed with the first import slice |
-| Lingui check against tracked catalogs | Passed |
+| Lingui check against tracked catalogs | Passed, including milestone 3's six new strings |
 | Desktop Oxlint | No errors; 207 inherited warnings |
 | Affected ESLint / native Clippy | Desktop ESLint passed; plugin JS has no matching ESLint configuration. db-app/session-ingest Clippy passed with warnings denied. Plugin Clippy is blocked by two inherited lints described below. |
 | Workflow audit | Offline zizmor scan found 358 inherited findings. No upstream workflow fixes or release-readiness claim. GitHub Actions are disabled on this private repository. |
@@ -86,14 +94,14 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 - The old reconstruction validator's returned `language` is the **target** language. Preserve a distinct spoken-language annotation; never derive it from a forced provider locale.
 - Upstream missing timing metadata defaults to precise provider-word timing. Imported derived wording uses `synthetic_text` to disable that claim; source interval playback must be implemented explicitly.
 - Anarlog edits its working `words_json`. Do not put immutable ASR legs in that editable table or silently turn its editing path into an evidence rewrite.
-- The upstream proposal accept path checks a timestamp, then saves separately. It is not an atomic compare-and-swap operation and does not pin the transcript version. Fix the transaction before connecting automatic correction proposals.
+- The upstream proposal accept path checks a timestamp, then saves separately, replacing the whole body from markdown. **Milestone 3 fixed this for Dialext proposals only** (those with block targets go to `apply_dialext_proposal`). Chat, CLI and MCP inbox proposals still take the old timestamp path, deliberately unchanged; do not route correction-driven work through it.
 - Both `transcripts` and `session_documents` already have trigger-maintained `content_version` tokens. Pin those in native edits/proposal acceptance; transcript `content_revision` alone misses writers that change text without incrementing the counter. Exact migration files and the revised contract are in `ARCHITECTURE.md`.
 - `applySessionIngest` is a usable native command, but its source marker says `meeting_bot`, its workspace is a fixed local fixture scope here, and its envelope is capped at 2 MB. Do not mistake this prototype seam for the final local recording model.
 - Native build caches produced by Xcode's default `swiftbuild` may contain libraries under `out/Products/Debug`, while the linker looks for `arm64-apple-macosx/debug`. The wrapper fixes clean builds. On an affected old cache, touching the relevant Swift-owning `build.rs` files forces rebuilding; no Rust source edit or global Xcode change is required.
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestone 1 have passed; next undertake **milestone 2 only**: source review and recording-level speaker identity, using synthetic audio/prepared fixtures and no paid calls. Read the nearest database/plugin instructions before changing those layers. Preserve current saved edits, contacts and immutable artefacts; use additive migrations and test fresh creation, upgrade, deletion/restoration and restart.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–3 have passed; next undertake **milestone 4 only**: the native task lifecycle and stateless helper for the provider bridge, using deterministic fixture providers and no paid calls. Read the nearest database/plugin instructions before changing those layers. Preserve current saved edits, contacts and immutable artefacts; use additive migrations and test fresh creation, upgrade, deletion/restoration and restart.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -475,3 +483,162 @@ rebuild. It is a scratch file, not a durable backup. The running prototype now h
 `source-review` selected in **English** — the acceptance run above proved Gaeilge survived a
 restart before it was switched.
 
+## Milestone 3 — checked editing and proposals (commits `ee4bd02`, `e9b74ca`, `9452be2`, `c74d843`, `4d3fffc`)
+
+Completed and natively accepted on 21 September. `apps/desktop/src/session/queries/proposals.ts`
+was read first and matched the handover exactly; that defect is fixed for Dialext proposals.
+
+### What was built
+
+- **`ee4bd02` — native checked edits and history.** `dialext_edits::edit_passage` and
+  `undo_last_edit` pin `transcripts.content_version` (not `content_revision`) and compare it
+  inside one `BEGIN IMMEDIATE` transaction. A stale base returns a `Stale` outcome rather than
+  an error, and nothing is written. Only `text` moves: anchors, metadata and speaker
+  attribution stay as stored. Migration `20260921120000_dialext_account_edits` adds the
+  append-only history. It is additive, `Plain` scope, declared in the CloudSync registry as
+  **not enabled**, with a no-update trigger and a unique partial index so one edit can be
+  undone only once. Undo reverts the newest edit that is not itself an undo and has not been
+  undone. It **refuses** when a writer outside this history changed the same words, rather than
+  discarding that change. There is no redo.
+- **`e9b74ca` — desktop wiring.** The editable transcript segment sends Dialext passages to
+  `edit_dialext_passage`. Any transcript without a Dialext account keeps the upstream
+  `updateTranscriptSegmentText` path. A refusal shows *"This reading changed in another window.
+  Your text is still here. Refresh and review it before saving."* and leaves the typed text on
+  screen.
+- **`9452be2` — atomic proposals by block.** `dialext_proposals::apply_proposal` runs in one
+  transaction. It compares the summary's and the account's `content_version`, replaces only the
+  named blocks and sets the proposal to `applied`. A mismatch in either token leaves both
+  untouched. A named block that has gone refuses the whole proposal. Migration
+  `20260921120100_dialext_proposal_versions` adds four defaulted columns to the local,
+  non-synced `session_proposals` inbox; an older inbox row keeps its behaviour. The same edit
+  transaction creates one proposal per generated summary of the recording. That proposal targets
+  only blocks whose text still reads as generated; a block the reader rewrote by hand is never
+  proposed over. A later correction marks the earlier pending proposal for that summary
+  `superseded` (a new status value), and undoing back to the summarised text withdraws it.
+- **Block identity** is a `dialextBlock` wrapper node (`attrs.id`) in both editor schemas, and it
+  exists only in generated outputs. The first attempt, an optional attribute on paragraphs and
+  headings, made **every** note's stored JSON gain `dialextBlockId: null`. Fourteen editor tests
+  caught it and it was reverted. Markdown export renders the wrapper's content with no identity
+  in the text.
+- **`c74d843` — deterministic outputs and undo control.** For a Dialext recording,
+  `EnhancerService.enhance` skips the model. It writes a heading plus one `dialextBlock` per
+  anchored passage of the **selected** reading, keyed by that passage's word id, and only into a
+  still-empty document. An output that already has text is never regenerated. The picker's
+  `targetNoteId` is deliberately ignored for these recordings, so a template adds another output
+  (upstream replaces the one on screen). The pending auto-enhance record is discarded because no
+  model run exists to resume. **Undo last correction** sits beside the reading selector.
+- **`4d3fffc` — pin fix found by native acceptance** (see below).
+
+### Native acceptance on 21 September — every step in the real window
+
+The window was launched with `node dialext/dev.mjs` and driven with full-screen control
+(background clicks still do not reach the webview). There were no provider calls, no mocked
+database and no browser mock. All steps used `Sample · Source review with audio`, English
+reading.
+
+1. **Applying Lecture creates another output — PASSED.** Summary ▾ → search "Lecture" → the
+   user template. A `template_output` titled Lecture appeared beside the supplied Summary, as a
+   heading plus four `dialextBlock`s keyed `…:passage:0`–`3`. The supplied Summary kept
+   `content_version` `fd029…` and 613 bytes throughout the run. **Side effect:** the picker's
+   first "Lecture" entry is a suggested web template. Clicking it opened the template editor and
+   created an empty **user template "Lecture" (`9feb44db…`)** in the prototype database. That is
+   upstream picker behaviour; the template was left in place and used.
+2. **Block identity survives the real editor — PASSED.** A manual edit to an unrelated block
+   ("Thank you very much. **indeed**") was saved by the note editor with all four wrappers and
+   ids intact. The editor also added its own title heading and a trailing paragraph.
+3. **Accepting a targeted proposal preserves unrelated manual edits — PASSED.** A correction to
+   passage 0 created one pending proposal for `passage:0` only. It was pinned to the Lecture
+   version after the manual edit and to the account version the correction produced. A second
+   correction superseded it live. Review summary → Apply to summary changed only `passage:0` (to
+   "three tickets"). "…indeed", the title heading and the trailing paragraph survived, and the
+   proposal became `applied`.
+4. **A stale proposal refuses — PASSED.** A correction to passage 1 created a proposal. The
+   Lecture's "Hmm." block was then edited by hand to "Hmm (pause).". Applying showed *"This
+   proposal is stale. The meeting changed after it was created. It is still here to review."*
+   The Lecture version stayed `6cbbfa8b…`, its passage 1 block still read "two tickets", and the
+   proposal stayed `pending`. It also survived the restart below.
+5. **Undo survives restart — PASSED.** After a full quit (`app_exit_requested`; no launcher,
+   Vite or desktop process survived) and a fresh `node dialext/dev.mjs`, **Undo last correction**
+   recorded edit 5 undoing edit 4, which was made before the restart. Passage 3 went back to
+   "Hmm.", and the window said "Correction undone.".
+6. **A stale edit refuses with the typing intact — PASSED after the fix.** "Hmm, maybe." was
+   typed into passage 3. Before leaving the field, a second writer (a direct `sqlite3` write
+   standing in for another window) changed passage 2. Leaving the field showed the refusal with
+   "Hmm, maybe." still on screen. No edit 6 was recorded, the version stayed where the other
+   writer left it, and passage 3 was still "Hmm.".
+
+### The defect native acceptance found, and its fix
+
+The first run of step 6 **was accepted**: edit 4 wrote "Hmm, yes indeed." over a base another
+writer had just moved. The native compare was correct. The desktop bridge read `content_version`
+at submission, so the pin described the database rather than the screen and could never refuse.
+The live query does not observe out-of-process writes; the window kept showing the old passage 2
+until the next in-process write.
+
+`4d3fffc` pins a **live-queried** version (`useDialextEditVersion`) on the same invalidation as
+the rendered words, captured when the reader starts typing, for both edits and undo. With no
+version on screen, the bridge refuses rather than guessing. A regression test covers it, and a
+negative control reinstating the submit-time read turned exactly that test red. Step 6 then
+passed as recorded. Nothing was lost in the failed run, because the two writers touched
+different passages.
+
+### Limitations, stated exactly
+
+- The refusal says "Refresh and review", but **there is no refresh control**. The words on
+  screen catch up only on the next in-process write, or on reopening or restarting. Leaving edit
+  mode discards the refused typing, so the reader must copy it first.
+- A proposal refused as stale stays `pending` until declined. A later correction does not
+  replace it unless the summary is unchanged since it was made. There is no "re-propose against
+  the current summary" action.
+- Imported (supplied) summaries have no block identity and never receive proposals. Only
+  deterministic Dialext outputs do.
+- The deterministic output ignores the template's sections, and "Regenerate" does nothing to a
+  Dialext output that has text. Auto on an imported sample returns its supplied summary.
+- Undo covers the selected account only and only edits in its history. Edits made on other
+  paths (for example the upstream live-capture writer) block undo of the same words by design.
+- Refusal text renders in the default text colour in this theme, not red.
+- Chat, CLI and MCP inbox proposals still use the upstream timestamp path.
+- Plugin Clippy and Oxlint stand as inherited: 207 warnings, no errors. zizmor was not rerun,
+  because no workflow changed.
+
+### Automated coverage
+
+- session-ingest **48** (34 before).
+- db-app **247** unit + 2 integration (3 existing ignored), including upgrade tests for both
+  migrations.
+- db plugin **162**; native `desktop` **57**.
+- Editor **27 files / 204 tests**; desktop **472 files / 4,449 tests**.
+- Clippy with `-D warnings` on session-ingest; Lingui extract/compile/check; dprint on every
+  changed file; Node 82; licence 9 + check; validator 13.
+
+Negative controls, each seen red before the assertion was trusted:
+
+- dropping the version compare
+- undoing oldest-first
+- removing the outside-writer guard
+- treating stale as success
+- routing Dialext edits to the generic retrying path
+- patching by position or ignoring block ids
+- comparing only the document version
+- proposing over hand-written blocks
+- never superseding
+- regenerating over existing text
+- the submit-time pin
+
+### State of the live prototype database after acceptance
+
+A pre-milestone copy is at
+`/private/tmp/claude-501/-Users-joshuacorbett-Coding-Dialext-Anarlog/e4cd4889-6ef3-4ca7-95b4-30c273526cb8/scratchpad/db-before-m3/`
+(session scratch space, not a durable backup). Compared with it:
+
+- `language-practice`'s transcripts, including **Defect B** and the saved `Dialext Test Speaker`
+  hints, are **byte-identical**.
+- Every pre-existing Dialext document is identical.
+- `source-review`'s English account has edits 1–5: passage 0 is "I would like three tickets,
+  please.", passage 1 is "That is fine, three tickets.", and passage 3 is back to "Hmm.".
+- Passage 2 had two out-of-history `sqlite3` writes from steps 6 and 6-retry; the net effect
+  restores it to "Thank you very much.".
+- The Lecture output carries "…indeed", "Hmm (pause)." and "three tickets".
+- One stale proposal (edit 3) is pending, and there is the empty "Lecture" user template.
+
+These are acceptance artefacts, recorded rather than cleaned.
