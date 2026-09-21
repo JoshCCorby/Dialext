@@ -2,13 +2,18 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  onScreen: "version-one" as string | null,
   read: vi.fn(),
   editDialextPassage: vi.fn(),
   undoDialextEdit: vi.fn(),
   updateTranscriptSegmentText: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock("~/db", () => ({ liveQueryClient: { execute: mocks.read } }));
+vi.mock("~/db", () => ({
+  liveQueryClient: { execute: mocks.read },
+  // The version behind the words on screen, as the live query last delivered it.
+  useLiveQuery: () => ({ data: mocks.onScreen }),
+}));
 vi.mock("@anlg/plugin-db", () => ({
   editDialextPassage: mocks.editDialextPassage,
   undoDialextEdit: mocks.undoDialextEdit,
@@ -36,6 +41,7 @@ const ACCOUNT = {
 
 describe("Dialext checked account edits", () => {
   beforeEach(() => {
+    mocks.onScreen = "version-one";
     mocks.read.mockReset();
     mocks.editDialextPassage.mockReset();
     mocks.undoDialextEdit.mockReset();
@@ -55,6 +61,7 @@ describe("Dialext checked account edits", () => {
       transcriptId: "dialext-recording:english",
       wordIds: ["word-1"],
       text: "I would like to order tea.",
+      expectedContentVersion: "version-one",
     });
 
     expect(mocks.editDialextPassage).toHaveBeenCalledWith(
@@ -84,6 +91,7 @@ describe("Dialext checked account edits", () => {
         transcriptId: "dialext-recording:english",
         wordIds: ["word-1"],
         text: "Typed against the old base.",
+        expectedContentVersion: "version-one",
       }),
     ).resolves.toEqual({ outcome: "stale", contentVersion: "version-moved" });
   });
@@ -95,6 +103,7 @@ describe("Dialext checked account edits", () => {
         transcriptId: "ordinary-transcript",
         wordIds: ["word-1"],
         text: "Anything.",
+        expectedContentVersion: null,
       }),
     ).resolves.toEqual({ outcome: "not-dialext" });
     expect(mocks.editDialextPassage).not.toHaveBeenCalled();
@@ -109,8 +118,54 @@ describe("Dialext checked account edits", () => {
       sequence: null,
     });
     await expect(
-      undoDialextPassageEdit("dialext-recording:english"),
+      undoDialextPassageEdit("dialext-recording:english", "version-one"),
     ).resolves.toEqual({ outcome: "nothing-to-undo" });
+  });
+
+  it("pins the version the reader was shown, not the one the database holds now", async () => {
+    // Another writer moved the reading where this window could not see it: the
+    // database says version-moved, the screen still shows version-one.
+    mocks.read.mockResolvedValue([
+      { ...ACCOUNT, content_version: "version-moved" },
+    ]);
+    mocks.editDialextPassage.mockResolvedValue({
+      outcome: "stale",
+      contentVersion: "version-moved",
+      editId: null,
+      sequence: null,
+    });
+    mocks.onScreen = "version-one";
+
+    const view = renderEditableSegment();
+    const editor = view.container.querySelector<HTMLElement>(
+      "[data-transcript-editor]",
+    );
+    fireEvent.focus(editor!);
+    editor!.innerText = "I would like to order tea.";
+    fireEvent.blur(editor!);
+
+    await waitFor(() => {
+      expect(mocks.editDialextPassage).toHaveBeenCalledWith(
+        "dialext-recording",
+        "account-en",
+        "version-one",
+        ["word-1"],
+        "I would like to order tea.",
+      );
+    });
+  });
+
+  it("refuses rather than guessing when no version was on screen", async () => {
+    mocks.read.mockResolvedValue([ACCOUNT]);
+    await expect(
+      editDialextPassageText({
+        transcriptId: "dialext-recording:english",
+        wordIds: ["word-1"],
+        text: "Anything.",
+        expectedContentVersion: null,
+      }),
+    ).resolves.toEqual({ outcome: "stale", contentVersion: "version-one" });
+    expect(mocks.editDialextPassage).not.toHaveBeenCalled();
   });
 
   it("keeps the reader's typing on screen when the reading moved underneath it", async () => {
@@ -122,45 +177,7 @@ describe("Dialext checked account edits", () => {
       sequence: null,
     });
 
-    const view = render(
-      <TranscriptSelectionProvider
-        selectMode={false}
-        selectedKeys={new Set<string>()}
-        registerSource={() => () => {}}
-      >
-        <SegmentRenderer
-          segment={{
-            id: "segment-1",
-            text: "I would like to order coffee.",
-            start_ms: 0,
-            end_ms: 900,
-            key: {
-              channel: "MixedCapture",
-              speaker_index: null,
-              speaker_human_id: null,
-            },
-            words: [
-              {
-                id: "word-1",
-                text: "I would like to order coffee.",
-                start_ms: 0,
-                end_ms: 900,
-                channel: "MixedCapture",
-                is_final: true,
-              },
-            ],
-          }}
-          offsetMs={0}
-          transcriptId="dialext-recording:english"
-          speakerLabel="Gary"
-          currentMs={0}
-          seekAndPlay={vi.fn()}
-          audioExists
-          search={EMPTY_TRANSCRIPT_SEARCH}
-          editMode
-        />
-      </TranscriptSelectionProvider>,
-    );
+    const view = renderEditableSegment();
 
     const editor = view.container.querySelector<HTMLElement>(
       "[data-transcript-editor]",
@@ -181,3 +198,45 @@ describe("Dialext checked account edits", () => {
     expect(mocks.updateTranscriptSegmentText).not.toHaveBeenCalled();
   });
 });
+
+function renderEditableSegment() {
+  return render(
+    <TranscriptSelectionProvider
+      selectMode={false}
+      selectedKeys={new Set<string>()}
+      registerSource={() => () => {}}
+    >
+      <SegmentRenderer
+        segment={{
+          id: "segment-1",
+          text: "I would like to order coffee.",
+          start_ms: 0,
+          end_ms: 900,
+          key: {
+            channel: "MixedCapture",
+            speaker_index: null,
+            speaker_human_id: null,
+          },
+          words: [
+            {
+              id: "word-1",
+              text: "I would like to order coffee.",
+              start_ms: 0,
+              end_ms: 900,
+              channel: "MixedCapture",
+              is_final: true,
+            },
+          ],
+        }}
+        offsetMs={0}
+        transcriptId="dialext-recording:english"
+        speakerLabel="Gary"
+        currentMs={0}
+        seekAndPlay={vi.fn()}
+        audioExists
+        search={EMPTY_TRANSCRIPT_SEARCH}
+        editMode
+      />
+    </TranscriptSelectionProvider>,
+  );
+}

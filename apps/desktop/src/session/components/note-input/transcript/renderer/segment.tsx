@@ -1,5 +1,5 @@
 import { Trans } from "@lingui/react/macro";
-import { Fragment, memo, useCallback, useMemo, useState } from "react";
+import { Fragment, memo, useCallback, useMemo, useRef, useState } from "react";
 
 import { cn } from "@anlg/utils";
 
@@ -16,7 +16,10 @@ import {
 } from "./utils";
 import { WordSpan } from "./word-span";
 
-import { editDialextPassageText } from "~/dialext/checked-edit";
+import {
+  editDialextPassageText,
+  useDialextEditVersion,
+} from "~/dialext/checked-edit";
 import { DialextPassageSource } from "~/dialext/source-panel";
 import { createHighlightSegments } from "~/session/components/note-input/search/matching";
 import type { Segment, SegmentWord } from "~/stt/live-segment";
@@ -240,6 +243,13 @@ const EditableSegmentText = memo(function EditableSegmentText({
     [segment.words],
   );
   const [refused, setRefused] = useState(false);
+  // Pinned when the reader starts typing: the version of the words they are looking
+  // at, not whatever the database holds by the time they finish.
+  const onScreenVersion = useDialextEditVersion(transcriptId);
+  const pinnedVersion = useRef<string | null>(null);
+  const handleFocus = useCallback(() => {
+    pinnedVersion.current = onScreenVersion;
+  }, [onScreenVersion]);
   const handleBlur = useCallback(
     (event: React.FocusEvent<HTMLDivElement>) => {
       const nextText = normalizeEditableTranscriptText(
@@ -256,6 +266,7 @@ const EditableSegmentText = memo(function EditableSegmentText({
           transcriptId,
           wordIds,
           text: nextText,
+          expectedContentVersion: pinnedVersion.current ?? onScreenVersion,
         });
         if (attempt.outcome === "stale") {
           // The reading moved under this correction. Leave the typed text in place
@@ -276,7 +287,7 @@ const EditableSegmentText = memo(function EditableSegmentText({
         console.error("[transcript] failed to update text", error);
       });
     },
-    [originalText, transcriptId, wordIds],
+    [onScreenVersion, originalText, transcriptId, wordIds],
   );
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -313,6 +324,7 @@ const EditableSegmentText = memo(function EditableSegmentText({
         "overflow-wrap-anywhere mt-1.5 rounded-md text-sm leading-relaxed wrap-break-word outline-hidden",
         "select-text-deep",
       ])}
+      onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
     >

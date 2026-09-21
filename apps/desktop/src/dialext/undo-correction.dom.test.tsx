@@ -3,7 +3,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ undo: vi.fn() }));
-vi.mock("./checked-edit", () => ({ undoDialextPassageEdit: mocks.undo }));
+vi.mock("./checked-edit", () => ({
+  undoDialextPassageEdit: mocks.undo,
+  useDialextEditVersion: () => "version-on-screen",
+}));
 vi.mock("~/db/write-queue", () => ({
   flushDatabaseWrites: vi.fn().mockResolvedValue(undefined),
 }));
@@ -27,7 +30,10 @@ describe("UndoCorrection", () => {
     mocks.undo.mockResolvedValue({ outcome: "applied", contentVersion: "v3" });
     renderUndo();
     expect(await screen.findByText("Correction undone.")).toBeTruthy();
-    expect(mocks.undo).toHaveBeenCalledWith("recording:english");
+    expect(mocks.undo).toHaveBeenCalledWith(
+      "recording:english",
+      "version-on-screen",
+    );
   });
 
   it("says so when there is nothing to undo", async () => {

@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@anlg/ui/components/ui/button";
 
-import { undoDialextPassageEdit } from "./checked-edit";
+import { undoDialextPassageEdit, useDialextEditVersion } from "./checked-edit";
 
 import { flushDatabaseWrites } from "~/db/write-queue";
 
@@ -16,10 +16,12 @@ export function UndoCorrection({
   transcriptId: string;
   disabled: boolean;
 }) {
+  // The version on screen: undo must not revert text this window has not shown.
+  const onScreenVersion = useDialextEditVersion(transcriptId);
   const mutation = useMutation({
     mutationFn: async () => {
       await flushDatabaseWrites([`transcript:${transcriptId}`]);
-      return undoDialextPassageEdit(transcriptId);
+      return undoDialextPassageEdit(transcriptId, onScreenVersion);
     },
   });
   const outcome = mutation.data?.outcome;
