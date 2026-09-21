@@ -97,6 +97,8 @@ async fn migrations_apply_cleanly() {
             "dialext_account_edits",
             "dialext_accounts",
             "dialext_evidence",
+            "dialext_provider_stages",
+            "dialext_provider_tasks",
             "dialext_recordings",
             "dialext_source_speakers",
             "dialext_speakers",
@@ -605,6 +607,8 @@ async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose(
         "dialext_accounts",
         "dialext_account_edits",
         "dialext_evidence",
+        "dialext_provider_stages",
+        "dialext_provider_tasks",
         "dialext_speakers",
         "dialext_source_speakers",
     ] {
@@ -614,6 +618,42 @@ async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose(
                 .find(|s| s.table_name == name)
                 .unwrap()
                 .enabled
+        );
+    }
+}
+
+#[tokio::test]
+async fn dialext_provider_queue_upgrades_without_touching_saved_work() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260922120000_dialext_provider_tasks"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('kept')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO transcripts(id,session_id,words_json) VALUES('kept-reading','kept','[4]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+
+    let saved: String =
+        sqlx::query_scalar("SELECT words_json FROM transcripts WHERE id = 'kept-reading'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(saved, "[4]");
+    for table in ["dialext_provider_tasks", "dialext_provider_stages"] {
+        assert!(
+            cloudsync_table_registry()
+                .iter()
+                .any(|entry| entry.table_name == table && !entry.enabled)
         );
     }
 }

@@ -12,6 +12,8 @@ pub mod dialext_edits;
 #[cfg(feature = "apply")]
 pub mod dialext_proposals;
 #[cfg(feature = "apply")]
+pub mod dialext_provider;
+#[cfg(feature = "apply")]
 pub mod dialext_source;
 #[cfg(feature = "apply")]
 pub mod dialext_speakers;

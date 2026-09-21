@@ -561,6 +561,11 @@ pub const APP_MIGRATION_STEPS: &[anlg_db_migrate::MigrationStep] = &[
         scope: anlg_db_migrate::MigrationScope::Plain,
         sql: include_str!("../migrations/20260921120100_dialext_proposal_versions.sql"),
     },
+    anlg_db_migrate::MigrationStep {
+        id: "20260922120000_dialext_provider_tasks",
+        scope: anlg_db_migrate::MigrationScope::Plain,
+        sql: include_str!("../migrations/20260922120000_dialext_provider_tasks.sql"),
+    },
 ];
 
 pub fn schema() -> anlg_db_migrate::DbSchema {
