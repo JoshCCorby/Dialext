@@ -39,7 +39,7 @@ export async function runWebSearch(
   if (!headers) {
     return {
       status: "error",
-      message: "Sign in to use web search.",
+      message: "Web search is not available in this build.",
       query: params.query,
       results: [],
     };

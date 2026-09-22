@@ -17,7 +17,7 @@ describe("web search chat tool", () => {
     expect(fetch).not.toHaveBeenCalled();
     expect(result).toEqual({
       status: "error",
-      message: "Sign in to use web search.",
+      message: "Web search is not available in this build.",
       query: "how can char.com help?",
       results: [],
     });

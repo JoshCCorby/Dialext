@@ -1151,8 +1151,9 @@ owns the prototype vault and synthetic samples:
   for milestone 8's icon work rather than adding a fifth local capability here. It is the one
   reachable Pro interruption this audit found.
 - The chat `web_search` tool targets Anarlog's hosted research endpoint. Without auth headers
-  it makes no request and returns "Sign in to use web search." to the model. Removing or
-  replacing it changes model tools, so it needs a decision.
+  it makes no request; its refusal to the model now reads "Web search is not available in this
+  build." instead of asking for a sign-in that cannot happen. The tool itself is still
+  registered: removing or replacing it changes model tools, so that needs a decision.
 - The template gallery (Templates tab and note template picker) still fetches public suggested
   templates from `https://anarlog.so/api/templates` without an account. Milestone 3's "Lecture"
   template came from it; replacing it with bundled local templates is separate template work.
