@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useRef, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 
 import { DotsThree, File, Plus, X } from "@anlg/ui/components/icons";
 import { Button } from "@anlg/ui/components/ui/button";
@@ -18,6 +18,7 @@ import { cn } from "@anlg/utils";
 import { useFolderSelection } from "./selection";
 
 import { useOptionalAuth } from "~/auth";
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { ResourceShareButton, sharedFolderPayload } from "~/resource-sharing";
 import {
   deleteSharedResource,
@@ -46,8 +47,22 @@ import { useFolderMaterialUpload } from "~/shared/hooks/useFileUpload";
 import { DestructiveConfirmationDialog } from "~/shared/ui/destructive-confirmation-dialog";
 import { TemplateIconPicker } from "~/templates/template-icon-picker";
 
+type FolderSharing = {
+  shareButton: ReactNode;
+  afterRename: (renamedPath: string) => Promise<void>;
+  beforeDelete: () => Promise<void>;
+  afterDelete: () => void;
+};
+
 export function FolderEditor({ folderPath }: { folderPath: string }) {
-  const { t } = useLingui();
+  if (!ANARLOG_ACCOUNT_SERVICES_ENABLED) {
+    return <FolderEditorContent folderPath={folderPath} sharing={null} />;
+  }
+
+  return <SharedFolderEditor folderPath={folderPath} />;
+}
+
+function SharedFolderEditor({ folderPath }: { folderPath: string }) {
   const auth = useOptionalAuth();
   const queryClient = useQueryClient();
   const sharedFolders = useSharedResources("folder");
@@ -55,6 +70,67 @@ export function FolderEditor({ folderPath }: { folderPath: string }) {
     (resource) =>
       resource.accessKind === "owner" && resource.sourceId === folderPath,
   );
+  const displayName = folderDisplayName(folderPath);
+
+  const sharing = useMemo<FolderSharing>(() => {
+    const invalidate = () =>
+      void queryClient.invalidateQueries({
+        queryKey: sharedResourcesQueryKey(auth?.session?.user.id, "folder"),
+      });
+
+    return {
+      shareButton: (
+        <ResourceShareButton
+          resourceType="folder"
+          sourceId={folderPath}
+          title={displayName}
+          buildPayload={() => sharedFolderPayload(folderPath)}
+        />
+      ),
+      afterRename: async (renamed) => {
+        if (!ownedShare || !auth) {
+          return;
+        }
+        try {
+          await moveSharedResource(requireResourceSharingContext(auth), {
+            shareId: ownedShare.shareId,
+            sourceId: renamed,
+            title: folderDisplayName(renamed),
+            payload: await sharedFolderPayload(renamed),
+          });
+        } catch (error) {
+          await renameNamedFolder(renamed, folderPath);
+          throw error;
+        }
+        invalidate();
+      },
+      beforeDelete: async () => {
+        if (ownedShare && auth) {
+          await deleteSharedResource(
+            requireResourceSharingContext(auth),
+            ownedShare.shareId,
+          );
+        }
+      },
+      afterDelete: () => {
+        if (ownedShare) {
+          invalidate();
+        }
+      },
+    };
+  }, [auth, displayName, folderPath, ownedShare, queryClient]);
+
+  return <FolderEditorContent folderPath={folderPath} sharing={sharing} />;
+}
+
+function FolderEditorContent({
+  folderPath,
+  sharing,
+}: {
+  folderPath: string;
+  sharing: FolderSharing | null;
+}) {
+  const { t } = useLingui();
   const setSelectedPath = useFolderSelection((state) => state.setSelectedPath);
   const markFolderDeleted = useFolderSelection(
     (state) => state.markFolderDeleted,
@@ -106,22 +182,7 @@ export function FolderEditor({ folderPath }: { folderPath: string }) {
     setBusy(true);
     try {
       const renamed = await renameNamedFolder(folderPath, renamedPath);
-      if (ownedShare && auth) {
-        try {
-          await moveSharedResource(requireResourceSharingContext(auth), {
-            shareId: ownedShare.shareId,
-            sourceId: renamed,
-            title: folderDisplayName(renamed),
-            payload: await sharedFolderPayload(renamed),
-          });
-        } catch (error) {
-          await renameNamedFolder(renamed, folderPath);
-          throw error;
-        }
-        void queryClient.invalidateQueries({
-          queryKey: sharedResourcesQueryKey(auth.session?.user.id, "folder"),
-        });
-      }
+      await sharing?.afterRename(renamed);
       rekeyIconOverride(folderPath, renamed);
       setSelectedPath(renamed);
     } catch {
@@ -130,14 +191,12 @@ export function FolderEditor({ folderPath }: { folderPath: string }) {
       setBusy(false);
     }
   }, [
-    auth,
     displayName,
     draft,
     folderPath,
-    ownedShare,
-    queryClient,
     rekeyIconOverride,
     setSelectedPath,
+    sharing,
   ]);
 
   return (
@@ -187,12 +246,7 @@ export function FolderEditor({ folderPath }: { folderPath: string }) {
           </div>
         </div>
         <div className="flex items-center gap-0.5">
-          <ResourceShareButton
-            resourceType="folder"
-            sourceId={folderPath}
-            title={displayName}
-            buildPayload={() => sharedFolderPayload(folderPath)}
-          />
+          {sharing?.shareButton}
           <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -340,23 +394,11 @@ export function FolderEditor({ folderPath }: { folderPath: string }) {
           void (async () => {
             setBusy(true);
             try {
-              if (ownedShare && auth) {
-                await deleteSharedResource(
-                  requireResourceSharingContext(auth),
-                  ownedShare.shareId,
-                );
-              }
+              await sharing?.beforeDelete();
               await deleteNamedFolder(folderPath);
               setDeleting(false);
               markFolderDeleted(folderPath);
-              if (ownedShare) {
-                void queryClient.invalidateQueries({
-                  queryKey: sharedResourcesQueryKey(
-                    auth?.session?.user.id,
-                    "folder",
-                  ),
-                });
-              }
+              sharing?.afterDelete();
             } finally {
               setBusy(false);
             }

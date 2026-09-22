@@ -14,6 +14,7 @@ import { cn } from "@anlg/utils";
 import { useActiveFolderPath, useFolderSelection } from "./selection";
 
 import { useOptionalAuth } from "~/auth";
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import {
   importSharedFolder,
   parseSharedFolderPayload,
@@ -153,19 +154,21 @@ export function FoldersSidebar() {
             })}
           </ul>
         )}
-        <SharedResourceLibrarySection
-          resourceType="folder"
-          search={search}
-          onImport={async (resource) => {
-            const userId = auth?.session?.user.id;
-            if (!userId) throw new Error(t`Sign in to add this folder`);
-            const path = await importSharedFolder(
-              parseSharedFolderPayload(resource.payload),
-              userId,
-            );
-            setSelectedPath(path);
-          }}
-        />
+        {ANARLOG_ACCOUNT_SERVICES_ENABLED ? (
+          <SharedResourceLibrarySection
+            resourceType="folder"
+            search={search}
+            onImport={async (resource) => {
+              const userId = auth?.session?.user.id;
+              if (!userId) throw new Error(t`Sign in to add this folder`);
+              const path = await importSharedFolder(
+                parseSharedFolderPayload(resource.payload),
+                userId,
+              );
+              setSelectedPath(path);
+            }}
+          />
+        ) : null}
       </div>
 
       <FolderNameDialog

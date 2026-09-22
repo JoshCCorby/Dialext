@@ -27,6 +27,9 @@ const mocks = vi.hoisted(() => ({
   updateFolderIcon: vi.fn(),
   updateFolderInstructions: vi.fn(),
   upload: vi.fn(),
+  useSharedResources: vi.fn(() => ({ data: [] })),
+  moveSharedResource: vi.fn(),
+  deleteSharedResource: vi.fn(),
 }));
 
 vi.mock("@lingui/react/macro", () => ({
@@ -68,6 +71,19 @@ vi.mock("~/shared/hooks/useFileUpload", () => ({
   useFolderMaterialUpload: () => mocks.upload,
 }));
 
+vi.mock("~/resource-sharing/hooks", () => ({
+  sharedResourcesQueryKey: () => ["shared-resources"],
+  useSharedResources: mocks.useSharedResources,
+}));
+
+vi.mock("~/resource-sharing/client", () => ({
+  deleteSharedResource: mocks.deleteSharedResource,
+  moveSharedResource: mocks.moveSharedResource,
+  requireResourceSharingContext: () => {
+    throw new Error("No Anarlog account in the personal shell");
+  },
+}));
+
 vi.mock("~/sidebar/custom-sidebar-header", () => ({
   CustomSidebarHeader: ({ children }: { children?: ReactNode }) => (
     <div>{children}</div>
@@ -77,6 +93,9 @@ vi.mock("~/sidebar/custom-sidebar-header", () => ({
 import { FoldersMain } from "./index";
 import { useFolderSelection } from "./selection";
 import { FoldersSidebar } from "./sidebar";
+
+import { PersonalBillingProvider } from "~/auth/personal-billing";
+import { PersonalAuthProvider } from "~/auth/personal-context";
 
 function FoldersWorkspace() {
   return (
@@ -98,6 +117,21 @@ function renderFoldersWorkspace() {
   );
 }
 
+function renderPersonalFoldersWorkspace() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <PersonalAuthProvider>
+        <PersonalBillingProvider>
+          <FoldersWorkspace />
+        </PersonalBillingProvider>
+      </PersonalAuthProvider>
+    </QueryClientProvider>,
+  );
+}
+
 describe("Folders workspace", () => {
   beforeEach(() => {
     mocks.createNamedFolder.mockReset();
@@ -107,6 +141,9 @@ describe("Folders workspace", () => {
     mocks.updateFolderIcon.mockReset();
     mocks.updateFolderInstructions.mockReset();
     mocks.upload.mockReset();
+    mocks.useSharedResources.mockClear();
+    mocks.moveSharedResource.mockReset();
+    mocks.deleteSharedResource.mockReset();
     mocks.folders = [];
     mocks.icons = {};
     mocks.instructions = "";
@@ -345,5 +382,48 @@ describe("Folders workspace", () => {
       expect(useFolderSelection.getState().iconOverrides.Work).toBeUndefined();
     });
     consoleError.mockRestore();
+  });
+  it("edits folders locally in the personal shell without sharing or hosted queries", async () => {
+    mocks.folders = ["Work", "Personal"];
+
+    renderPersonalFoldersWorkspace();
+
+    expect(screen.queryByRole("button", { name: /^Share/ })).toBeNull();
+    expect(screen.queryByText("Shared with me")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Folder context"), {
+      target: { value: "Irish lessons" },
+    });
+    fireEvent.blur(screen.getByLabelText("Folder context"));
+    await waitFor(() => {
+      expect(mocks.updateFolderInstructions).toHaveBeenCalledWith(
+        "Work",
+        "Irish lessons",
+      );
+    });
+
+    const title = screen.getByRole("textbox", { name: "Folder name" });
+    fireEvent.change(title, { target: { value: "Algorithms" } });
+    fireEvent.blur(title);
+    await waitFor(() => {
+      expect(mocks.renameNamedFolder).toHaveBeenCalledWith(
+        "Work",
+        "Algorithms",
+      );
+    });
+
+    fireEvent.pointerDown(
+      screen.getByRole("button", { name: "Folder actions" }),
+      { button: 0, ctrlKey: false },
+    );
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete folder" }));
+    await waitFor(() => {
+      expect(mocks.deleteNamedFolder).toHaveBeenCalled();
+    });
+
+    expect(mocks.useSharedResources).not.toHaveBeenCalled();
+    expect(mocks.moveSharedResource).not.toHaveBeenCalled();
+    expect(mocks.deleteSharedResource).not.toHaveBeenCalled();
   });
 });

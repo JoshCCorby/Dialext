@@ -36,6 +36,12 @@ const mocks = vi.hoisted(() => ({
     error: null as string | null,
   },
   openIntegration: vi.fn(),
+  useConnections: vi.fn(() => ({
+    data: [],
+    isPending: false,
+    isError: false,
+  })),
+  useOpenIntegrationUrl: vi.fn(),
   removeDisconnectedCalendarConnection: vi.fn(),
   allowReconnectedCalendarConnections: vi.fn(),
   syncCalendarEvents: vi.fn(),
@@ -60,11 +66,7 @@ vi.mock("~/auth/billing-context", () => ({
 }));
 
 vi.mock("~/auth/useConnections", () => ({
-  useConnections: () => ({
-    data: [],
-    isPending: false,
-    isError: false,
-  }),
+  useConnections: mocks.useConnections,
 }));
 
 vi.mock("~/shared/hooks/useNativeContextMenu", () => ({
@@ -80,10 +82,7 @@ vi.mock("~/shared/hooks/usePermissions", () => ({
 
 vi.mock("~/shared/integration", () => ({
   openIntegrationUrl: vi.fn(),
-  useOpenIntegrationUrl: () => ({
-    openIntegration: mocks.openIntegration,
-    openingAction: null,
-  }),
+  useOpenIntegrationUrl: mocks.useOpenIntegrationUrl,
 }));
 
 vi.mock("~/services/calendar", () => ({
@@ -127,6 +126,28 @@ describe("CalendarSidebarContent", () => {
     mocks.syncCalendarEvents.mockReset();
     mocks.syncCalendarEvents.mockResolvedValue(undefined);
     mocks.contextMenus = [];
+    mocks.useConnections.mockClear();
+    mocks.useOpenIntegrationUrl.mockReset();
+    mocks.useOpenIntegrationUrl.mockReturnValue({
+      openIntegration: mocks.openIntegration,
+      openingAction: null,
+    });
+  });
+
+  it("offers Apple Calendar without account-backed calendar providers", () => {
+    mocks.calendar.status = "authorized";
+    mocks.calendar.confirmedStatus = "authorized";
+
+    render(<CalendarSidebarContent />);
+
+    expect(screen.getByText("Apple Calendar")).toBeTruthy();
+    expect(screen.queryByText("Google")).toBeNull();
+    expect(screen.queryByText("Outlook")).toBeNull();
+    expect(screen.queryByText(/Connect Google Calendar/)).toBeNull();
+    expect(screen.queryByText("Sign in to connect your calendar")).toBeNull();
+    expect(mocks.useConnections).not.toHaveBeenCalled();
+    expect(mocks.useOpenIntegrationUrl).not.toHaveBeenCalled();
+    expect(findContextMenuItem("add-google-account")).toBeUndefined();
   });
 
   it("explains how to recover after Apple Calendar access is denied", () => {

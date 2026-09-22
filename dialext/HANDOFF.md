@@ -944,12 +944,14 @@ Real-window result, using only `node dialext/dev.mjs`: the isolated debug protot
 no black diagnostics bar and no purple render outlines. Settings → Developers → Show developer
 diagnostics restored the bar; switching it off removed the bar again. No release build was used.
 
-## Milestone 7 — independent entitlements (first bounded slice)
+## Milestone 7 — independent entitlements (two bounded slices; not yet accepted)
+
+### First bounded slice
 
 Implemented on 22 September 2026. This is a verified slice, not completion of the whole
 milestone.
 
-### Entitlement seam and local capabilities
+#### Entitlement seam and local capabilities
 
 - `useBillingAccess` remains the single renderer entitlement seam. `BillingAccess` now has a
   distinct `localFeatures` capability object for playback speed, dictionary, Auto-template
@@ -965,7 +967,7 @@ milestone.
   local automation save/enable now consult their specific local capability. The existing plan
   seam and denial behavior remain testable with a provider that sets one false.
 
-### Personal shell and hosted-service boundary
+#### Personal shell and hosted-service boundary
 
 - Account, Team and Sync settings destinations are absent; restored legacy destinations fall
   back to General. Login and calendar account steps no longer appear in personal onboarding.
@@ -988,7 +990,7 @@ milestone.
 - Internal `@anlg`/`anlg_` identifiers, hosted implementations, migrations, licences, evidence
   and saved edits remain intact. Branding and visual changes stay deferred.
 
-### Exact validation
+#### Exact validation
 
 - Focused capability/shell regression set: 14 files / 154 tests passed.
 - Focused automation and local-export set: 6 files / 104 tests passed.
@@ -1005,7 +1007,7 @@ milestone.
   missing messages in each non-English catalog. The generated catalog edits are intentional and
   remain uncommitted with this slice.
 
-### Native synthetic verification
+#### Native synthetic verification
 
 Launched and stopped the isolated application only with `node dialext/dev.mjs`; no release
 build, live provider or paid provider call was used.
@@ -1030,12 +1032,138 @@ Observed inherited native diagnostics included Rust warnings, SQLite transaction
 `no_version_in_config`, occasional IPC fallback/performance logging and the existing router
 code-split warning. They did not block this slice and were not treated as release validation.
 
-### What remains in milestone 7
+### Second bounded slice — hosted surface isolation
 
-The next bounded slice should remove the remaining account-backed resource-sharing and
-connected-import/calendar entry points from the personal shell while preserving local folder,
-template, file-import and Apple/local calendar workflows. In particular, folder/template Share
-buttons and connected import cards still contain sign-in/upgrade paths in retained legacy code.
-Audit restored tabs/deep links for those surfaces and add mount-level regressions proving no
-hosted query hooks run. Do not delete their storage, migrations or implementations, and do not
-replace the capability split with `isPro: true`.
+Implemented on 22 September 2026 on branch `codex/m7-hosted-surface-isolation`, in a separate
+worktree, as one commit on top of `d3e7182` (`wip: checkpoint Dialext milestone 7 entitlement
+slice`), which holds the first slice above and its regenerated catalogs. **Automated checks
+pass; real-window acceptance of this slice is outstanding (see below). Milestone 7 is not
+accepted.**
+
+#### Policy
+
+- `apps/desktop/src/auth/account-services.ts` exports `ANARLOG_ACCOUNT_SERVICES_ENABLED = false`,
+  a build-time statement that the personal shell has no Anarlog account.
+  `ANARLOG_HOSTED_AUTOMATIONS_ENABLED` now derives from it, so the existing automation
+  execution policy keeps its value.
+- `useBillingAccess`, the four `localFeatures` capabilities and the personal
+  `isPro: false`/`isPaid: false` provider are unchanged. Direct provider and provider-owned
+  OAuth/subscription flows (e.g. Settings → Intelligence connect) are untouched.
+- The account-backed implementations stay in the tree behind that constant. Tests of the
+  retained paths now mock it `true`; new personal-shell tests use the real value.
+
+#### What the personal shell no longer mounts or shows
+
+- **Folders:** the folder editor renders a local-only variant with no Share button and no
+  `useSharedResources` query. Rename and delete are local; the hosted share move/delete
+  bookkeeping lives only in the account-backed wrapper. The "Shared with me" folder library and
+  its import are not rendered.
+- **Templates:** no Share button in the template editor and no "Shared with me" library in the
+  Templates sidebar. Local create/edit/duplicate/delete and Auto are unchanged.
+- **Imports:** a local file-only list replaces the connected list. Detected apps keep **Choose
+  files** (including apps whose connection was MCP, CLI or Anarlog/Nango-hosted); Connect &
+  import, Sign in to connect, Disconnect and Sync now are absent; `useAuth`, `useConnections`
+  and connected credential/sync queries are not called. Providers listed only for their hosted
+  connection (Google Meet, `alwaysAvailable` without an installed app) are hidden. **Import a
+  Dialext recording** and provider generation are unchanged. Onboarding's import step now
+  skips itself when nothing local is detected (Google Meet previously kept it open).
+- **Calendar:** the sidebar offers Apple Calendar only, with its permission, reconnect and
+  disconnect behaviour intact. Google/Outlook rows, their OAuth prompts, `useConnections` and
+  `useOpenIntegrationUrl` are not mounted. The calendar view still schedules and range-syncs
+  local calendars but no longer mounts the account connection query.
+- **Settings → Meetings:** the hosted "Default sharing" selector is hidden; the stored
+  `default_meeting_share_access` value is untouched.
+- **Restored tabs and navigation:** `getDefaultState` normalizes legacy inputs before a tab is
+  created. `shared_sessions` and `shared_note_preview` open the local home (empty) tab;
+  settings `account`, `sync`, `team` and `todo` open General. This covers pinned-tab restore,
+  closed-tab restore, native `openTab`/settings navigation and search results, so the
+  shared-note "Sign in" screens cannot mount. The account/share deep-link handler remains
+  unmounted from the first slice; such links are ignored, not handled.
+
+#### Regressions added
+
+- `folders/index.test.tsx`: under the personal providers, folder context, rename and delete
+  work with no Share control, no shared library, no `useSharedResources` call and no hosted
+  move/delete.
+- `templates/personal-shell.test.tsx`: editing a template saves locally without a Share
+  control; the sidebar lists local templates without the shared library; no hosted query.
+- `imports/local-screen.test.tsx`: local file imports listed and working (Choose files → read →
+  `importMeetingFiles`); no connect/sign-in controls; no auth, connections, credential or sync
+  hooks; Settings → Imports keeps the Dialext recording import beside them; hosted-only
+  listings let onboarding skip.
+- `calendar/components/sidebar.test.tsx`: Apple only, no Google/Outlook, no sign-in, no
+  connections or integration hooks (existing Apple tests now run in the personal
+  configuration). `calendar/components/calendar-view.test.tsx`: local sync runs without the
+  account connection query.
+- `store/zustand/tabs/personal-shell.test.tsx`: the shipped flag is false; shared-note inputs
+  become the local home tab and render it without mounting shared-note content; legacy account
+  settings open General; closed-tab and pinned-tab restore stay local.
+- `settings/general/meeting-settings.test.tsx`: Default sharing is absent without account
+  services.
+
+#### Exact validation (this slice)
+
+- Baseline before editing (worktree at the base commit): the affected-area tests passed,
+  67 files / 552 tests.
+- Focused regression set (folders, templates, both import suites, calendar sidebar/view, all
+  tab-store tests, meeting settings, personal providers, automations): **22 files / 218 tests
+  passed**.
+- Full desktop suite: **483 files / 4,502 tests passed**.
+- `pnpm -F @anlg/ui build`: passed. `pnpm -F @anlg/desktop typecheck` (`tsc --noEmit`):
+  passed on the final source state.
+- ESLint on every changed desktop TypeScript/TSX file: passed; only the inherited
+  `eslint.config.js` module-type warning was printed.
+- Desktop Oxlint: **206 inherited warnings, 0 errors**; none are in changed files.
+- Changed-file dprint format/check: passed. (`HANDOFF.md` is outside dprint's file set.)
+- Lingui clean extraction and strict compilation, and `pnpm -F @anlg/desktop i18n:check`:
+  passed with **no catalog changes**. No user-facing string was added; the import result
+  summary kept its placeholder names so the 109 locale catalogs did not churn.
+- Licence-boundary tests (9) and boundary check: passed.
+- No live or paid provider call, no network publish, no push and no release build.
+
+#### Native verification: not run — acceptance outstanding
+
+No native check was run for this slice. The dev launcher resolves its toolchain and vault from
+the checkout root, but this worktree has no `.dialext-tools` (and no global `cargo`), would
+need a cold Rust build, and would share the `app.dialext.prototype` application data with the
+primary checkout, where another agent is working. Doing that safely needs Joshua's go-ahead and
+window control. Real-window checklist, using only `node dialext/dev.mjs` from the checkout that
+owns the prototype vault and synthetic samples:
+
+1. Folders: create, rename, set context, add/remove a material, delete. No Share button and no
+   "Shared with me" section.
+2. Templates: create, edit, duplicate and delete a template; Auto still opens. No Share button
+   and no "Shared with me" section.
+3. Settings → Imports: **Import a Dialext recording** and generation are present; detected apps
+   show only **Choose files**; no Connect, Sign in or Google Meet row.
+4. Calendar: only Apple Calendar is listed; permission prompt/recovery, reconnect and disconnect
+   still work; no Google/Outlook and no sign-in tooltip.
+5. Settings → Meetings: no Default sharing row.
+6. No sign-in, upgrade or trial prompt appears across launch, restart and the steps above.
+   Recording, permission, download, missing-provider and error notices still appear where
+   they apply.
+
+#### What remains in milestone 7
+
+- The real-window acceptance above.
+- **Appearance → App icon** still gates choosing another icon behind Pro ("This requires
+  Anarlog Pro" with a no-op Upgrade). Every option is an Anarlog-branded icon, so this was left
+  for milestone 8's icon work rather than adding a fifth local capability here. It is the one
+  reachable Pro interruption this audit found.
+- The chat `web_search` tool targets Anarlog's hosted research endpoint. Without auth headers
+  it makes no request; its refusal to the model now reads "Web search is not available in this
+  build." instead of asking for a sign-in that cannot happen. The tool itself is still
+  registered: removing or replacing it changes model tools, so that needs a decision.
+- The template gallery (Templates tab and note template picker) still fetches public suggested
+  templates from `https://anarlog.so/api/templates` without an account. Milestone 3's "Lecture"
+  template came from it; replacing it with bundled local templates is separate template work.
+- Native calendar discovery (`plugins/calendar`, `list_connection_ids`) still asks the Anarlog
+  API for Google/Outlook connections if a legacy Anarlog access token is stored by the auth
+  plugin. The personal shell cannot create one; a native guard would be a separate Rust
+  change.
+- The note editor's owned-share comment query stays mounted but disabled without a session;
+  it sits inside the core editor and was not changed.
+- Upstream documentation links (Imports, calendar docs) belong to milestone 8.
+
+Do not delete the retained storage, migrations or implementations, and do not replace the
+capability split with `isPro: true`.

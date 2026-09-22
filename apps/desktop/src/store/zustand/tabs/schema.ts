@@ -8,6 +8,8 @@ import type {
   TemplatesState,
 } from "@anlg/plugin-windows";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
+
 export type {
   ChangelogState,
   ContactsSelection,
@@ -155,8 +157,35 @@ export type TaskResource =
   | { type: "github_issue"; owner: string; repo: string; number: number }
   | { type: "github_pr"; owner: string; repo: string; number: number };
 
-export const getDefaultState = (tab: TabInput): Tab => {
+const ACCOUNT_SETTINGS_TABS: ReadonlySet<string> = new Set([
+  "account",
+  "sync",
+  "team",
+  "todo",
+]);
+
+// Restored tabs, closed-tab history and native navigation can still name
+// Anarlog account destinations. Without account services they open locally,
+// so no shared-note or account screen can mount and ask the person to sign in.
+const toReachableTabInput = (tab: TabInput): TabInput => {
+  if (ANARLOG_ACCOUNT_SERVICES_ENABLED) {
+    return tab;
+  }
+  if (tab.type === "shared_sessions" || tab.type === "shared_note_preview") {
+    return { type: "empty" };
+  }
+  if (
+    tab.type === "settings" &&
+    ACCOUNT_SETTINGS_TABS.has(String(tab.state?.tab))
+  ) {
+    return { type: "settings", state: { tab: "app" } };
+  }
+  return tab;
+};
+
+export const getDefaultState = (input: TabInput): Tab => {
   const base = { active: false, slotId: "", pinned: false };
+  const tab = toReachableTabInput(input);
 
   switch (tab.type) {
     case "sessions":

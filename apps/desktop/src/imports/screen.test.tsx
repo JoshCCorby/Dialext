@@ -9,6 +9,11 @@ import {
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// These cases cover the retained Anarlog account-backed behavior.
+vi.mock("~/auth/account-services", () => ({
+  ANARLOG_ACCOUNT_SERVICES_ENABLED: true,
+}));
+
 const mocks = vi.hoisted(() => ({
   detectImportSources: vi.fn(),
   cancelConnectedImport: vi.fn(),

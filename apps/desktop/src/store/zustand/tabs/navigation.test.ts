@@ -1,10 +1,15 @@
 import "./test-matchers";
 
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { useTabs } from ".";
 import { MAX_TAB_HISTORY_ENTRIES } from "./navigation";
 import { createSessionTab, resetTabsStore } from "./test-utils";
+
+// These cases cover the retained Anarlog account-backed behavior.
+vi.mock("~/auth/account-services", () => ({
+  ANARLOG_ACCOUNT_SERVICES_ENABLED: true,
+}));
 
 describe("navigation", () => {
   beforeEach(() => {
