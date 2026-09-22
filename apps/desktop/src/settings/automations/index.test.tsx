@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
     isPro: true,
     isReady: true,
     upgradeToPro: vi.fn(),
+    localFeatures: { localAutomations: true },
   },
   chatGroup: null as {
     id: string;
@@ -135,6 +136,7 @@ describe("AutomationsContent", () => {
   beforeEach(() => {
     mocks.billing.isPro = true;
     mocks.billing.isReady = true;
+    mocks.billing.localFeatures.localAutomations = true;
     mocks.billing.upgradeToPro.mockClear();
     mocks.chatGroup = null;
     mocks.deleteChatAutomation.mockClear();
@@ -190,13 +192,13 @@ describe("AutomationsContent", () => {
   });
 
   it("shows the selected starter as an inspectable deterministic draft", () => {
-    mocks.selection = { kind: "starter", starterId: "slack-recap" };
+    mocks.selection = { kind: "starter", starterId: "markdown-export" };
 
     renderAutomations();
 
-    expect(screen.getByText("Use the AI meeting summary")).toBeTruthy();
-    expect(screen.getByText("Post to a channel")).toBeTruthy();
-    expect(screen.getByTestId("config-slack")).toBeTruthy();
+    expect(screen.getByText("Render canonical Markdown")).toBeTruthy();
+    expect(screen.getByText("Write to a folder")).toBeTruthy();
+    expect(screen.getByTestId("config-markdown")).toBeTruthy();
     expect(
       screen.getByRole<HTMLButtonElement>("button", { name: "Test" }).disabled,
     ).toBe(true);
@@ -210,46 +212,48 @@ describe("AutomationsContent", () => {
 
     expect(screen.getByText("Expected output")).toBeTruthy();
     expect(
-      screen.getByText(/A Slack message with the meeting title and recap/),
+      screen.getByText(
+        "A Markdown file with the note, summary, and transcript.",
+      ),
     ).toBeTruthy();
   });
 
   it("uses product marks without icon tiles", () => {
-    mocks.selection = { kind: "starter", starterId: "slack-recap" };
+    mocks.selection = { kind: "starter", starterId: "markdown-export" };
 
     const { container } = renderAutomations();
 
     const header = screen
       .getByRole("heading", {
         level: 2,
-        name: "Share a meeting recap in Slack",
+        name: "Export every meeting as Markdown",
       })
       .closest("header");
-    const slackIcon = container.querySelector(
-      'iconify-icon[icon="logos:slack-icon"]',
+    const markdownIcon = container.querySelector(
+      'img[src="/assets/markdown-mark.svg"]',
     );
 
     expect(header).toBeTruthy();
-    expect(slackIcon).toBeTruthy();
-    expect(slackIcon?.closest("header")).toBe(header);
+    expect(markdownIcon).toBeTruthy();
+    expect(markdownIcon?.closest("header")).toBe(header);
     expect(
       screen
         .getByRole("button", { name: "Automation actions" })
         .closest("header"),
     ).toBe(header);
-    expect(slackIcon?.parentElement?.className).not.toContain("bg-muted");
-    expect(slackIcon?.parentElement?.className).not.toContain("rounded");
+    expect(markdownIcon?.parentElement?.className).not.toContain("bg-muted");
+    expect(markdownIcon?.parentElement?.className).not.toContain("rounded");
   });
 
   it("matches the templates header and body gutters", () => {
-    mocks.selection = { kind: "starter", starterId: "slack-recap" };
+    mocks.selection = { kind: "starter", starterId: "markdown-export" };
 
     renderAutomations();
 
     const header = screen
       .getByRole("heading", {
         level: 2,
-        name: "Share a meeting recap in Slack",
+        name: "Export every meeting as Markdown",
       })
       .closest("header");
     const body = header?.nextElementSibling;
@@ -261,7 +265,8 @@ describe("AutomationsContent", () => {
     expect(body?.className).toContain("pt-3");
   });
 
-  it("saves the selected draft for Pro users", async () => {
+  it("saves the selected draft on the personal free plan", async () => {
+    mocks.billing.isPro = false;
     mocks.selection = { kind: "starter", starterId: "markdown-export" };
 
     renderAutomations();
@@ -277,9 +282,9 @@ describe("AutomationsContent", () => {
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Automation draft saved");
   });
 
-  it("toasts instead of saving on the free plan", () => {
-    mocks.billing.isPro = false;
-    mocks.selection = { kind: "starter", starterId: "notion-project-notes" };
+  it("keeps the entitlement seam when local automations are denied", () => {
+    mocks.billing.localFeatures.localAutomations = false;
+    mocks.selection = { kind: "starter", starterId: "markdown-export" };
 
     renderAutomations();
 
@@ -321,7 +326,7 @@ describe("AutomationsContent", () => {
   });
 
   it("removes the starter automation from the actions menu", async () => {
-    mocks.selection = { kind: "starter", starterId: "slack-recap" };
+    mocks.selection = { kind: "starter", starterId: "markdown-export" };
 
     renderAutomations();
 
@@ -331,7 +336,17 @@ describe("AutomationsContent", () => {
 
     fireEvent.click(await screen.findByText("Remove automation"));
 
-    expect(mocks.removeStarterDraft).toHaveBeenCalledWith("slack-recap");
+    expect(mocks.removeStarterDraft).toHaveBeenCalledWith("markdown-export");
+  });
+
+  it("does not open a restored hosted starter in the personal shell", () => {
+    mocks.selection = { kind: "starter", starterId: "slack-recap" };
+
+    renderAutomations();
+
+    expect(screen.getByRole("heading", { name: "Automations" })).toBeTruthy();
+    expect(screen.getByText("No automation draft yet")).toBeTruthy();
+    expect(screen.queryByTestId("config-slack")).toBeNull();
   });
 
   it("deletes a chat automation from the actions menu", async () => {

@@ -265,7 +265,6 @@ msgstr ""
 
 #: src/onboarding/index.tsx
 #: src/settings/general/account.tsx
-#: src/sidebar/settings.tsx
 msgid "Account"
 msgstr ""
 
@@ -621,6 +620,10 @@ msgstr ""
 
 #: src/onboarding/index.tsx
 msgid "Anarlog will sync your calendar to get meeting reminders"
+msgstr ""
+
+#: src/settings/automations/index.tsx
+msgid "Anarlog-hosted automation actions are unavailable in this personal build."
 msgstr ""
 
 #: src/templates/template-icon-picker.tsx
@@ -2327,6 +2330,7 @@ msgstr ""
 
 #: src/session/components/outer-header/overflow/export-modal.tsx
 #: src/session/components/outer-header/overflow/index.tsx
+#: src/session/components/outer-header/personal-export-button.tsx
 msgid "Export"
 msgstr ""
 
@@ -2340,6 +2344,10 @@ msgstr ""
 
 #: src/settings/general/storage/export-location.tsx
 msgid "Export location"
+msgstr ""
+
+#: src/session/components/outer-header/personal-export-button.tsx
+msgid "Export note"
 msgstr ""
 
 #: src/settings/automations/workflow-builder.tsx
@@ -2589,10 +2597,6 @@ msgstr ""
 
 #: src/resource-sharing/share-dialog.tsx
 msgid "guest@company.com"
-msgstr ""
-
-#: src/settings/developers/index.tsx
-msgid "Guide"
 msgstr ""
 
 #: src/settings/general/app-settings.tsx
@@ -4965,7 +4969,6 @@ msgstr ""
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 #: src/settings/sync/index.tsx
 #: src/shared-notes/index.tsx
-#: src/sidebar/toast/registry.tsx
 msgid "Sign in"
 msgstr ""
 
@@ -5009,10 +5012,6 @@ msgstr ""
 
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 msgid "Sign in to generate this summary"
-msgstr ""
-
-#: src/sidebar/toast/registry.tsx
-msgid "Sign in to get the most out of Anarlog"
 msgstr ""
 
 #: src/session-sharing/index.tsx
@@ -5375,7 +5374,6 @@ msgid "Symbols"
 msgstr ""
 
 #: src/settings/sync/index.tsx
-#: src/sidebar/settings.tsx
 msgid "Sync"
 msgstr ""
 
@@ -5471,7 +5469,6 @@ msgid "teammate@company.com"
 msgstr ""
 
 #: src/settings/team/index.tsx
-#: src/sidebar/settings.tsx
 msgid "Teams"
 msgstr ""
 
@@ -5648,6 +5645,10 @@ msgstr ""
 
 #: src/settings/plan-gate.tsx
 msgid "This requires Anarlog Team"
+msgstr ""
+
+#: src/settings/automations/workflow-builder.tsx
+msgid "This saved Anarlog-hosted action is unavailable in the personal build."
 msgstr ""
 
 #: src/dialext/source-panel.tsx

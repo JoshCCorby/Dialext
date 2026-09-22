@@ -45,8 +45,8 @@ import {
   type TranscriptState,
 } from "./transcript";
 
+import { PERSONAL_AUTOMATION_EXECUTION_POLICY } from "~/automations/access";
 import { runMeetingCompletedAutomations } from "~/automations/engine";
-import { syncCloudApiSnapshotBestEffort } from "~/cloud-api/client";
 import { getSessionResourcePath } from "~/session/resource-path";
 import { isAppStoreBuild } from "~/shared/app-store";
 import { fromResult } from "~/stt/fromResult";
@@ -341,7 +341,10 @@ const createSessionEventHandlers = <T extends LiveStore>(
 
     const dispatchMeetingCompleted = () => {
       void localApiCommands.dispatchEvent("meeting.completed", targetSessionId);
-      void runMeetingCompletedAutomations(targetSessionId);
+      void runMeetingCompletedAutomations(
+        targetSessionId,
+        PERSONAL_AUTOMATION_EXECUTION_POLICY,
+      );
     };
 
     if (onStopped) {
@@ -887,8 +890,6 @@ export const stopLiveSession = <T extends GeneralState>(
         if (!sessionId) {
           return;
         }
-
-        syncCloudApiSnapshotBestEffort(sessionId);
 
         if (isAppStoreBuild()) {
           return;

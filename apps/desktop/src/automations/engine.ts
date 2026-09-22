@@ -17,6 +17,7 @@ import {
 } from "./types";
 import {
   type AutomationWorkflow,
+  isLocalAutomationWorkflow,
   parseAutomationWorkflows,
   serializeAutomationWorkflows,
   type WorkflowStep,
@@ -41,6 +42,7 @@ const MAX_PROCESSED_SESSIONS = 50;
 
 export async function runMeetingCompletedAutomations(
   sessionId: string,
+  { allowHostedServices = true }: { allowHostedServices?: boolean } = {},
 ): Promise<void> {
   try {
     await runMarkdownExport(sessionId);
@@ -48,7 +50,11 @@ export async function runMeetingCompletedAutomations(
     console.error("[automations] meeting.completed run failed", error);
   }
   try {
-    await runCustomWorkflows(sessionId, "meeting_completed");
+    await runCustomWorkflows(
+      sessionId,
+      "meeting_completed",
+      allowHostedServices,
+    );
   } catch (error) {
     console.error("[automations] meeting.completed workflows failed", error);
   }
@@ -56,17 +62,20 @@ export async function runMeetingCompletedAutomations(
 
 export async function runNoteEnhancedAutomations(
   sessionId: string,
+  { allowHostedServices = true }: { allowHostedServices?: boolean } = {},
 ): Promise<void> {
-  const runners = [runSlackRecap, runLinearIssues, runNotionUpdate];
-  for (const runner of runners) {
-    try {
-      await runner(sessionId);
-    } catch (error) {
-      console.error("[automations] note.enhanced run failed", error);
+  if (allowHostedServices) {
+    const runners = [runSlackRecap, runLinearIssues, runNotionUpdate];
+    for (const runner of runners) {
+      try {
+        await runner(sessionId);
+      } catch (error) {
+        console.error("[automations] note.enhanced run failed", error);
+      }
     }
   }
   try {
-    await runCustomWorkflows(sessionId, "note_enhanced");
+    await runCustomWorkflows(sessionId, "note_enhanced", allowHostedServices);
   } catch (error) {
     console.error("[automations] note.enhanced workflows failed", error);
   }
@@ -75,11 +84,15 @@ export async function runNoteEnhancedAutomations(
 async function runCustomWorkflows(
   sessionId: string,
   trigger: WorkflowTrigger,
+  allowHostedServices: boolean,
 ): Promise<void> {
   const { values } = await getStoredSettingValues();
   const workflows = parseAutomationWorkflows(values.automation_workflows);
   for (const workflow of workflows) {
     if (!workflow.enabled || workflow.trigger !== trigger) {
+      continue;
+    }
+    if (!allowHostedServices && !isLocalAutomationWorkflow(workflow)) {
       continue;
     }
     if (workflow.steps.length === 0) {

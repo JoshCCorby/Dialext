@@ -1,13 +1,11 @@
 import { cn } from "@anlg/utils";
 
 import {
-  SettingsAccount,
   SettingsApp,
   SettingsMeetings,
   SettingsNotifications,
   SettingsPermissions,
 } from "./general";
-import { SettingsTodo } from "./todo";
 
 import { LLM } from "~/settings/ai/llm";
 import { STT } from "~/settings/ai/stt";
@@ -19,8 +17,6 @@ import { SettingsImports } from "~/settings/imports";
 import { SettingsPrivacy } from "~/settings/privacy";
 import { SettingsStats } from "~/settings/stats";
 import { SettingsInsights } from "~/settings/stats/insights";
-import { SettingsSync } from "~/settings/sync";
-import { SettingsTeam } from "~/settings/team";
 import { StandardContentWrapper } from "~/shared/main";
 import { type Tab } from "~/store/zustand/tabs";
 
@@ -40,7 +36,7 @@ export function TabContentSettings({
 
 function SettingsView({ tab }: { tab: Extract<Tab, { type: "settings" }> }) {
   const requestedTab = tab.state.tab as string | undefined;
-  const activeTab =
+  const normalizedTab =
     requestedTab === "data"
       ? "imports"
       : requestedTab === "personalization"
@@ -48,11 +44,12 @@ function SettingsView({ tab }: { tab: Extract<Tab, { type: "settings" }> }) {
         : requestedTab === "audio"
           ? "meetings"
           : (tab.state.tab ?? "app");
+  const activeTab = ["account", "sync", "team", "todo"].includes(normalizedTab)
+    ? "app"
+    : normalizedTab;
 
   const renderContent = () => {
     switch (activeTab) {
-      case "account":
-        return <SettingsAccount />;
       case "stats":
         return <SettingsStats />;
       case "insights":
@@ -65,10 +62,6 @@ function SettingsView({ tab }: { tab: Extract<Tab, { type: "settings" }> }) {
         return <SettingsAppearance />;
       case "notifications":
         return <SettingsNotifications />;
-      case "sync":
-        return <SettingsSync />;
-      case "team":
-        return <SettingsTeam />;
       case "imports":
         return <SettingsImports />;
       case "permissions":
@@ -83,8 +76,6 @@ function SettingsView({ tab }: { tab: Extract<Tab, { type: "settings" }> }) {
         return <STT />;
       case "intelligence":
         return <LLM />;
-      case "todo":
-        return <SettingsTodo />;
       default:
         return <SettingsApp />;
     }

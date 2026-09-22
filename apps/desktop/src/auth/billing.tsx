@@ -29,7 +29,11 @@ import { configurePaidSettings } from "../shared/config/configure-paid-settings"
 import { startTrialOnce } from "../shared/trial-start";
 import { buildWebAppUrl } from "../shared/utils";
 import { useAuth } from "./auth-context";
-import { type BillingAccess, BillingContext } from "./billing-context";
+import {
+  type BillingAccess,
+  BillingContext,
+  createLocalFeatureAccess,
+} from "./billing-context";
 
 import { setSettingValues } from "~/settings/queries";
 import { useConfigValues } from "~/shared/config";
@@ -391,6 +395,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
       canStartTrial,
       upgradeToPro,
       isUpgradingToPro,
+      localFeatures: createLocalFeatureAccess(billing.isPro),
     }),
     [billing, isReady, canStartTrial, upgradeToPro, isUpgradingToPro],
   );

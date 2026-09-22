@@ -148,22 +148,22 @@ describe("AutomationsNav", () => {
     mocks.showContextMenu.mockClear();
   });
 
-  it("lists the starter automations and selects one", () => {
+  it("lists only the local starter automation and selects it", () => {
     render(<AutomationsNav />);
 
     expect(screen.getByText("Get started")).toBeTruthy();
-    expect(screen.getByText("Share a meeting recap in Slack")).toBeTruthy();
-    expect(screen.getByText("Update project notes in Notion")).toBeTruthy();
+    expect(screen.queryByText("Share a meeting recap in Slack")).toBeNull();
+    expect(screen.queryByText("Update project notes in Notion")).toBeNull();
     expect(
-      screen.getByText("Turn action items into Linear issues"),
-    ).toBeTruthy();
+      screen.queryByText("Turn action items into Linear issues"),
+    ).toBeNull();
     expect(screen.getByText("Export every meeting as Markdown")).toBeTruthy();
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Share a meeting recap in Slack/ }),
+      screen.getByRole("button", { name: /Export every meeting as Markdown/ }),
     );
 
-    expect(mocks.selectStarter).toHaveBeenCalledWith("slack-recap");
+    expect(mocks.selectStarter).toHaveBeenCalledWith("markdown-export");
   });
 
   it("marks the selected starter", () => {
@@ -201,14 +201,14 @@ describe("AutomationsNav", () => {
     render(<AutomationsNav />);
 
     fireEvent.contextMenu(
-      screen.getByRole("button", { name: /Share a meeting recap in Slack/ }),
+      screen.getByRole("button", { name: /Export every meeting as Markdown/ }),
     );
 
-    expect(mocks.selectStarter).toHaveBeenCalledWith("slack-recap");
+    expect(mocks.selectStarter).toHaveBeenCalledWith("markdown-export");
     expect(mocks.showContextMenu).toHaveBeenCalled();
 
-    findContextMenuItem("remove-automation-slack-recap")?.action();
-    expect(mocks.removeStarterDraft).toHaveBeenCalledWith("slack-recap");
+    findContextMenuItem("remove-automation-markdown-export")?.action();
+    expect(mocks.removeStarterDraft).toHaveBeenCalledWith("markdown-export");
   });
 
   it("offers edit and delete in the chat automation context menu", () => {
@@ -233,10 +233,17 @@ describe("AutomationsNav", () => {
       target: { value: "project" },
     });
 
-    expect(screen.queryByText("Share a meeting recap in Slack")).toBeNull();
-    expect(screen.getByText("Update project notes in Notion")).toBeTruthy();
+    expect(screen.queryByText("Update project notes in Notion")).toBeNull();
+    expect(screen.queryByText("Export every meeting as Markdown")).toBeNull();
     expect(screen.queryByText("Share weekly recap")).toBeNull();
     expect(screen.getByText("Update project notes")).toBeTruthy();
+
+    fireEvent.change(screen.getByPlaceholderText("Search automations..."), {
+      target: { value: "export" },
+    });
+
+    expect(screen.getByText("Export every meeting as Markdown")).toBeTruthy();
+    expect(screen.queryByText("Update project notes")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
 

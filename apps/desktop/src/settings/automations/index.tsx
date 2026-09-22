@@ -34,6 +34,7 @@ import {
 import { useSaveWorkflow, WorkflowBuilder } from "./workflow-builder";
 
 import { useBillingAccess } from "~/auth/billing-context";
+import { ANARLOG_HOSTED_AUTOMATIONS_ENABLED } from "~/automations/access";
 import {
   useDeleteChatAutomation,
   useDeleteWorkflow,
@@ -52,6 +53,7 @@ import {
 import {
   type AutomationWorkflow,
   createEmptyWorkflow,
+  isLocalAutomationWorkflow,
   isWorkflowReady,
   parseAutomationWorkflows,
   saveAutomationWorkflows,
@@ -90,6 +92,12 @@ export function AutomationsContent() {
   const selection = useEffectiveAutomationSelection();
 
   if (selection?.kind === "starter") {
+    if (
+      !ANARLOG_HOSTED_AUTOMATIONS_ENABLED &&
+      selection.starterId !== "markdown-export"
+    ) {
+      return <AutomationsOverview />;
+    }
     return (
       <StarterAutomationDetails
         key={selection.starterId}
@@ -308,13 +316,18 @@ function CustomWorkflowDetails({
   const notifyPlanRequired = useNotifyPlanRequired();
   const workflows = useAutomationWorkflows();
   const saveWorkflow = useSaveWorkflow();
+  const hostedActionsUnavailable =
+    !ANARLOG_HOSTED_AUTOMATIONS_ENABLED && !isLocalAutomationWorkflow(workflow);
 
   const persist = (next: AutomationWorkflow) => {
     saveWorkflow.mutate({ workflows, next });
   };
 
   const handleEnable = (enabled: boolean) => {
-    if (enabled && !billing.isPro) {
+    if (enabled && hostedActionsUnavailable) {
+      return;
+    }
+    if (enabled && !billing.localFeatures.localAutomations) {
       notifyPlanRequired("pro");
       return;
     }
@@ -328,12 +341,14 @@ function CustomWorkflowDetails({
       description={description}
       actions={
         <div className="flex items-center gap-2">
-          <ResourceShareButton
-            resourceType="automation"
-            sourceId={workflow.id}
-            title={workflow.title.trim() || t`Untitled automation`}
-            buildPayload={() => sharedAutomationPayload(workflow)}
-          />
+          {ANARLOG_HOSTED_AUTOMATIONS_ENABLED ? (
+            <ResourceShareButton
+              resourceType="automation"
+              sourceId={workflow.id}
+              title={workflow.title.trim() || t`Untitled automation`}
+              buildPayload={() => sharedAutomationPayload(workflow)}
+            />
+          ) : null}
           {workflow.enabled ? (
             <Button
               type="button"
@@ -352,12 +367,17 @@ function CustomWorkflowDetails({
               disabled={
                 !billing.isReady ||
                 saveWorkflow.isPending ||
-                (billing.isPro && !isWorkflowReady(workflow))
+                hostedActionsUnavailable ||
+                (billing.localFeatures.localAutomations &&
+                  !isWorkflowReady(workflow))
               }
               title={
-                billing.isPro && !isWorkflowReady(workflow)
-                  ? t`Add and configure at least one action first.`
-                  : undefined
+                hostedActionsUnavailable
+                  ? t`Anarlog-hosted automation actions are unavailable in this personal build.`
+                  : billing.localFeatures.localAutomations &&
+                      !isWorkflowReady(workflow)
+                    ? t`Add and configure at least one action first.`
+                    : undefined
               }
             >
               <Lightning size={14} />
@@ -371,7 +391,11 @@ function CustomWorkflowDetails({
         </div>
       }
     >
-      <WorkflowBuilder workflow={workflow} onChange={persist} />
+      <WorkflowBuilder
+        workflow={workflow}
+        onChange={persist}
+        allowHostedSteps={ANARLOG_HOSTED_AUTOMATIONS_ENABLED}
+      />
     </AutomationDetailsLayout>
   );
 }
@@ -484,7 +508,7 @@ function StarterAutomationDetails({ starterId }: { starterId: StarterId }) {
   })();
 
   const handleSaveDraft = () => {
-    if (!billing.isPro) {
+    if (!billing.localFeatures.localAutomations) {
       notifyPlanRequired("pro");
       return;
     }
@@ -492,7 +516,7 @@ function StarterAutomationDetails({ starterId }: { starterId: StarterId }) {
   };
 
   const handleEnable = () => {
-    if (!billing.isPro) {
+    if (!billing.localFeatures.localAutomations) {
       notifyPlanRequired("pro");
       return;
     }
@@ -590,9 +614,13 @@ function StarterAutomationDetails({ starterId }: { starterId: StarterId }) {
                 disabled={
                   !billing.isReady ||
                   setEnabledMutation.isPending ||
-                  (billing.isPro && !isReady)
+                  (billing.localFeatures.localAutomations && !isReady)
                 }
-                title={billing.isPro && !isReady ? readinessHint : undefined}
+                title={
+                  billing.localFeatures.localAutomations && !isReady
+                    ? readinessHint
+                    : undefined
+                }
               >
                 <Lightning size={14} />
                 <Trans>Save &amp; enable</Trans>

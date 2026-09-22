@@ -10,14 +10,8 @@ export type OnboardingStep =
   | "folder-location"
   | "final";
 
-const STEPS_MACOS: OnboardingStep[] = [
-  "permissions",
-  "login",
-  "calendar",
-  "imports",
-  "final",
-];
-const STEPS_OTHER: OnboardingStep[] = ["login", "calendar", "imports", "final"];
+const STEPS_MACOS: OnboardingStep[] = ["permissions", "imports", "final"];
+const STEPS_OTHER: OnboardingStep[] = ["imports", "final"];
 
 function getOnboardingSteps(): OnboardingStep[] {
   return platform() === "macos" ? STEPS_MACOS : STEPS_OTHER;

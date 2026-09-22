@@ -16,6 +16,7 @@ import { FolderPicker } from "../folder-picker";
 import { RecordingIcon, useHasTranscript } from "../shared";
 import { TitleInput } from "../title-input";
 import { OverflowButton } from "./overflow";
+import { PersonalExportButton } from "./personal-export-button";
 
 import { useAudioPlayer } from "~/audio-player";
 import { useNow } from "~/calendar/hooks";
@@ -24,7 +25,6 @@ import {
   buildWelcomeNoteDemoUrl,
   WELCOME_NOTE_TRACKING_ID,
 } from "~/onboarding/welcome-note.constants";
-import { SessionShareButton } from "~/session-sharing";
 import { useEventCountdown } from "~/session/hooks/useEventCountdown";
 import { useMeetingMicInUse } from "~/session/hooks/useMeetingMicInUse";
 import {
@@ -108,6 +108,7 @@ export function OuterHeader({
           sessionId={sessionId}
           sessionMode={sessionMode}
           meetingOver={meetingOver}
+          currentView={currentView}
         />
         <OverflowButton
           standaloneWindow={standaloneWindow}
@@ -123,10 +124,12 @@ function HeaderMeetingControl({
   sessionId,
   sessionMode,
   meetingOver,
+  currentView,
 }: {
   sessionId: string;
   sessionMode: string;
   meetingOver: boolean;
+  currentView: EditorView;
 }) {
   const sessionEvent = useSessionEvent(sessionId);
   const hasTranscript = useHasTranscript(sessionId);
@@ -143,11 +146,7 @@ function HeaderMeetingControl({
   if (meetingOver) {
     return (
       <div className="relative mr-1 flex min-w-0 shrink-0 items-center">
-        <SessionShareButton
-          key={sessionId}
-          sessionId={sessionId}
-          variant="cta"
-        />
+        <PersonalExportButton sessionId={sessionId} currentView={currentView} />
       </div>
     );
   }

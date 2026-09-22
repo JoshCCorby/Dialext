@@ -2,22 +2,15 @@ import { useRouteContext } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef } from "react";
 
 import { useLanguageModel, useLLMConnection } from "~/ai/hooks";
-import { AttachmentTransferLifecycle } from "~/attachment-sync/lifecycle";
 import { useAuth } from "~/auth";
-import { CloudsyncKeychainRepairToast } from "~/auth/cloudsync-keychain-repair";
 import { searchCalendarEvents } from "~/calendar/queries";
 import { useSessionTab } from "~/chat/components/use-session-tab";
 import { buildChatTools } from "~/chat/tools";
-import { CloudApiBackfillLifecycle } from "~/cloud-api/lifecycle";
 import { searchContacts } from "~/contacts/queries";
 import { useRegisterTools } from "~/contexts/tool";
 import { takePendingWelcomeSession } from "~/onboarding/welcome-note";
 import { useSearchEngine } from "~/search/contexts/engine";
 import { initEnhancerService } from "~/services/enhancer";
-import { OwnedSharedNotePublisher } from "~/session-sharing/sync";
-import { SharedAttachmentCacheLifecycle } from "~/shared-notes/attachment-cache-lifecycle";
-import { SharedNotePreviewAuthLifecycle } from "~/shared-notes/preview";
-import { DurableSharedNoteCacheSync } from "~/shared-notes/sync";
 import { useConfigValue } from "~/shared/config";
 import { useDesktopTabLifecycle } from "~/shared/desktop-tab-lifecycle";
 import { folderIdForNewNote, useSidebarNotes } from "~/sidebar/note-filter";
@@ -50,13 +43,6 @@ export function useClassicMainLifecycle() {
 export function ClassicMainServices() {
   return (
     <>
-      <AttachmentTransferLifecycle />
-      <CloudsyncKeychainRepairToast />
-      <CloudApiBackfillLifecycle />
-      <DurableSharedNoteCacheSync />
-      <SharedAttachmentCacheLifecycle />
-      <OwnedSharedNotePublisher />
-      <SharedNotePreviewAuthLifecycle />
       <LiveCaptureRecovery />
       <ScheduledMeetingAutoStart />
       <MainListenerControlBridge />

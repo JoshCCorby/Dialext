@@ -265,7 +265,6 @@ msgstr "Accessibility"
 
 #: src/onboarding/index.tsx
 #: src/settings/general/account.tsx
-#: src/sidebar/settings.tsx
 msgid "Account"
 msgstr "Account"
 
@@ -622,6 +621,10 @@ msgstr "Anarlog will retry automatically. This does not affect your notes."
 #: src/onboarding/index.tsx
 msgid "Anarlog will sync your calendar to get meeting reminders"
 msgstr "Anarlog will sync your calendar to get meeting reminders"
+
+#: src/settings/automations/index.tsx
+msgid "Anarlog-hosted automation actions are unavailable in this personal build."
+msgstr "Anarlog-hosted automation actions are unavailable in this personal build."
 
 #: src/templates/template-icon-picker.tsx
 msgid "Animals & Nature"
@@ -2327,6 +2330,7 @@ msgstr "Expected output"
 
 #: src/session/components/outer-header/overflow/export-modal.tsx
 #: src/session/components/outer-header/overflow/index.tsx
+#: src/session/components/outer-header/personal-export-button.tsx
 msgid "Export"
 msgstr "Export"
 
@@ -2341,6 +2345,10 @@ msgstr "Export folder"
 #: src/settings/general/storage/export-location.tsx
 msgid "Export location"
 msgstr "Export location"
+
+#: src/session/components/outer-header/personal-export-button.tsx
+msgid "Export note"
+msgstr "Export note"
 
 #: src/settings/automations/workflow-builder.tsx
 msgid "Export the meeting as Markdown"
@@ -2590,10 +2598,6 @@ msgstr "Guest email"
 #: src/resource-sharing/share-dialog.tsx
 msgid "guest@company.com"
 msgstr "guest@company.com"
-
-#: src/settings/developers/index.tsx
-msgid "Guide"
-msgstr "Guide"
 
 #: src/settings/general/app-settings.tsx
 msgid "Have Anarlog ready when you sign in."
@@ -4965,7 +4969,6 @@ msgstr "Show when initial cloud sync finishes."
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 #: src/settings/sync/index.tsx
 #: src/shared-notes/index.tsx
-#: src/sidebar/toast/registry.tsx
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -5010,10 +5013,6 @@ msgstr "Sign in to create a shared workspace for your team."
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 msgid "Sign in to generate this summary"
 msgstr "Sign in to generate this summary"
-
-#: src/sidebar/toast/registry.tsx
-msgid "Sign in to get the most out of Anarlog"
-msgstr "Sign in to get the most out of Anarlog"
 
 #: src/session-sharing/index.tsx
 msgid "Sign in to share"
@@ -5375,7 +5374,6 @@ msgid "Symbols"
 msgstr "Symbols"
 
 #: src/settings/sync/index.tsx
-#: src/sidebar/settings.tsx
 msgid "Sync"
 msgstr "Sync"
 
@@ -5471,7 +5469,6 @@ msgid "teammate@company.com"
 msgstr "teammate@company.com"
 
 #: src/settings/team/index.tsx
-#: src/sidebar/settings.tsx
 msgid "Teams"
 msgstr "Teams"
 
@@ -5649,6 +5646,10 @@ msgstr "This requires Anarlog Pro"
 #: src/settings/plan-gate.tsx
 msgid "This requires Anarlog Team"
 msgstr "This requires Anarlog Team"
+
+#: src/settings/automations/workflow-builder.tsx
+msgid "This saved Anarlog-hosted action is unavailable in the personal build."
+msgstr "This saved Anarlog-hosted action is unavailable in the personal build."
 
 #: src/dialext/source-panel.tsx
 msgid "This summary block was generated from this passage of the {reading} reading."

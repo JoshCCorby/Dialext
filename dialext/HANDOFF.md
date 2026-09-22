@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 22 September 2026. **Milestone 5 — coherent personal workflow — is implemented and passes its automated checks, but its real-window acceptance is still outstanding** (window control was declined this session; see “Milestone 5” at the end). Native baseline and milestones 1–**4** are complete and verified in the isolated native app. **Milestone 4 — provider bridge — now has a native-owned durable queue, a bounded stateless fixture helper, independently durable stages, immediate cancellation of an in-flight helper, preferred-language generation and on-demand alternate generation.** Its real-window acceptance and exact limitations are at the end of this file. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 22 September 2026. **Milestone 5 — coherent personal workflow — is implemented and passes its automated checks, but its real-window acceptance is still outstanding**; do not describe it as accepted until the checklist below passes. Native baseline and milestones 1–**4** are complete and verified in the isolated native app. **Milestone 6 — quiet interface — has now passed its real-window acceptance. Milestone 7 has started with a bounded personal-entitlement and hosted-service-isolation slice; it is not complete.** No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -34,6 +34,7 @@ The user wants a working personal tool based on Anarlog's layout, not another en
 12. Deterministic Dialext outputs through the existing template picker, one `dialextBlock` per passage of the selected reading, with no model call. A template is another output, never a replacement of the one on screen.
 13. A milestone-4 provider bridge. Rust owns the durable `dialext_provider_tasks` lifecycle, cancellation, protocol/result validation, immutable stage writes and final account transaction. The development-only Node helper is a stateless fixture subprocess with bounded JSON stdin/stdout and stderr diagnostics; it has no HTTP listener, database access or workspace-write authority. Settings → Imports generates the preferred reading from a WAV, and the existing language selector generates the missing alternate on demand.
 14. Milestone 5 (automated checks only; native acceptance outstanding): stored per-block evidence for generated outputs, a quiet source control on each summary block, grounded questions through the existing chat, and a Dialext export regression. See the end of this file.
+15. Milestone 6 native acceptance and the first milestone 7 slice: developer diagnostics are quiet by default and opt-in works; the personal shell now uses no-account auth/billing providers, unlocks the four requested local capabilities through `useBillingAccess`, removes primary account/upgrade interruptions, and prevents its automatic lifecycle, automation and deletion paths from activating Anarlog-hosted services. See the end of this file.
 
 The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. It has **no source audio**, no actual ASR output, and no evaluated translation quality. Do not describe opening it as a successful live transcription test.
 
@@ -41,6 +42,7 @@ The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. 
 
 - A live Azure/other speech provider, provider credentials, quality claims or packaged helper runtime. Only the deterministic development fixture provider is offered. One approved short live sample remains a separate assessment.
 - Real-window acceptance of milestone 5. Its code and automated checks are in place; the checklist is at the end of this file.
+- Completion of milestone 7. Folder/template resource sharing and connected-import/calendar surfaces still need a bounded personal-shell pass; their legacy implementation remains in the tree but must not become the route to a blanket paid entitlement.
 - A real summary. The Dialext outputs are deterministic, fixture-grade copies of the selected reading's passages, for checking corrections and proposals end to end.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 - Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
@@ -55,7 +57,7 @@ Do not fill these gaps with inert controls. Complete one visible journey at a ti
 | --- | --- |
 | Pinned dependency install and shared UI build | Passed |
 | Desktop TypeScript check | Passed |
-| Full desktop test suite | Milestone 5 (22 September): 476 files, 4,483 tests passed. Milestone 4 boundary (21 September): 473 files, 4,452 tests passed. Milestone 3: 472 / 4,449 |
+| Full desktop test suite | Milestone 7 first slice (22 September): 479 files, 4,482 tests passed. Milestone 5: 476 files, 4,483 tests passed. Milestone 4 boundary: 473 files, 4,452 tests passed. Milestone 3: 472 / 4,449 |
 | Focused import/UI tests | 13 tests passed on 17 September, including the final timing metadata refinement |
 | Provider protocol/helper and source-anchor validator | 19 tests passed |
 | Native tests | Milestone 5: session-ingest 58; db-app 249 unit + 2 integration; db plugin 162. Milestone 4: session-ingest 52; db-app 248 unit + 2 integration (3 existing ignored); db plugin 162. Milestone 3 desktop native suite: 57 |
@@ -64,7 +66,7 @@ Do not fill these gaps with inert controls. Complete one visible journey at a ti
 | Licence-boundary tests/check | 9 tests and boundary check passed (rerun 21 September) |
 | Lingui extraction and strict compilation | Passed; generated catalog changes are committed with the first import slice |
 | Lingui check against tracked catalogs | Passed, including milestone 3's six new strings |
-| Desktop Oxlint | No errors; 207 inherited warnings |
+| Desktop Oxlint | No errors; 206 inherited warnings at the milestone 7 first slice |
 | Affected ESLint / native Clippy | Desktop ESLint passed; plugin JS has no matching ESLint configuration. db-app/session-ingest Clippy passed with warnings denied. Plugin Clippy is blocked by two inherited lints described below. |
 | Workflow audit | Offline zizmor scan found 358 inherited findings. No upstream workflow fixes or release-readiness claim. GitHub Actions are disabled on this private repository. |
 
@@ -103,7 +105,7 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–4 have passed; milestone 5 is implemented; **first complete its real-window acceptance** (checklist at the end of this file), then choose the next bounded step with Joshua. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–4 have passed; milestone 5 is implemented but still needs the real-window checklist below; milestone 6 has passed; milestone 7 has one verified slice and remaining work recorded below. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -904,8 +906,8 @@ Joshua added a "Making it Dialext's own" section to `product/product-vision.md`,
 - **8** user-visible Dialext branding, with the MIT notice retained
 - **9** a personal look (fonts and colours), which waits for Joshua's choices
 
-**Milestone 6 is implemented; not seen in the real window.** Root cause of the "purple
-pop-ups":
+**Milestone 6 is implemented and passed its real-window acceptance on 22 September 2026.**
+Root cause of the "purple pop-ups":
 
 - The devtools status bar shows in every debug build (`should_show_devtool` returns true under
   `debug_assertions`), and the launcher always builds debug.
@@ -938,5 +940,102 @@ Checks:
 - Also fixed: a typing error in the milestone 5 transport test (`unknown[]` context refs), which
   the earlier typecheck had run before that test existed.
 
-**Real-window check outstanding:** relaunch `node dialext/dev.mjs` and confirm there is no black
-bar and no purple outlines. Turn the Developers setting on and confirm the bar returns.
+Real-window result, using only `node dialext/dev.mjs`: the isolated debug prototype opened with
+no black diagnostics bar and no purple render outlines. Settings → Developers → Show developer
+diagnostics restored the bar; switching it off removed the bar again. No release build was used.
+
+## Milestone 7 — independent entitlements (first bounded slice)
+
+Implemented on 22 September 2026. This is a verified slice, not completion of the whole
+milestone.
+
+### Entitlement seam and local capabilities
+
+- `useBillingAccess` remains the single renderer entitlement seam. `BillingAccess` now has a
+  distinct `localFeatures` capability object for playback speed, dictionary, Auto-template
+  customization and local automations. The ordinary Anarlog billing provider maps those
+  capabilities from its existing Pro state; the personal provider supplies only those four
+  local capabilities.
+- The personal provider deliberately remains `isPro: false`, `isPaid: false`, with no available
+  trial and a no-op upgrade action. This is not a blanket paid-flag override.
+- The personal auth provider has no Supabase client or session and returns no request headers.
+  The main personal shell mounts these providers instead of the account-backed auth and billing
+  providers.
+- Playback-rate enforcement and its menu, Dictionary, Auto-template save/reset/improve, and
+  local automation save/enable now consult their specific local capability. The existing plan
+  seam and denial behavior remain testable with a provider that sets one false.
+
+### Personal shell and hosted-service boundary
+
+- Account, Team and Sync settings destinations are absent; restored legacy destinations fall
+  back to General. Login and calendar account steps no longer appear in personal onboarding.
+- Sign-in and generic Pro-upgrade promotional toasts were removed. Recording, microphone,
+  permission, model-download, missing-provider and error notices remain.
+- The completed-note primary action is now local **Export note**, using the existing PDF/TXT/
+  Markdown/Org export dialog, instead of hosted session sharing.
+- Anarlog-hosted LLM/STT choices are filtered from the provider selectors. Direct configured
+  providers and on-device choices remain available and provider-agnostic.
+- CloudSync/share/attachment/Cloud API lifecycles, workspace mirroring, invitation toasts,
+  connected meeting import sync and enterprise capture sync are not mounted by the personal
+  shell. Auth/billing/share deep-link handling is also not mounted.
+- Completion and enhancement no longer schedule Cloud API snapshot uploads. Local deletion no
+  longer reads module-level Anarlog auth or schedules Cloud API/share cleanup.
+- Personal automation callers pass `allowHostedServices: false`. Slack, Notion and Linear
+  starters/actions and the shared automation library are hidden; previously saved hosted
+  workflows are preserved but cannot be enabled or executed. Markdown-only workflows remain
+  editable and executable. Engine regressions prove the false policy skips connection/auth
+  reads and hosted writes while still running Markdown export.
+- Internal `@anlg`/`anlg_` identifiers, hosted implementations, migrations, licences, evidence
+  and saved edits remain intact. Branding and visual changes stay deferred.
+
+### Exact validation
+
+- Focused capability/shell regression set: 14 files / 154 tests passed.
+- Focused automation and local-export set: 6 files / 104 tests passed.
+- Final hosted-boundary regression set: 5 files / 111 tests passed. It includes production-call
+  assertions for `allowHostedServices: false` and local deletion with no hosted cleanup.
+- Final full desktop suite: **479 files / 4,482 tests passed**.
+- `pnpm -F @anlg/ui build`: passed.
+- `pnpm -F @anlg/desktop typecheck`: passed on the final source state.
+- ESLint on every changed desktop TypeScript/TSX file: passed; Node printed the inherited
+  module-type warning for `eslint.config.js`.
+- Desktop Oxlint: **206 inherited warnings, 0 errors**.
+- Changed-file dprint format/check: passed.
+- Lingui clean extraction and strict compilation: passed with 1,491 source messages and 1,476
+  missing messages in each non-English catalog. The generated catalog edits are intentional and
+  remain uncommitted with this slice.
+
+### Native synthetic verification
+
+Launched and stopped the isolated application only with `node dialext/dev.mjs`; no release
+build, live provider or paid provider call was used.
+
+- Settings had no Account, Teams or Sync destination. Dictionary opened directly. The Auto
+  template editor exposed its prompt, Improve and Save controls without a plan interruption.
+- A synthetic recording exposed playback rates 0.5x through 2x. 1.5x could be selected and was
+  restored to 1x without playing audio or making a provider call.
+- Transcription and Intelligence showed direct/on-device providers and did not show Anarlog.
+  Developers showed diagnostics and local CLI material, not Cloud API or Webhooks.
+- Automations showed only **Export every meeting as Markdown**. Save draft was available; Save
+  & enable was blocked only by the actionable `Choose an export folder first` requirement, not
+  by Pro or login.
+- `Sample · Source review with audio` showed **Export note**. Opening it displayed the existing
+  local file-format/include dialog; it was dismissed without writing a file.
+- No sign-in, trial or upgrade interruption appeared during launch, restart or this navigation.
+- Milestone 6's diagnostics off/on/off behavior passed in the same isolated window. **Milestone
+  5's separate source-control/question/restart/export checklist was not run and remains
+  outstanding.**
+
+Observed inherited native diagnostics included Rust warnings, SQLite transaction warnings,
+`no_version_in_config`, occasional IPC fallback/performance logging and the existing router
+code-split warning. They did not block this slice and were not treated as release validation.
+
+### What remains in milestone 7
+
+The next bounded slice should remove the remaining account-backed resource-sharing and
+connected-import/calendar entry points from the personal shell while preserving local folder,
+template, file-import and Apple/local calendar workflows. In particular, folder/template Share
+buttons and connected import cards still contain sign-in/upgrade paths in retained legacy code.
+Audit restored tabs/deep links for those surfaces and add mount-level regressions proving no
+hosted query hooks run. Do not delete their storage, migrations or implementations, and do not
+replace the capability split with `isPro: true`.

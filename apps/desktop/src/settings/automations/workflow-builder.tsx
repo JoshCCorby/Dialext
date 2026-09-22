@@ -35,9 +35,11 @@ import {
 export function WorkflowBuilder({
   workflow,
   onChange,
+  allowHostedSteps = true,
 }: {
   workflow: AutomationWorkflow;
   onChange: (workflow: AutomationWorkflow) => void;
+  allowHostedSteps?: boolean;
 }) {
   const { t } = useLingui();
 
@@ -140,15 +142,19 @@ export function WorkflowBuilder({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="slack_recap">
-                    <Trans>Post a recap to Slack</Trans>
-                  </SelectItem>
-                  <SelectItem value="notion_update">
-                    <Trans>Append an update to Notion</Trans>
-                  </SelectItem>
-                  <SelectItem value="linear_issues">
-                    <Trans>Create Linear issues from action items</Trans>
-                  </SelectItem>
+                  {allowHostedSteps ? (
+                    <>
+                      <SelectItem value="slack_recap">
+                        <Trans>Post a recap to Slack</Trans>
+                      </SelectItem>
+                      <SelectItem value="notion_update">
+                        <Trans>Append an update to Notion</Trans>
+                      </SelectItem>
+                      <SelectItem value="linear_issues">
+                        <Trans>Create Linear issues from action items</Trans>
+                      </SelectItem>
+                    </>
+                  ) : null}
                   <SelectItem value="markdown_export">
                     <Trans>Export the meeting as Markdown</Trans>
                   </SelectItem>
@@ -158,6 +164,7 @@ export function WorkflowBuilder({
                 <WorkflowStepConfig
                   step={step}
                   onChange={(next) => updateStep(step.id, next)}
+                  allowHostedSteps={allowHostedSteps}
                 />
               </div>
             </WorkflowCard>
@@ -168,7 +175,7 @@ export function WorkflowBuilder({
           <ArrowRight className="rotate-90" size={13} />
         </div>
 
-        <AddWorkflowStep onAdd={addStep} />
+        <AddWorkflowStep onAdd={addStep} allowHostedSteps={allowHostedSteps} />
       </div>
 
       <div className="border-border border-t px-5 py-4">
@@ -186,9 +193,11 @@ export function WorkflowBuilder({
 function WorkflowStepConfig({
   step,
   onChange,
+  allowHostedSteps,
 }: {
   step: WorkflowStep;
   onChange: (step: WorkflowStep) => void;
+  allowHostedSteps: boolean;
 }) {
   if (step.type === "markdown_export") {
     return (
@@ -196,6 +205,15 @@ function WorkflowStepConfig({
         value={step.directory}
         onChange={(directory) => onChange({ ...step, directory })}
       />
+    );
+  }
+  if (!allowHostedSteps) {
+    return (
+      <p className="text-muted-foreground text-xs">
+        <Trans>
+          This saved Anarlog-hosted action is unavailable in the personal build.
+        </Trans>
+      </p>
     );
   }
   if (step.type === "slack_recap") {
@@ -224,8 +242,10 @@ function WorkflowStepConfig({
 
 function AddWorkflowStep({
   onAdd,
+  allowHostedSteps,
 }: {
   onAdd: (type: WorkflowStepType) => void;
+  allowHostedSteps: boolean;
 }) {
   const { t } = useLingui();
 
@@ -247,15 +267,19 @@ function AddWorkflowStep({
           </span>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="slack_recap">
-            <Trans>Slack recap</Trans>
-          </SelectItem>
-          <SelectItem value="notion_update">
-            <Trans>Notion update</Trans>
-          </SelectItem>
-          <SelectItem value="linear_issues">
-            <Trans>Linear issues</Trans>
-          </SelectItem>
+          {allowHostedSteps ? (
+            <>
+              <SelectItem value="slack_recap">
+                <Trans>Slack recap</Trans>
+              </SelectItem>
+              <SelectItem value="notion_update">
+                <Trans>Notion update</Trans>
+              </SelectItem>
+              <SelectItem value="linear_issues">
+                <Trans>Linear issues</Trans>
+              </SelectItem>
+            </>
+          ) : null}
           <SelectItem value="markdown_export">
             <Trans>Markdown export</Trans>
           </SelectItem>

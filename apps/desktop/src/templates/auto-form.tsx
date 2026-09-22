@@ -113,7 +113,7 @@ export function AutoFormatForm({
   const form = useForm({
     defaultValues: { format: initialFormat },
     onSubmit: async ({ value }) => {
-      if (!billing.isPro) {
+      if (!billing.localFeatures.autoTemplateCustomization) {
         notifyPlanRequired("pro");
         return;
       }
@@ -126,7 +126,7 @@ export function AutoFormatForm({
   });
 
   const resetToDefault = async () => {
-    if (!billing.isPro) {
+    if (!billing.localFeatures.autoTemplateCustomization) {
       notifyPlanRequired("pro");
       return;
     }
@@ -238,7 +238,7 @@ export function AutoFormatForm({
               variant="outline"
               className="shrink-0"
               onClick={() => {
-                if (!billing.isPro) {
+                if (!billing.localFeatures.autoTemplateCustomization) {
                   notifyPlanRequired("pro");
                   return;
                 }
@@ -250,7 +250,10 @@ export function AutoFormatForm({
             </Button>
           </div>
 
-          <PlanGate plan="pro" allowed={billing.isPro}>
+          <PlanGate
+            plan="pro"
+            allowed={billing.localFeatures.autoTemplateCustomization}
+          >
             <div className="flex flex-col gap-5">
               <form.Field name="format">
                 {(field) => (

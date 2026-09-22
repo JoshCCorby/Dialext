@@ -8,6 +8,7 @@ import { cn, formatDistanceToNow } from "@anlg/utils";
 
 import { CustomSidebarHeader } from "./custom-sidebar-header";
 
+import { ANARLOG_HOSTED_AUTOMATIONS_ENABLED } from "~/automations/access";
 import {
   useDeleteChatAutomation,
   useDeleteWorkflow,
@@ -39,7 +40,10 @@ export function AutomationsNav() {
   const { t } = useLingui();
   const [search, setSearch] = useState("");
   const searchRef = useSquircleRef<HTMLDivElement>();
-  const starters = useStarterAutomations();
+  const starters = useStarterAutomations().filter(
+    (starter) =>
+      ANARLOG_HOSTED_AUTOMATIONS_ENABLED || starter.id === "markdown-export",
+  );
   const chatAutomations = useChatGroups("automations");
   const workflows = useAutomationWorkflows();
   const selection = useEffectiveAutomationSelection();
@@ -235,18 +239,22 @@ export function AutomationsNav() {
                 ))}
               </div>
             ) : null}
-            <SharedResourceLibrarySection
-              resourceType="automation"
-              search={search}
-              onImport={async (resource) => {
-                const workflow = parseSharedAutomationPayload(resource.payload);
-                const workflowId = await importSharedAutomation({
-                  version: 1,
-                  workflow,
-                });
-                selectWorkflow(workflowId);
-              }}
-            />
+            {ANARLOG_HOSTED_AUTOMATIONS_ENABLED ? (
+              <SharedResourceLibrarySection
+                resourceType="automation"
+                search={search}
+                onImport={async (resource) => {
+                  const workflow = parseSharedAutomationPayload(
+                    resource.payload,
+                  );
+                  const workflowId = await importSharedAutomation({
+                    version: 1,
+                    workflow,
+                  });
+                  selectWorkflow(workflowId);
+                }}
+              />
+            ) : null}
           </>
         )}
       </div>

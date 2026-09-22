@@ -16,7 +16,7 @@ export function Timeline({
 }: {
   contentClassName?: string;
 } = {}) {
-  const { isPro } = useBillingAccess();
+  const { localFeatures } = useBillingAccess();
   const {
     registerContainer,
     state,
@@ -124,7 +124,7 @@ export function Timeline({
             <span>{formatTime(time.total)}</span>
           </TimelineMeta>
 
-          {isPro ? (
+          {localFeatures.playbackSpeed ? (
             <div className="relative shrink-0" ref={rateMenuRef}>
               <button
                 onClick={() => setShowRateMenu((prev) => !prev)}

@@ -196,37 +196,14 @@ describe("ToastNotifications", () => {
     vi.useRealTimers();
   });
 
-  it("routes the sign-in suggestion through Sonner", () => {
+  it("does not create sign-in or upgrade promotions", () => {
     render(<ToastNotifications />);
 
     act(() => vi.advanceTimersByTime(500));
 
-    expect(mocks.message).toHaveBeenCalledWith(
-      "Sign in to get the most out of Anarlog",
-      expect.objectContaining({
-        id: "sign-in-benefits",
-        duration: Infinity,
-        closeButton: true,
-        action: expect.objectContaining({ label: "Sign in" }),
-      }),
-    );
-
-    const options = mocks.message.mock.calls[0][1];
-    options.action.onClick();
-    expect(mocks.signIn).toHaveBeenCalledOnce();
-
-    options.onDismiss();
+    expect(mocks.message).not.toHaveBeenCalled();
+    expect(mocks.signIn).not.toHaveBeenCalled();
     expect(mocks.dismissToast).not.toHaveBeenCalled();
-  });
-
-  it("persists explicit Sonner dismissals", () => {
-    render(<ToastNotifications />);
-
-    act(() => vi.advanceTimersByTime(500));
-
-    const options = mocks.message.mock.calls[0][1];
-    options.onDismiss();
-    expect(mocks.dismissToast).toHaveBeenCalledWith("auth-promotion");
   });
 
   it("uses a Sonner loading toast for model downloads", () => {
