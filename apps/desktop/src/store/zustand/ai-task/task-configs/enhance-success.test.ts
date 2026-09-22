@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   playCompletionSound: vi.fn(),
   persistGeneratedEnhancedNote: vi.fn().mockResolvedValue(undefined),
   persistGeneratedTitle: vi.fn().mockResolvedValue(true),
+  runNoteEnhancedAutomations: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@anlg/plugin-db", async (importOriginal) => ({
@@ -36,8 +37,8 @@ vi.mock("~/shared/notification-policy", () => ({
   shouldShowNotification: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock("~/cloud-api/client", () => ({
-  syncCloudApiSnapshotBestEffort: vi.fn(),
+vi.mock("~/automations/engine", () => ({
+  runNoteEnhancedAutomations: mocks.runNoteEnhancedAutomations,
 }));
 
 vi.mock("~/session/content-mutations", () => ({
@@ -186,6 +187,9 @@ describe("enhanceSuccess.onSuccess", () => {
       "enhance",
       cloudsyncLeaseKey,
     );
+    expect(mocks.runNoteEnhancedAutomations).toHaveBeenCalledWith("session-1", {
+      allowHostedServices: false,
+    });
   });
 
   it("reports persistence only after generated content is saved", async () => {

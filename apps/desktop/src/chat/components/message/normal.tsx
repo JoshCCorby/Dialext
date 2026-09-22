@@ -18,6 +18,8 @@ import type { Part } from "./types";
 
 import { hasRenderableContent } from "~/chat/components/shared";
 import type { AnlgUIMessage } from "~/chat/types";
+import { DialextAnswerCitations } from "~/dialext/answer-citations";
+import { DIALEXT_ANSWER_PART } from "~/dialext/question-chat";
 
 function getMessageText(message: AnlgUIMessage): string {
   return message.parts
@@ -155,6 +157,9 @@ function Part({ part }: { part: Part }) {
   }
   if (part.type === "step-start") {
     return null;
+  }
+  if ((part.type as string) === DIALEXT_ANSWER_PART) {
+    return <DialextAnswerCitations data={(part as { data?: unknown }).data} />;
   }
 
   return <Tool part={part} />;

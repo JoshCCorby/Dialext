@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-cancel-dialext-provider-task"
+description = "Enables the cancel_dialext_provider_task command without any pre-configured scope."
+commands.allow = ["cancel_dialext_provider_task"]
+
+[[permission]]
+identifier = "deny-cancel-dialext-provider-task"
+description = "Denies the cancel_dialext_provider_task command without any pre-configured scope."
+commands.deny = ["cancel_dialext_provider_task"]

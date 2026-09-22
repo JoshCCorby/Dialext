@@ -1,4 +1,5 @@
-import { Fragment, memo, useCallback, useMemo } from "react";
+import { Trans } from "@lingui/react/macro";
+import { Fragment, memo, useCallback, useMemo, useRef, useState } from "react";
 
 import { cn } from "@anlg/utils";
 
@@ -15,6 +16,10 @@ import {
 } from "./utils";
 import { WordSpan } from "./word-span";
 
+import {
+  editDialextPassageText,
+  useDialextEditVersion,
+} from "~/dialext/checked-edit";
 import { DialextPassageSource } from "~/dialext/source-panel";
 import { createHighlightSegments } from "~/session/components/note-input/search/matching";
 import type { Segment, SegmentWord } from "~/stt/live-segment";
@@ -237,6 +242,14 @@ const EditableSegmentText = memo(function EditableSegmentText({
       ),
     [segment.words],
   );
+  const [refused, setRefused] = useState(false);
+  // Pinned when the reader starts typing: the version of the words they are looking
+  // at, not whatever the database holds by the time they finish.
+  const onScreenVersion = useDialextEditVersion(transcriptId);
+  const pinnedVersion = useRef<string | null>(null);
+  const handleFocus = useCallback(() => {
+    pinnedVersion.current = onScreenVersion;
+  }, [onScreenVersion]);
   const handleBlur = useCallback(
     (event: React.FocusEvent<HTMLDivElement>) => {
       const nextText = normalizeEditableTranscriptText(
@@ -246,15 +259,35 @@ const EditableSegmentText = memo(function EditableSegmentText({
         return;
       }
 
-      void updateTranscriptSegmentText({
-        transcriptId,
-        wordIds,
-        text: nextText,
-      }).catch((error) => {
+      void (async () => {
+        // A Dialext account is pinned to the reading this text was typed against.
+        // Anything else keeps the ordinary transcript path.
+        const attempt = await editDialextPassageText({
+          transcriptId,
+          wordIds,
+          text: nextText,
+          expectedContentVersion: pinnedVersion.current ?? onScreenVersion,
+        });
+        if (attempt.outcome === "stale") {
+          // The reading moved under this correction. Leave the typed text in place
+          // and say so; overwriting it here is the loss this check exists to stop.
+          setRefused(true);
+          return;
+        }
+        setRefused(false);
+        if (attempt.outcome !== "not-dialext") {
+          return;
+        }
+        await updateTranscriptSegmentText({
+          transcriptId,
+          wordIds,
+          text: nextText,
+        });
+      })().catch((error) => {
         console.error("[transcript] failed to update text", error);
       });
     },
-    [originalText, transcriptId, wordIds],
+    [onScreenVersion, originalText, transcriptId, wordIds],
   );
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -273,7 +306,7 @@ const EditableSegmentText = memo(function EditableSegmentText({
     [originalText],
   );
 
-  return (
+  const editor = (
     <div
       data-transcript-segment-content
       data-transcript-editor
@@ -291,11 +324,28 @@ const EditableSegmentText = memo(function EditableSegmentText({
         "overflow-wrap-anywhere mt-1.5 rounded-md text-sm leading-relaxed wrap-break-word outline-hidden",
         "select-text-deep",
       ])}
+      onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
     >
       {originalText}
     </div>
+  );
+
+  if (!refused) {
+    return editor;
+  }
+
+  return (
+    <>
+      {editor}
+      <p role="alert" className="text-destructive text-sm">
+        <Trans>
+          This reading changed in another window. Your text is still here.
+          Refresh and review it before saving.
+        </Trans>
+      </p>
+    </>
   );
 });
 

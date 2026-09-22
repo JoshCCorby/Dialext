@@ -985,3 +985,42 @@ describe("schema mirror", () => {
     }
   });
 });
+
+describe("Dialext summary block identity", () => {
+  const generated = {
+    type: "doc",
+    content: [
+      {
+        type: "dialextBlock",
+        attrs: { id: "summary:b2" },
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "He ordered coffee." }],
+          },
+        ],
+      },
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "My own note." }],
+      },
+    ],
+  };
+
+  test("survives a round-trip through the editor the reader types in", () => {
+    const reopened = PMNode.fromJSON(noteSchema, generated).toJSON();
+    expect(reopened).toEqual(generated);
+  });
+
+  test("exports as plain markdown with no identity leaking into the text", () => {
+    expect(json2md(generated).trim()).toBe(
+      "He ordered coffee.\n\nMy own note.",
+    );
+  });
+
+  test("is never invented for ordinary markdown", () => {
+    expect(
+      JSON.stringify(md2json("A paragraph.\n\n## Heading\n")),
+    ).not.toContain("dialext");
+  });
+});

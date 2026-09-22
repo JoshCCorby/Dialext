@@ -73,6 +73,12 @@ export function isWorkflowReady(workflow: AutomationWorkflow): boolean {
   return workflow.steps.length > 0 && workflow.steps.every(isWorkflowStepReady);
 }
 
+export function isLocalAutomationWorkflow(
+  workflow: AutomationWorkflow,
+): boolean {
+  return workflow.steps.every((step) => step.type === "markdown_export");
+}
+
 export function parseAutomationWorkflows(
   value: string | undefined,
 ): AutomationWorkflow[] {

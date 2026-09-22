@@ -9,6 +9,12 @@ const env = {
   ...process.env,
   ANARLOG_DISABLE_SENTRY: "1",
   DIALEXT_APP_IDENTIFIER: "app.dialext.prototype",
+  DIALEXT_PROVIDER_HELPER: join(
+    root,
+    "dialext",
+    "engine",
+    "provider-helper.mjs",
+  ),
   ONBOARDING: process.env.ONBOARDING ?? "false",
   CHAR_VAULT_BASE: join(root, ".dialext-data", "vault"),
   RELAY_PORT: "1424",

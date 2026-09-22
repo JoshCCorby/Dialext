@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
     isPro: true,
     isUpgradingToPro: false,
     upgradeToPro: vi.fn(),
+    localFeatures: { autoTemplateCustomization: true },
   },
   values: {
     auto_summary_prompt: "",
@@ -147,6 +148,7 @@ describe("Auto format editor", () => {
     mocks.values.auto_summary_prompt = "";
     mocks.values.selected_template_id = "";
     mocks.billing.isPro = true;
+    mocks.billing.localFeatures.autoTemplateCustomization = true;
     mocks.billing.isUpgradingToPro = false;
     mocks.billing.upgradeToPro.mockClear();
     mocks.getTemplateSource.mockResolvedValue({
@@ -174,8 +176,8 @@ describe("Auto format editor", () => {
     expect(screen.queryByText("Variables")).toBeNull();
   });
 
-  it("keeps the format visible and toasts for Free users", () => {
-    mocks.billing.isPro = false;
+  it("keeps the entitlement seam when format customization is denied", () => {
+    mocks.billing.localFeatures.autoTemplateCustomization = false;
 
     renderWithQueryClient(
       <AutoFormatForm defaultFormat={defaultFormat} formatOverride="" />,
@@ -205,8 +207,8 @@ describe("Auto format editor", () => {
     expect(mocks.setSettingValue).not.toHaveBeenCalled();
   });
 
-  it("toasts instead of opening example generation for Free users", () => {
-    mocks.billing.isPro = false;
+  it("keeps the entitlement seam when example generation is denied", () => {
+    mocks.billing.localFeatures.autoTemplateCustomization = false;
 
     renderWithQueryClient(
       <AutoFormatForm defaultFormat={defaultFormat} formatOverride="" />,
@@ -229,6 +231,28 @@ describe("Auto format editor", () => {
     expect(
       screen.queryByRole("dialog", { name: "Improve summary format" }),
     ).toBeNull();
+  });
+
+  it("saves a custom format on the personal free plan", async () => {
+    mocks.billing.isPro = false;
+
+    renderWithQueryClient(
+      <AutoFormatForm defaultFormat={defaultFormat} formatOverride="" />,
+    );
+
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Auto summary format" }),
+      { target: { value: "- Lead with the key point." } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(mocks.setSettingValue).toHaveBeenCalledWith(
+        "auto_summary_prompt",
+        "- Lead with the key point.",
+      ),
+    );
+    expect(mocks.toastWarning).not.toHaveBeenCalled();
   });
 
   it("generates an editable format from up to three transient examples", async () => {

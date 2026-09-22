@@ -12,6 +12,10 @@ import { renderFolderContext } from "~/chat/context/folder-context";
 import { hydrateSessionContext } from "~/chat/context/session-context-hydrator";
 import { loadHuman, loadOrganization } from "~/contacts/queries";
 import { useToolRegistry } from "~/contexts/tool";
+import {
+  answerRecordingQuestion,
+  DIALEXT_ANSWER_PART,
+} from "~/dialext/question-chat";
 import { useConfigValue } from "~/shared/config";
 
 export const MEETING_CONTEXT_TOOL_GUIDANCE = `
@@ -193,6 +197,22 @@ export function useTransport(
         const text = await renderOrganizationContext(ref.organizationId);
         return text
           ? ({ kind: "text", text } satisfies ResolvedChatContext)
+          : null;
+      },
+      async ({ sessionId, question, abortSignal }) => {
+        const reply = await answerRecordingQuestion({
+          sessionId,
+          question,
+          model,
+          selfHumanId: userId,
+          abortSignal,
+        });
+        return reply
+          ? {
+              text: reply.text,
+              dataType: DIALEXT_ANSWER_PART,
+              data: reply.data,
+            }
           : null;
       },
     );

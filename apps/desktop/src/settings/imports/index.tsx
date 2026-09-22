@@ -5,6 +5,7 @@ import { ArrowSquareOut } from "@anlg/ui/components/icons";
 import { Button } from "@anlg/ui/components/ui/button";
 
 import { ImportDialextRecording } from "~/dialext/import-recording";
+import { DialextProviderGeneration } from "~/dialext/provider-generation";
 import { MeetingImportScreen } from "~/imports/screen";
 import { SettingsPageTitle } from "~/settings/page-title";
 
@@ -27,6 +28,7 @@ export function SettingsImports() {
           <ArrowSquareOut className="size-3.5" />
         </Button>
       </div>
+      <DialextProviderGeneration />
       <ImportDialextRecording />
       <MeetingImportScreen />
     </div>

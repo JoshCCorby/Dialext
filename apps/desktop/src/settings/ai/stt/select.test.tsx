@@ -48,7 +48,7 @@ test.each([true, false])(
       ),
     });
 
-    expect(result.current.providers.anarlog.configured).toBe(true);
+    expect(result.current.providers.anarlog).toBeUndefined();
     expect(result.current.providers.deepgram.configured).toBe(false);
     expect(result.current.isReady).toBe(false);
 

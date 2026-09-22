@@ -16,6 +16,9 @@ vi.mock("~/imports/screen", () => ({
 vi.mock("~/dialext/import-recording", () => ({
   ImportDialextRecording: () => <div>Dialext recording import</div>,
 }));
+vi.mock("~/dialext/provider-generation", () => ({
+  DialextProviderGeneration: () => <div>Dialext provider generation</div>,
+}));
 
 import { SettingsImports } from ".";
 
@@ -25,6 +28,7 @@ describe("SettingsImports", () => {
   it("puts documentation beside the page title", () => {
     render(<SettingsImports />);
     expect(screen.getByText("Dialext recording import")).toBeTruthy();
+    expect(screen.getByText("Dialext provider generation")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Documentation" }));
 

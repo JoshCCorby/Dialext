@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createEmptyWorkflow,
   createWorkflowStep,
+  isLocalAutomationWorkflow,
   isWorkflowReady,
   parseAutomationWorkflows,
 } from "./workflows";
@@ -75,5 +76,34 @@ describe("automation workflows", () => {
       },
     ];
     expect(isWorkflowReady(workflow)).toBe(true);
+  });
+
+  it("distinguishes local exports from hosted connector workflows", () => {
+    expect(
+      isLocalAutomationWorkflow(
+        createEmptyWorkflow({
+          steps: [
+            {
+              id: "step-1",
+              type: "markdown_export",
+              directory: "/exports",
+            },
+          ],
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isLocalAutomationWorkflow(
+        createEmptyWorkflow({
+          steps: [
+            {
+              id: "step-1",
+              type: "slack_recap",
+              target: { id: "C1", name: "general" },
+            },
+          ],
+        }),
+      ),
+    ).toBe(false);
   });
 });

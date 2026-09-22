@@ -174,6 +174,48 @@ pub struct DialextSourceInterval {
     pub audio_unavailable: Option<String>,
 }
 
+/// The result of a version-pinned Dialext account edit. `outcome` is `applied`,
+/// `stale` or `unchanged`; a stale answer is an expected outcome, not an error, so
+/// the interface keeps what the reader typed and offers `contentVersion` to refresh.
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextEditResult {
+    pub outcome: String,
+    pub content_version: String,
+    pub edit_id: Option<String>,
+    pub sequence: Option<i64>,
+}
+
+/// The result of applying a Dialext summary proposal. `outcome` is `applied`,
+/// `stale` or `settled`. A stale answer leaves both the summary and the proposal
+/// untouched, so the reader can refresh and review rather than losing the proposal.
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextProposalResult {
+    pub outcome: String,
+    pub document_version: Option<String>,
+    pub transcript_version: Option<String>,
+    pub blocks_changed: Option<u32>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextProviderTaskStart {
+    pub task_id: String,
+    pub session_id: String,
+}
+
+/// The result of generating a deterministic Dialext output. `outcome` is `written`,
+/// `already_has_text` (nothing was replaced) or `no_passages`.
+#[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DialextOutputResult {
+    pub outcome: String,
+    pub document_version: Option<String>,
+    pub blocks: Option<u32>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, specta::Type, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct E2eeIdentityStatus {
@@ -372,6 +414,13 @@ fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
             commands::attach_dialext_source_audio::<tauri::Wry>,
             commands::read_dialext_source_interval::<tauri::Wry>,
             commands::assign_dialext_speaker,
+            commands::edit_dialext_passage,
+            commands::undo_dialext_edit,
+            commands::apply_dialext_proposal,
+            commands::generate_dialext_output,
+            commands::create_dialext_provider_task::<tauri::Wry>,
+            commands::start_dialext_provider_task::<tauri::Wry>,
+            commands::cancel_dialext_provider_task,
             commands::get_e2ee_identity_status<tauri::Wry>,
             commands::inspect_e2ee_recovery_key,
             commands::create_e2ee_identity<tauri::Wry>,
@@ -425,6 +474,11 @@ async fn bootstrap_app_database<R: tauri::Runtime>(
     let vault = import::resolve_startup_vault_base(&app).map_err(|error| error.to_string())?;
     if let Err(error) = anlg_session_ingest::dialext::migrate_recordings(db.pool(), &vault).await {
         tracing::error!(%error, "Dialext account adoption incomplete; saved transcripts retained");
+    }
+    if let Err(error) =
+        anlg_session_ingest::dialext_provider::recover_interrupted_tasks(db.pool()).await
+    {
+        tracing::error!(%error, "Dialext provider task recovery incomplete");
     }
     if let Some(config) = startup_config {
         runtime.set_startup_status_if_running(StartupStatus::for_phase(

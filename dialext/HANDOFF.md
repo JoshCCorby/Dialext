@@ -1,12 +1,16 @@
 # Start here: Dialext handover
 
-Updated 20 September 2026. Native baseline and milestone 1 are complete and verified in the isolated native app. **Milestone 2's acceptance is now complete**: every step passed in the real interface, including speaker naming across both readings, per-language TXT export, restart, a second recording reusing the contact, and the original sample reporting no source audio. Two defects were found while doing it, both recorded under "Native acceptance completed on 20 September, evening": an unnamed-speaker display and export conflation, **now fixed and verified**, and baseline text that had moved across a passage boundary on 17 September, **deliberately left as found**. Read that section before starting milestone 3, which has not been started. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 22 September 2026. **Milestone 5 — coherent personal workflow — is implemented and passes its automated checks, but its real-window acceptance is still outstanding**; do not describe it as accepted until the checklist below passes. Native baseline and milestones 1–**4** are complete and verified in the isolated native app. **Milestone 6 — quiet interface — has now passed its real-window acceptance. Milestone 7 has started with a bounded personal-entitlement and hosted-service-isolation slice; it is not complete.** No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
 - Private repository: https://github.com/JoshCCorby/Dialext
 - Local checkout: `/Users/joshuacorbett/Coding/Dialext-Anarlog`
-- Working branch: `codex/dialext-personal-prototype`, tracking `origin/main`.
+- Working branch: `codex/dialext-personal-prototype`, tracking `origin/main`. That tracking is
+  misleading: `git log origin/main..HEAD` on this branch lists every commit since the baseline,
+  and run from `main` it lists nothing. Compare against `origin/codex/dialext-personal-prototype`
+  to see what is unpushed. On 21 September the local checkout was found on `main` (two commits);
+  all milestone work lives on the working branch.
 - `origin` is Joshua's new repository. `upstream` is `fastrepl/anarlog`; do not push there.
 - The initial community snapshot is `1f0643e`. Its parentless history is deliberate: it excludes the commercially licensed enterprise implementation. The original upstream revision and licence notices are retained. Local ignored enterprise files are upstream reference material, not part of the new repository.
 - The old `/Users/joshuacorbett/Coding/Transcip` checkout is intact, with pre-existing uncommitted changes. Do not reset it, import its live database, or assume those changes are all in its remote.
@@ -25,14 +29,21 @@ The user wants a working personal tool based on Anarlog's layout, not another en
 7. Durable personal-only recording/evidence/account tables, crash-safe metadata adoption and verified immutable vault artefacts. One effective-transcript view supplies the selected reading to the panel, export, search, enhancer/chat snapshots and native session access.
 8. English/Gaeilge selection in the existing Transcript workspace, checked by native transaction against the expected previous selection. Separate saved edits survive switching/restart. General settings remembers the preferred reading language, default English, for fresh prepared imports. Missing accounts are explicitly unavailable; switching is disabled while editing or processing. Existing summary documents are unchanged by switching.
 9. A native permissions-helper fix: an AppKit drag operation returning nil now restores the row state instead of panicking across an Objective-C callback. The app compiled successfully with this fix. The exact failed-drag interaction has not been reproduced after the fix.
+10. Version-pinned account edits with durable history (milestone 3). Dialext passage corrections and "Undo last correction" go through native `edit_dialext_passage` / `undo_dialext_edit`, pinned to the `content_version` of the reading on screen and compared in one `BEGIN IMMEDIATE` transaction; a stale base is refused with the reader's text kept. Every accepted edit, including an undo, is an append-only `dialext_account_edits` row.
+11. Atomic, block-targeted summary proposals. A Dialext proposal is applied by native `apply_dialext_proposal`, which compares the summary's and the account's `content_version`, replaces only the named `dialextBlock`s and settles the proposal in one transaction. A correction creates the proposal inside its own edit transaction.
+12. Deterministic Dialext outputs through the existing template picker, one `dialextBlock` per passage of the selected reading, with no model call. A template is another output, never a replacement of the one on screen.
+13. A milestone-4 provider bridge. Rust owns the durable `dialext_provider_tasks` lifecycle, cancellation, protocol/result validation, immutable stage writes and final account transaction. The development-only Node helper is a stateless fixture subprocess with bounded JSON stdin/stdout and stderr diagnostics; it has no HTTP listener, database access or workspace-write authority. Settings → Imports generates the preferred reading from a WAV, and the existing language selector generates the missing alternate on demand.
+14. Milestone 5 (automated checks only; native acceptance outstanding): stored per-block evidence for generated outputs, a quiet source control on each summary block, grounded questions through the existing chat, and a Dialext export regression. See the end of this file.
+15. Milestone 6 native acceptance and the first milestone 7 slice: developer diagnostics are quiet by default and opt-in works; the personal shell now uses no-account auth/billing providers, unlocks the four requested local capabilities through `useBillingAccess`, removes primary account/upgrade interruptions, and prevents its automatic lifecycle, automation and deletion paths from activating Anarlog-hosted services. See the end of this file.
 
 The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. It has **no source audio**, no actual ASR output, and no evaluated translation quality. Do not describe opening it as a successful live transcription test.
 
 ## What is not implemented
 
-- Generating a language account or running Azure/another speech provider in the new app.
-- A correction history for imported accounts.
-- Atomic correction-driven summary proposals, stable summary-block provenance, or the requested footer question surface.
+- A live Azure/other speech provider, provider credentials, quality claims or packaged helper runtime. Only the deterministic development fixture provider is offered. One approved short live sample remains a separate assessment.
+- Real-window acceptance of milestone 5. Its code and automated checks are in place; the checklist is at the end of this file.
+- Completion of milestone 7. Folder/template resource sharing and connected-import/calendar surfaces still need a bounded personal-shell pass; their legacy implementation remains in the tree but must not become the route to a blanket paid entitlement.
+- A real summary. The Dialext outputs are deterministic, fixture-grade copies of the selected reading's passages, for checking corrections and proposals end to end.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 - Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
   `session_attachments`, so the ordinary audio-retention sweep and the Delete recording
@@ -46,15 +57,16 @@ Do not fill these gaps with inert controls. Complete one visible journey at a ti
 | --- | --- |
 | Pinned dependency install and shared UI build | Passed |
 | Desktop TypeScript check | Passed |
-| Full desktop test suite | Milestone boundary: 466 files, 4,421 tests passed |
+| Full desktop test suite | Milestone 7 first slice (22 September): 479 files, 4,482 tests passed. Milestone 5: 476 files, 4,483 tests passed. Milestone 4 boundary: 473 files, 4,452 tests passed. Milestone 3: 472 / 4,449 |
 | Focused import/UI tests | 13 tests passed on 17 September, including the final timing metadata refinement |
-| Original source-anchor validator | 13 tests passed |
-| Native tests | session-ingest 15; db-app 244 unit + 2 integration (3 existing ignored); db plugin 162; desktop 57 passed |
-| Common repository Node tests | 82 tests passed |
-| Licence-boundary tests/check | 9 tests and boundary check passed |
+| Provider protocol/helper and source-anchor validator | 19 tests passed |
+| Native tests | Milestone 5: session-ingest 58; db-app 249 unit + 2 integration; db plugin 162. Milestone 4: session-ingest 52; db-app 248 unit + 2 integration (3 existing ignored); db plugin 162. Milestone 3 desktop native suite: 57 |
+| Editor package | 27 files, 204 tests passed (block-identity round-trip, markdown export and "never invented for markdown" added) |
+| Common repository Node tests | 82 tests passed (rerun 21 September); original validator 13 passed |
+| Licence-boundary tests/check | 9 tests and boundary check passed (rerun 21 September) |
 | Lingui extraction and strict compilation | Passed; generated catalog changes are committed with the first import slice |
-| Lingui check against tracked catalogs | Passed |
-| Desktop Oxlint | No errors; 207 inherited warnings |
+| Lingui check against tracked catalogs | Passed, including milestone 3's six new strings |
+| Desktop Oxlint | No errors; 206 inherited warnings at the milestone 7 first slice |
 | Affected ESLint / native Clippy | Desktop ESLint passed; plugin JS has no matching ESLint configuration. db-app/session-ingest Clippy passed with warnings denied. Plugin Clippy is blocked by two inherited lints described below. |
 | Workflow audit | Offline zizmor scan found 358 inherited findings. No upstream workflow fixes or release-readiness claim. GitHub Actions are disabled on this private repository. |
 
@@ -64,7 +76,7 @@ Useful commands, from the new checkout:
 
 ```sh
 node dialext/dev.mjs
-node --test dialext/engine/reconstruction-validate.test.mjs
+node --test dialext/engine/provider-contracts.test.mjs dialext/engine/provider-helper.test.mjs dialext/engine/reconstruction-validate.test.mjs
 npx --yes pnpm@11.1.1 -F @anlg/desktop exec vitest run src/dialext src/settings/imports/index.test.tsx
 npx --yes pnpm@11.1.1 -F @anlg/desktop typecheck
 ```
@@ -86,14 +98,14 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 - The old reconstruction validator's returned `language` is the **target** language. Preserve a distinct spoken-language annotation; never derive it from a forced provider locale.
 - Upstream missing timing metadata defaults to precise provider-word timing. Imported derived wording uses `synthetic_text` to disable that claim; source interval playback must be implemented explicitly.
 - Anarlog edits its working `words_json`. Do not put immutable ASR legs in that editable table or silently turn its editing path into an evidence rewrite.
-- The upstream proposal accept path checks a timestamp, then saves separately. It is not an atomic compare-and-swap operation and does not pin the transcript version. Fix the transaction before connecting automatic correction proposals.
+- The upstream proposal accept path checks a timestamp, then saves separately, replacing the whole body from markdown. **Milestone 3 fixed this for Dialext proposals only** (those with block targets go to `apply_dialext_proposal`). Chat, CLI and MCP inbox proposals still take the old timestamp path, deliberately unchanged; do not route correction-driven work through it.
 - Both `transcripts` and `session_documents` already have trigger-maintained `content_version` tokens. Pin those in native edits/proposal acceptance; transcript `content_revision` alone misses writers that change text without incrementing the counter. Exact migration files and the revised contract are in `ARCHITECTURE.md`.
 - `applySessionIngest` is a usable native command, but its source marker says `meeting_bot`, its workspace is a fixed local fixture scope here, and its envelope is capped at 2 MB. Do not mistake this prototype seam for the final local recording model.
 - Native build caches produced by Xcode's default `swiftbuild` may contain libraries under `out/Products/Debug`, while the linker looks for `arm64-apple-macosx/debug`. The wrapper fixes clean builds. On an affected old cache, touching the relevant Swift-owning `build.rs` files forces rebuilding; no Rust source edit or global Xcode change is required.
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestone 1 have passed; next undertake **milestone 2 only**: source review and recording-level speaker identity, using synthetic audio/prepared fixtures and no paid calls. Read the nearest database/plugin instructions before changing those layers. Preserve current saved edits, contacts and immutable artefacts; use additive migrations and test fresh creation, upgrade, deletion/restoration and restart.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–4 have passed; milestone 5 is implemented but still needs the real-window checklist below; milestone 6 has passed; milestone 7 has one verified slice and remaining work recorded below. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -475,3 +487,555 @@ rebuild. It is a scratch file, not a durable backup. The running prototype now h
 `source-review` selected in **English** — the acceptance run above proved Gaeilge survived a
 restart before it was switched.
 
+## Milestone 3 — checked editing and proposals (commits `ee4bd02`, `e9b74ca`, `9452be2`, `c74d843`, `4d3fffc`)
+
+Completed and natively accepted on 21 September. `apps/desktop/src/session/queries/proposals.ts`
+was read first and matched the handover exactly; that defect is fixed for Dialext proposals.
+
+### What was built
+
+- **`ee4bd02` — native checked edits and history.** `dialext_edits::edit_passage` and
+  `undo_last_edit` pin `transcripts.content_version` (not `content_revision`) and compare it
+  inside one `BEGIN IMMEDIATE` transaction. A stale base returns a `Stale` outcome rather than
+  an error, and nothing is written. Only `text` moves: anchors, metadata and speaker
+  attribution stay as stored. Migration `20260921120000_dialext_account_edits` adds the
+  append-only history. It is additive, `Plain` scope, declared in the CloudSync registry as
+  **not enabled**, with a no-update trigger and a unique partial index so one edit can be
+  undone only once. Undo reverts the newest edit that is not itself an undo and has not been
+  undone. It **refuses** when a writer outside this history changed the same words, rather than
+  discarding that change. There is no redo.
+- **`e9b74ca` — desktop wiring.** The editable transcript segment sends Dialext passages to
+  `edit_dialext_passage`. Any transcript without a Dialext account keeps the upstream
+  `updateTranscriptSegmentText` path. A refusal shows *"This reading changed in another window.
+  Your text is still here. Refresh and review it before saving."* and leaves the typed text on
+  screen.
+- **`9452be2` — atomic proposals by block.** `dialext_proposals::apply_proposal` runs in one
+  transaction. It compares the summary's and the account's `content_version`, replaces only the
+  named blocks and sets the proposal to `applied`. A mismatch in either token leaves both
+  untouched. A named block that has gone refuses the whole proposal. Migration
+  `20260921120100_dialext_proposal_versions` adds four defaulted columns to the local,
+  non-synced `session_proposals` inbox; an older inbox row keeps its behaviour. The same edit
+  transaction creates one proposal per generated summary of the recording. That proposal targets
+  only blocks whose text still reads as generated; a block the reader rewrote by hand is never
+  proposed over. A later correction marks the earlier pending proposal for that summary
+  `superseded` (a new status value), and undoing back to the summarised text withdraws it.
+- **Block identity** is a `dialextBlock` wrapper node (`attrs.id`) in both editor schemas, and it
+  exists only in generated outputs. The first attempt, an optional attribute on paragraphs and
+  headings, made **every** note's stored JSON gain `dialextBlockId: null`. Fourteen editor tests
+  caught it and it was reverted. Markdown export renders the wrapper's content with no identity
+  in the text.
+- **`c74d843` — deterministic outputs and undo control.** For a Dialext recording,
+  `EnhancerService.enhance` skips the model. It writes a heading plus one `dialextBlock` per
+  anchored passage of the **selected** reading, keyed by that passage's word id, and only into a
+  still-empty document. An output that already has text is never regenerated. The picker's
+  `targetNoteId` is deliberately ignored for these recordings, so a template adds another output
+  (upstream replaces the one on screen). The pending auto-enhance record is discarded because no
+  model run exists to resume. **Undo last correction** sits beside the reading selector.
+- **`4d3fffc` — pin fix found by native acceptance** (see below).
+
+### Native acceptance on 21 September — every step in the real window
+
+The window was launched with `node dialext/dev.mjs` and driven with full-screen control
+(background clicks still do not reach the webview). There were no provider calls, no mocked
+database and no browser mock. All steps used `Sample · Source review with audio`, English
+reading.
+
+1. **Applying Lecture creates another output — PASSED.** Summary ▾ → search "Lecture" → the
+   user template. A `template_output` titled Lecture appeared beside the supplied Summary, as a
+   heading plus four `dialextBlock`s keyed `…:passage:0`–`3`. The supplied Summary kept
+   `content_version` `fd029…` and 613 bytes throughout the run. **Side effect:** the picker's
+   first "Lecture" entry is a suggested web template. Clicking it opened the template editor and
+   created an empty **user template "Lecture" (`9feb44db…`)** in the prototype database. That is
+   upstream picker behaviour; the template was left in place and used.
+2. **Block identity survives the real editor — PASSED.** A manual edit to an unrelated block
+   ("Thank you very much. **indeed**") was saved by the note editor with all four wrappers and
+   ids intact. The editor also added its own title heading and a trailing paragraph.
+3. **Accepting a targeted proposal preserves unrelated manual edits — PASSED.** A correction to
+   passage 0 created one pending proposal for `passage:0` only. It was pinned to the Lecture
+   version after the manual edit and to the account version the correction produced. A second
+   correction superseded it live. Review summary → Apply to summary changed only `passage:0` (to
+   "three tickets"). "…indeed", the title heading and the trailing paragraph survived, and the
+   proposal became `applied`.
+4. **A stale proposal refuses — PASSED.** A correction to passage 1 created a proposal. The
+   Lecture's "Hmm." block was then edited by hand to "Hmm (pause).". Applying showed *"This
+   proposal is stale. The meeting changed after it was created. It is still here to review."*
+   The Lecture version stayed `6cbbfa8b…`, its passage 1 block still read "two tickets", and the
+   proposal stayed `pending`. It also survived the restart below.
+5. **Undo survives restart — PASSED.** After a full quit (`app_exit_requested`; no launcher,
+   Vite or desktop process survived) and a fresh `node dialext/dev.mjs`, **Undo last correction**
+   recorded edit 5 undoing edit 4, which was made before the restart. Passage 3 went back to
+   "Hmm.", and the window said "Correction undone.".
+6. **A stale edit refuses with the typing intact — PASSED after the fix.** "Hmm, maybe." was
+   typed into passage 3. Before leaving the field, a second writer (a direct `sqlite3` write
+   standing in for another window) changed passage 2. Leaving the field showed the refusal with
+   "Hmm, maybe." still on screen. No edit 6 was recorded, the version stayed where the other
+   writer left it, and passage 3 was still "Hmm.".
+
+### The defect native acceptance found, and its fix
+
+The first run of step 6 **was accepted**: edit 4 wrote "Hmm, yes indeed." over a base another
+writer had just moved. The native compare was correct. The desktop bridge read `content_version`
+at submission, so the pin described the database rather than the screen and could never refuse.
+The live query does not observe out-of-process writes; the window kept showing the old passage 2
+until the next in-process write.
+
+`4d3fffc` pins a **live-queried** version (`useDialextEditVersion`) on the same invalidation as
+the rendered words, captured when the reader starts typing, for both edits and undo. With no
+version on screen, the bridge refuses rather than guessing. A regression test covers it, and a
+negative control reinstating the submit-time read turned exactly that test red. Step 6 then
+passed as recorded. Nothing was lost in the failed run, because the two writers touched
+different passages.
+
+### Limitations, stated exactly
+
+- The refusal says "Refresh and review", but **there is no refresh control**. The words on
+  screen catch up only on the next in-process write, or on reopening or restarting. Leaving edit
+  mode discards the refused typing, so the reader must copy it first.
+- A proposal refused as stale stays `pending` until declined. A later correction does not
+  replace it unless the summary is unchanged since it was made. There is no "re-propose against
+  the current summary" action.
+- Imported (supplied) summaries have no block identity and never receive proposals. Only
+  deterministic Dialext outputs do.
+- The deterministic output ignores the template's sections, and "Regenerate" does nothing to a
+  Dialext output that has text. Auto on an imported sample returns its supplied summary.
+- Undo covers the selected account only and only edits in its history. Edits made on other
+  paths (for example the upstream live-capture writer) block undo of the same words by design.
+- Refusal text renders in the default text colour in this theme, not red.
+- Chat, CLI and MCP inbox proposals still use the upstream timestamp path.
+- Plugin Clippy and Oxlint stand as inherited: 207 warnings, no errors. zizmor was not rerun,
+  because no workflow changed.
+
+### Automated coverage
+
+- session-ingest **48** (34 before).
+- db-app **247** unit + 2 integration (3 existing ignored), including upgrade tests for both
+  migrations.
+- db plugin **162**; native `desktop` **57**.
+- Editor **27 files / 204 tests**; desktop **472 files / 4,449 tests**.
+- Clippy with `-D warnings` on session-ingest; Lingui extract/compile/check; dprint on every
+  changed file; Node 82; licence 9 + check; validator 13.
+
+Negative controls, each seen red before the assertion was trusted:
+
+- dropping the version compare
+- undoing oldest-first
+- removing the outside-writer guard
+- treating stale as success
+- routing Dialext edits to the generic retrying path
+- patching by position or ignoring block ids
+- comparing only the document version
+- proposing over hand-written blocks
+- never superseding
+- regenerating over existing text
+- the submit-time pin
+
+### State of the live prototype database after acceptance
+
+A pre-milestone copy is at
+`/private/tmp/claude-501/-Users-joshuacorbett-Coding-Dialext-Anarlog/e4cd4889-6ef3-4ca7-95b4-30c273526cb8/scratchpad/db-before-m3/`
+(session scratch space, not a durable backup). Compared with it:
+
+- `language-practice`'s transcripts, including **Defect B** and the saved `Dialext Test Speaker`
+  hints, are **byte-identical**.
+- Every pre-existing Dialext document is identical.
+- `source-review`'s English account has edits 1–5: passage 0 is "I would like three tickets,
+  please.", passage 1 is "That is fine, three tickets.", and passage 3 is back to "Hmm.".
+- Passage 2 had two out-of-history `sqlite3` writes from steps 6 and 6-retry; the net effect
+  restores it to "Thank you very much.".
+- The Lecture output carries "…indeed", "Hmm (pause)." and "three tickets".
+- One stale proposal (edit 3) is pending, and there is the empty "Lecture" user template.
+
+These are acceptance artefacts, recorded rather than cleaned.
+
+## Milestone 4 — native provider bridge
+
+Completed and accepted on 21 September 2026. The implementation is split between the core
+persistence/protocol commit `dd281ca` and the desktop integration commit that follows it on the
+working branch. `dd281ca` appeared during the session authored as Joshua and includes the formerly
+untracked `dialext/.Rhistory`; it was treated as external state and was not rewritten or removed.
+
+### Durable boundary and helper contract
+
+- Additive migration `20260922120000_dialext_provider_tasks` adds local-only
+  `dialext_provider_tasks` and `dialext_provider_stages`. A task records provider/models, prompt
+  version, audio digest, input revision and attempt. Successful ASR and reconstruction stages are
+  immutable rows with content-addressed vault artefacts. Both tables are explicitly outside
+  enabled CloudSync.
+- `session-ingest::dialext_provider` creates recordings/tasks, claims and advances tasks, recovers
+  interrupted work, cancels queued/running work and stores the final account. Every stage and
+  account write is fenced by task id, attempt, input revision, audio digest and running status.
+  Cancelling an in-flight helper now kills that child and settles the task as cancelled; a late
+  result cannot be persisted.
+- The Node helper is invoked as `node <canonical helper path>` with an argument array. Protocol v1
+  input/output is bounded at 2 MiB, stdout contains only the response envelope, stderr contains
+  diagnostics, and an unsupported version/stage or malformed/oversized result is refused by Rust.
+  It has no listener, database connection or workspace-edit capability.
+- Pure extraction in `dialext/engine/provider-contracts.mjs` retains Azure normalisation,
+  reconstruction/chat request construction and response validation without the old worker,
+  repository or deployment coupling. `reconstruction-validate.mjs` remains unchanged.
+- The deterministic fixture performs separate `ga-IE` and `en-IE` ASR legs, then one target
+  reconstruction. Request keys include the audio digest, source locale, provider/model, prompt
+  version and target language as relevant. An alternate-language task and a reconstruction retry
+  reuse the successful ASR stages.
+
+### Visible desktop path
+
+- Settings → Imports contains **Generate a Dialext reading**. It accepts a bounded PCM WAV, a
+  title and English/Gaeilge first-reading choice, and says explicitly that this is a deterministic
+  development provider with no paid call or quality assessment.
+- The existing Transcript reading selector renders a missing account as **(generate)** when source
+  audio exists. It starts the alternate task in place and retains the existing checked selector
+  transaction once the account exists.
+- The renderer displays named stages such as “Building the requested reading…” and never invents a
+  completion percentage. Cancel, retry and open-recording actions are connected to the native
+  task state.
+
+### Native acceptance in the real window
+
+The app was launched twice with `node dialext/dev.mjs`; no browser mock, alternate database,
+credential or provider network request was used.
+
+1. In Settings → Imports, `dialext/fixtures/source-review.wav` was selected with title
+   **Milestone 4 provider bridge** and English first. The running state visibly said “Building the
+   requested reading…”, then “Reading ready.”
+2. Opening the recording showed the fixture English passages. The selector offered
+   **Gaeilge (generate)**; choosing it created and selected the Irish account with “Dia dhuit. Seo
+   sliocht tástála.” and “Go raibh maith agat.”
+3. A full application-menu Quit left no `dev.mjs`, Vite or desktop process. A fresh launcher start
+   retained the generated recording, both accounts, the active Gaeilge selection and the Irish
+   transcript.
+4. Read-only database inspection found two succeeded tasks and exactly four independently stored
+   stages: `ga-IE` ASR, `en-IE` ASR, English reconstruction and Irish reconstruction. The pre-M4
+   `language-practice` transcript/account/selection projection hashed identically before and after
+   acceptance (`7581842a…`), retaining Defect B and the saved speaker state.
+
+The fixture completes too quickly for a meaningful manual cancel click. Native regression coverage
+therefore uses a deliberately non-returning helper and proves cancellation kills it within the
+bound, leaves no stage, and settles `cancelled`. Separate tests prove completed ASR survives
+cancel/restart and failed reconstruction retry does not repeat ASR.
+
+### Snapshot, generated acceptance data and limitations
+
+The app was closed before migration and the prototype database plus sidecars were copied. The
+verified SQLite backup used for comparison is `/tmp/dialext-pre-m4.mCbuVJ/app.backup.db` (temporary
+machine storage, not a durable backup). Acceptance intentionally added one synthetic recording,
+two task rows, four stage rows, two accounts and their content-addressed audio/JSON artefacts to the
+live prototype. They were left in place as acceptance evidence.
+
+- Only the fixture provider is implemented and exposed. The helper location comes from
+  `DIALEXT_PROVIDER_HELPER` in the debug launcher; packaged runtime discovery/distribution remains
+  future work.
+- No accuracy, transcription or translation claim can be made from this deterministic fixture.
+  The one short live-provider sample was not run because Joshua's explicit approval is required.
+- The generated fixture accounts intentionally use synthetic passage timing and unknown spoken
+  language; they do not prove provider-quality word timing or speaker reconciliation.
+- Milestone 5 remains responsible for stable-block source controls, footer questions,
+  corrected-text retrieval and reader-matching TXT/Markdown sharing.
+
+### Milestone-4 verification
+
+- Pure provider/helper/validator: 19 tests.
+- session-ingest: 52 tests, including in-flight process cancellation, cancel/restart stage reuse,
+  reconstruction-failure retry and preferred/alternate generation; Clippy passes with warnings
+  denied.
+- db-app: 248 unit tests plus 2 integration tests passed (3 existing ignored); Clippy passes with
+  warnings denied.
+- db plugin: 162 tests passed. Its Clippy gate still stops on the same two inherited findings at
+  `commands.rs:778` (`needless_borrow`) and `commands.rs:878` (`too_many_arguments`); neither is in
+  the milestone diff.
+- Desktop: typecheck passed; full suite 473 files / 4,452 tests; changed-file ESLint passed;
+  Oxlint reported the inherited 207 warnings and no errors. Lingui extract/strict compile passed.
+- Shared UI build, changed-file dprint, Node 82, licence 9 + boundary check and both release-version
+  checks passed. No workflow changed, so zizmor was not rerun.
+
+One parallel plugin-test run transiently timed out in an existing CloudSync activity timing test
+while db-app's full suite was consuming the same machine. The required isolated rerun passed all
+162 tests; this was load-induced test scheduling, not a retained failure.
+
+## Milestone 5 — coherent personal workflow (implemented; real-window acceptance outstanding)
+
+Built on 22 September 2026. **This milestone is not accepted yet.** Every automated check
+below passed, the additive migration ran against the live prototype database without
+changing saved work, but the real-window journey was not driven: window control of
+`Dialext Prototype` was declined for this session and was not retried. Do the checklist at the
+end of this section before calling milestone 5 complete.
+
+### Decision recorded with Joshua
+
+Questions are answered through the app's **existing, provider-agnostic model setting**. Apple's
+on-device model (the prototype's configured `current_llm_provider = apple_foundation`) is
+approved for testing only. Nothing is tied to it. A hosted model (Mistral Small, OpenAI, Claude,
+…) must keep working through the same path, because Joshua may share the app later. A hosted or
+paid call still needs his explicit approval.
+
+### What was built
+
+- **Stored per-block evidence.** The additive migration `20260923120000_dialext_block_evidence`
+  adds a personal-only, CloudSync-disabled table with a TEXT `id` and a unique
+  `(document_id, block_id)`. Each row stores the account, the account `content_version`, the
+  passage word id, the block's pinned text, the passage's exact anchors, and the spoken and
+  target languages.
+- **Native output generation.** Output generation moved from TypeScript to native
+  `dialext_outputs::generate_output` (plugin command `generate_dialext_output`). One
+  `BEGIN IMMEDIATE` transaction reads the **active** account, writes the deterministic output
+  only if it is still empty, and pins every block's evidence. The TypeScript document builder
+  and passage loader, with their test, were removed rather than left as a second owner.
+- **Accepted proposals re-pin evidence.** `apply_dialext_proposal` re-pins the evidence of
+  exactly the blocks it replaces, in its existing atomic transaction, using the proposal's
+  pinned account version. A stale proposal leaves evidence untouched.
+- **Block source control.** It is a `dialextBlock` node view supplied through the note
+  editor's existing `extraNodeViews`, so the editor package knows nothing about Dialext. It is
+  quiet: it appears on hover or focus within the block. It is **absent** when a block has no
+  stored evidence, and it never borrows a neighbour's evidence.
+  - If the block's current text differs from the pinned text, the control reads
+    `edited · source`. The panel then says the passage supports the generated wording, not
+    the reader's edit.
+  - **Outputs generated before milestone 5 have no evidence and show no control.** Evidence is
+    never backfilled by guessing, and the migration test asserts zero backfilled rows.
+- **One source panel for the whole app.** The reveal is now one small store, and the
+  provider and slot sit once per recording workspace, below whichever tab is showing. Transcript
+  marks, summary blocks and chat citations all open that same panel. It states where the reveal
+  came from: a summary block, an edited block, or an answer's quotation.
+- **Grounded questions in the existing chat.** No second chat product was added.
+  - When the last question references **exactly one** recording (normally the `auto-current`
+    ref) and that recording is Dialext, the transport hands it to `answerRecordingQuestion`.
+    Every other conversation keeps the existing tool agent unchanged.
+  - Retrieval reads the effective transcript and the speaker rendering that chat context,
+    export and the panel already use (`renderSessionSegments`, extracted from the hydrator).
+    It therefore uses the **selected, corrected reading** and the names the reader sees.
+  - Evidence is refused, and **no model is called**, when there is no usable selected reading,
+    when the effective projection is not the selected account, or when the question names
+    something specific that no passage mentions.
+  - Otherwise, passages sharing a term come first, within a 2,400-character budget sized for an
+    on-device context window.
+  - The model returns `{answer, citations[{passage, quote}], insufficient_evidence}` through
+    `generateText` + `Output.object`. Validation uses the original Dialext answer rules: an
+    answer must cite, a refusal must not, each cited passage must have been supplied, and each
+    quotation must be contiguous passage text (case- and whitespace-insensitive).
+  - An answer that fails validation shows **no model prose**. A model that cannot run at all
+    surfaces as an error, not a quiet refusal.
+  - Refusal text follows the reading's language: English or Irish. The Irish strings are
+    hand-written and unreviewed; Joshua should check them.
+  - Citations are stored as a `data-dialext-answer` part of the chat message. It carries the
+    passage anchors, so a citation reopens the same panel after a restart, and the native
+    interval read re-checks the anchors every time. The chat shows the answer as model-written
+    and each quotation apart from it.
+- **Sharing.** The existing More → Export TXT/Markdown already takes the effective transcript
+  segments and serialises `dialextBlock` content without identity. A regression now proves that
+  a Dialext output plus transcript exports the visible block text, including a hand edit, and
+  `Speaker: text` lines, with no block ids.
+
+### Verification (22 September)
+
+| Check | Result |
+| --- | --- |
+| session-ingest (`--features apply`) | 58 passed (52 before). Clippy `-D warnings` passed |
+| db-app | 249 unit + 2 integration passed (3 existing ignored). Clippy `-D warnings` passed. Includes an upgrade test (existing summary's `content_version` unchanged, no backfill) and the CloudSync registry at 32 |
+| db plugin | 162 passed; bindings/permissions regenerated through `export_types` and the build |
+| Desktop | typecheck passed; full suite **476 files / 4,483 tests** passed; changed-file ESLint and dprint clean; Oxlint 207 inherited warnings, 0 errors |
+| Node | CI node tests 82; Dialext engine 19; licence 9 + boundary check |
+| Lingui | extract + strict compile passed; ten new strings |
+| Live DB | migration applied on launch; `dialext_block_evidence` empty; the fingerprint of every Dialext transcript, account, selection, document, evidence row and contact is byte-identical before and after (`39a0f71d…`) |
+
+Negative controls, each seen red and then restored:
+
+- no evidence re-pin on accept
+- pinning from any account instead of the active one
+- never detecting an edited block
+- lending evidence by position
+- removing the deterministic no-match refusal
+- not checking quotations
+- taking the grounded path for multi-ref questions
+- answering from an effective transcript that is not the selected account
+
+The pre-milestone backup is at
+`/private/tmp/claude-501/-Users-joshuacorbett-Coding-Dialext-Anarlog/4ade5935-a86a-4c05-a140-7a25f26f2d03/scratchpad/db-before-m5/app.backup.db`
+(integrity `ok`; session scratch, not a durable backup). The fingerprint query sits beside it as
+`fingerprint.sql`.
+
+### Limitations, stated exactly
+
+- **Real-window acceptance outstanding**, including whether Apple's on-device model returns
+  parseable answer JSON. If it often does not, the reader sees the "did not check out" refusal,
+  never unsupported prose.
+- Retrieval is lexical: shared terms, a four-letter shared stem, and English/Irish stopwords.
+  A paraphrased question about a long recording can be refused as no-match. Short recordings
+  get the whole reading within the budget.
+- Grounded questions are single-turn; earlier messages are not used. While a Dialext recording
+  is the only context, the chat's edit tools (edit_summary, apply_session_correction, …) are not
+  offered for it. Add another reference to use the ordinary agent.
+- A citation opens its recording tab if another tab is in front. It is not otherwise
+  scrolled into view.
+- The block control appears on hover or focus-within. Reaching it by keyboard inside the
+  editor was not verified.
+- Exports stay plain, with no source annotations. Share means a TXT/Markdown file, not a
+  hosted link.
+
+### Real-window acceptance checklist (do this next)
+
+Launch with `node dialext/dev.mjs`, never a release build. Use `Sample · Source review with audio`.
+
+1. Summary ▾ → choose a template not yet applied to this recording (for example Interview). A
+   new output appears. Hover a block and check for `source · translated · Irish`, then click it.
+   The panel should say "generated from this passage of the English reading", show the Irish
+   words, and offer a 0:04 clip. Confirm that the older Lecture output shows **no** block
+   controls.
+2. Edit that block's text. The control should read `edited · source`, and the panel should say
+   it supports the generated wording, not your edit.
+3. Correct the same passage in the transcript, then apply the proposal. The control should go
+   back to `source · …`.
+4. Ask anything: "How many tickets did Gary want?" Expect an answer with a quoted citation whose
+   source control opens the same panel. Then ask "What is the capital of France?" Expect "The
+   recording does not answer that." and "no model was asked".
+5. Switch to Gaeilge and ask an Irish question. Check that the citations are Irish passages.
+6. Quit fully and relaunch. Reopen the chat and confirm the earlier citation still opens the
+   panel.
+7. More → Export the new output with the transcript as TXT and as Markdown. Check the bytes:
+   visible block text, `Gary:` lines, no `dialextBlock` or passage ids.
+8. Re-run the fingerprint query and compare it to the backup, expecting differences only from
+   steps 1–5. Inspect `dialext_block_evidence` for the new output.
+
+## New direction from Joshua (22 September) and milestone 6 — quiet interface
+
+Joshua added a "Making it Dialext's own" section to `product/product-vision.md`, and
+`ARCHITECTURE.md` now lists milestones 6–9:
+
+- **6** quiet interface
+- **7** independent entitlements: no Anarlog login or plan gates on local features, hosted-only
+  features hidden, and the `useBillingAccess` seam kept for a future account system
+- **8** user-visible Dialext branding, with the MIT notice retained
+- **9** a personal look (fonts and colours), which waits for Joshua's choices
+
+**Milestone 6 is implemented and passed its real-window acceptance on 22 September 2026.**
+Root cause of the "purple pop-ups":
+
+- The devtools status bar shows in every debug build (`should_show_devtool` returns true under
+  `debug_assertions`), and the launcher always builds debug.
+- Its render outlines defaulted to `import.meta.env.DEV`, so every re-render drew purple boxes
+  labelled with component names.
+
+Fix:
+
+- A new setting, `show_developer_diagnostics`, defaults to **off**. The bar, and with it the
+  metrics and the render tracker, mounts only when the build allows it **and** the person has
+  opted in.
+- The opt-in is Settings → Developers → **Show developer diagnostics**. It is shown only in
+  builds that can display the bar.
+- Outlines now default to off even when opted in, and are toggled from the bar's Renders metric.
+
+Nothing was deleted. Analytics: debug builds compile no PostHog key, so nothing is sent today.
+Making analytics off by default for release builds is tracked in milestone 6's scope but not yet
+changed; there is no release build.
+
+Checks:
+
+- Desktop typecheck passed.
+- Full suite: **476 files / 4,484 tests** passed.
+- Oxlint: 207 inherited warnings, 0 errors. Changed-file dprint and ESLint are clean.
+- Lingui extract and strict compile passed.
+- Negative control: removing the opt-in gate turns
+  `stays hidden in a development build until the person opts in` red. The first version of that
+  test asserted before the query settled and passed with the gate removed. It was strengthened,
+  and only then trusted.
+- Also fixed: a typing error in the milestone 5 transport test (`unknown[]` context refs), which
+  the earlier typecheck had run before that test existed.
+
+Real-window result, using only `node dialext/dev.mjs`: the isolated debug prototype opened with
+no black diagnostics bar and no purple render outlines. Settings → Developers → Show developer
+diagnostics restored the bar; switching it off removed the bar again. No release build was used.
+
+## Milestone 7 — independent entitlements (first bounded slice)
+
+Implemented on 22 September 2026. This is a verified slice, not completion of the whole
+milestone.
+
+### Entitlement seam and local capabilities
+
+- `useBillingAccess` remains the single renderer entitlement seam. `BillingAccess` now has a
+  distinct `localFeatures` capability object for playback speed, dictionary, Auto-template
+  customization and local automations. The ordinary Anarlog billing provider maps those
+  capabilities from its existing Pro state; the personal provider supplies only those four
+  local capabilities.
+- The personal provider deliberately remains `isPro: false`, `isPaid: false`, with no available
+  trial and a no-op upgrade action. This is not a blanket paid-flag override.
+- The personal auth provider has no Supabase client or session and returns no request headers.
+  The main personal shell mounts these providers instead of the account-backed auth and billing
+  providers.
+- Playback-rate enforcement and its menu, Dictionary, Auto-template save/reset/improve, and
+  local automation save/enable now consult their specific local capability. The existing plan
+  seam and denial behavior remain testable with a provider that sets one false.
+
+### Personal shell and hosted-service boundary
+
+- Account, Team and Sync settings destinations are absent; restored legacy destinations fall
+  back to General. Login and calendar account steps no longer appear in personal onboarding.
+- Sign-in and generic Pro-upgrade promotional toasts were removed. Recording, microphone,
+  permission, model-download, missing-provider and error notices remain.
+- The completed-note primary action is now local **Export note**, using the existing PDF/TXT/
+  Markdown/Org export dialog, instead of hosted session sharing.
+- Anarlog-hosted LLM/STT choices are filtered from the provider selectors. Direct configured
+  providers and on-device choices remain available and provider-agnostic.
+- CloudSync/share/attachment/Cloud API lifecycles, workspace mirroring, invitation toasts,
+  connected meeting import sync and enterprise capture sync are not mounted by the personal
+  shell. Auth/billing/share deep-link handling is also not mounted.
+- Completion and enhancement no longer schedule Cloud API snapshot uploads. Local deletion no
+  longer reads module-level Anarlog auth or schedules Cloud API/share cleanup.
+- Personal automation callers pass `allowHostedServices: false`. Slack, Notion and Linear
+  starters/actions and the shared automation library are hidden; previously saved hosted
+  workflows are preserved but cannot be enabled or executed. Markdown-only workflows remain
+  editable and executable. Engine regressions prove the false policy skips connection/auth
+  reads and hosted writes while still running Markdown export.
+- Internal `@anlg`/`anlg_` identifiers, hosted implementations, migrations, licences, evidence
+  and saved edits remain intact. Branding and visual changes stay deferred.
+
+### Exact validation
+
+- Focused capability/shell regression set: 14 files / 154 tests passed.
+- Focused automation and local-export set: 6 files / 104 tests passed.
+- Final hosted-boundary regression set: 5 files / 111 tests passed. It includes production-call
+  assertions for `allowHostedServices: false` and local deletion with no hosted cleanup.
+- Final full desktop suite: **479 files / 4,482 tests passed**.
+- `pnpm -F @anlg/ui build`: passed.
+- `pnpm -F @anlg/desktop typecheck`: passed on the final source state.
+- ESLint on every changed desktop TypeScript/TSX file: passed; Node printed the inherited
+  module-type warning for `eslint.config.js`.
+- Desktop Oxlint: **206 inherited warnings, 0 errors**.
+- Changed-file dprint format/check: passed.
+- Lingui clean extraction and strict compilation: passed with 1,491 source messages and 1,476
+  missing messages in each non-English catalog. The generated catalog edits are intentional and
+  remain uncommitted with this slice.
+
+### Native synthetic verification
+
+Launched and stopped the isolated application only with `node dialext/dev.mjs`; no release
+build, live provider or paid provider call was used.
+
+- Settings had no Account, Teams or Sync destination. Dictionary opened directly. The Auto
+  template editor exposed its prompt, Improve and Save controls without a plan interruption.
+- A synthetic recording exposed playback rates 0.5x through 2x. 1.5x could be selected and was
+  restored to 1x without playing audio or making a provider call.
+- Transcription and Intelligence showed direct/on-device providers and did not show Anarlog.
+  Developers showed diagnostics and local CLI material, not Cloud API or Webhooks.
+- Automations showed only **Export every meeting as Markdown**. Save draft was available; Save
+  & enable was blocked only by the actionable `Choose an export folder first` requirement, not
+  by Pro or login.
+- `Sample · Source review with audio` showed **Export note**. Opening it displayed the existing
+  local file-format/include dialog; it was dismissed without writing a file.
+- No sign-in, trial or upgrade interruption appeared during launch, restart or this navigation.
+- Milestone 6's diagnostics off/on/off behavior passed in the same isolated window. **Milestone
+  5's separate source-control/question/restart/export checklist was not run and remains
+  outstanding.**
+
+Observed inherited native diagnostics included Rust warnings, SQLite transaction warnings,
+`no_version_in_config`, occasional IPC fallback/performance logging and the existing router
+code-split warning. They did not block this slice and were not treated as release validation.
+
+### What remains in milestone 7
+
+The next bounded slice should remove the remaining account-backed resource-sharing and
+connected-import/calendar entry points from the personal shell while preserving local folder,
+template, file-import and Apple/local calendar workflows. In particular, folder/template Share
+buttons and connected import cards still contain sign-in/upgrade paths in retained legacy code.
+Audit restored tabs/deep links for those surfaces and add mount-level regressions proving no
+hosted query hooks run. Do not delete their storage, migrations or implementations, and do not
+replace the capability split with `isPro: true`.

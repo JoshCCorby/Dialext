@@ -17,7 +17,9 @@ const TOP_COMPONENTS_WINDOW_TICKS = 10;
 const ignoredProps = new WeakSet<object>();
 let pendingRenders = 0;
 let buckets: Array<Map<string, number>> = [new Map()];
-let outlinesEnabled = import.meta.env.DEV;
+// Outlines label components on every re-render. They are an explicit
+// troubleshooting choice, never a default, even in development builds.
+let outlinesEnabled = false;
 let stopTracking: (() => void) | null = null;
 
 /**

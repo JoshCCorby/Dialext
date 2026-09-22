@@ -64,10 +64,10 @@ vi.mock("./overflow", () => ({
   },
 }));
 
-vi.mock("~/session-sharing", () => ({
-  SessionShareButton: () => (
-    <button type="button" aria-label="Share note">
-      Share
+vi.mock("./personal-export-button", () => ({
+  PersonalExportButton: () => (
+    <button type="button" aria-label="Export note">
+      Export
     </button>
   ),
 }));
@@ -242,7 +242,7 @@ describe("OuterHeader", () => {
 
     expect(screen.queryByRole("button", { name: "Join & record" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Record" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Share note" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Export note" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
     expect(screen.getByRole("button", { name: "More" })).not.toBeNull();
     expect(spacer?.className).toContain("flex-1");
@@ -270,7 +270,7 @@ describe("OuterHeader", () => {
 
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Record" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Share note" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Export note" })).toBeNull();
     expect(screen.getByRole("button", { name: "More" })).not.toBeNull();
   });
 
@@ -349,7 +349,7 @@ describe("OuterHeader", () => {
     const spacer = container.firstElementChild?.firstElementChild;
 
     expect(screen.getByRole("button", { name: "Record" })).not.toBeNull();
-    expect(screen.queryByRole("button", { name: "Share note" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Export note" })).toBeNull();
     expect(spacer?.className).toContain("flex-1");
   });
 
@@ -1236,11 +1236,11 @@ describe("OuterHeader", () => {
     fireEvent.click(recordButton);
 
     expect(mocks.startListening).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole("button", { name: "Share note" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Export note" })).toBeNull();
     expect(screen.getByRole("button", { name: "More" })).not.toBeNull();
   });
 
-  it("shows share instead of record for an inactive ad hoc session with a transcript", () => {
+  it("shows export instead of record for an inactive ad hoc session with a transcript", () => {
     mocks.hasTranscriptBySession = { "session-1": true };
 
     render(
@@ -1251,19 +1251,19 @@ describe("OuterHeader", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Record" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Share note" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Export note" })).not.toBeNull();
     expect(
       screen
         .getByRole("combobox", { name: "Select folder" })
         .compareDocumentPosition(
-          screen.getByRole("button", { name: "Share note" }),
+          screen.getByRole("button", { name: "Export note" }),
         ) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "More" })).not.toBeNull();
     expect(mocks.startListening).not.toHaveBeenCalled();
   });
 
-  it("shows share instead of record for an inactive ad hoc session with audio", () => {
+  it("shows export instead of record for an inactive ad hoc session with audio", () => {
     mocks.audioExists = true;
 
     render(
@@ -1274,7 +1274,7 @@ describe("OuterHeader", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Record" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Share note" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Export note" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "More" })).not.toBeNull();
     expect(mocks.startListening).not.toHaveBeenCalled();
   });
@@ -1376,7 +1376,7 @@ describe("OuterHeader", () => {
     expect(mocks.stopListening).toHaveBeenCalledTimes(1);
   });
 
-  it("shows share instead of record after the meeting is over", () => {
+  it("shows export instead of record after the meeting is over", () => {
     mocks.sessionEvents = {
       "session-1": {
         title: "Design Review",
@@ -1394,22 +1394,22 @@ describe("OuterHeader", () => {
       />,
     );
 
-    const share = screen.getByRole("button", { name: "Share note" });
+    const exportButton = screen.getByRole("button", { name: "Export note" });
     const more = screen.getByRole("button", { name: "More" });
     const actionStrip = container.firstElementChild?.lastElementChild;
     const actionChildren = [...(actionStrip?.children ?? [])];
 
     expect(screen.queryByRole("button", { name: "Join & record" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Record" })).toBeNull();
-    expect(share).not.toBeNull();
+    expect(exportButton).not.toBeNull();
     expect(more).not.toBeNull();
     expect(
-      actionChildren.findIndex((child) => child.contains(share)),
+      actionChildren.findIndex((child) => child.contains(exportButton)),
     ).toBeLessThan(actionChildren.findIndex((child) => child.contains(more)));
     expect(mocks.startListening).not.toHaveBeenCalled();
   });
 
-  it("shows share instead of rejoining when a recorded event has no ended_at", () => {
+  it("shows export instead of rejoining when a recorded event has no ended_at", () => {
     mocks.sessionEvents = {
       "session-1": {
         title: "Design Review",
@@ -1429,7 +1429,7 @@ describe("OuterHeader", () => {
 
     expect(screen.queryByRole("button", { name: "Join & record" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Record" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Share note" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Export note" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "More" })).not.toBeNull();
     expect(mocks.startListening).not.toHaveBeenCalled();
   });
@@ -1446,6 +1446,6 @@ describe("OuterHeader", () => {
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Record" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Share note" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Export note" })).not.toBeNull();
   });
 });

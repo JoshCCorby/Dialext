@@ -2,25 +2,56 @@
 
 Continue Dialext in `/Users/joshuacorbett/Coding/Dialext-Anarlog`.
 
-Read `AGENTS.md`, `dialext/HANDOFF.md`, `dialext/ARCHITECTURE.md`, and `dialext/product/product-vision.md`; follow the personal-product scope and existing architecture decisions. Check the current branch and status and preserve unrelated work, including the untracked `.Rhistory` files; do not reset anything in the old `/Users/joshuacorbett/Coding/Transcip` checkout. The working branch is `codex/dialext-personal-prototype`; origin is the private `JoshCCorby/Dialext` repository. Never push to upstream.
+Read `AGENTS.md`, `dialext/HANDOFF.md`, `dialext/ARCHITECTURE.md`, and
+`dialext/product/product-vision.md`; follow the personal-product scope and existing architecture
+decisions. Check the current branch and status and preserve unrelated work. Do not reset anything
+in the old `/Users/joshuacorbett/Coding/Transcip` checkout. The working branch is
+`codex/dialext-personal-prototype`; origin is the private `JoshCCorby/Dialext` repository. Never
+push to upstream. Compare against `origin/codex/dialext-personal-prototype`, not `origin/main`, to
+see unpushed work. Agent pushes have been refused before, so ask Joshua to push rather than working
+around it.
 
-**Milestone 2 is complete and its native acceptance is recorded.** All five acceptance steps passed in the real `app.dialext.prototype` window on 20 September — naming across both readings, per-language TXT export, quit and restart, a second recording reusing the contact, and the original sample reporting no source audio. Do not repeat them. Read "Native acceptance completed on 20 September, evening" in `HANDOFF.md` before anything else.
+**Milestone 5 is implemented but not accepted.** Read "Milestone 5" at the end of `HANDOFF.md`
+first. Its automated checks all pass and its migration ran on the live prototype without changing
+saved work, but the real-window journey was not driven (window control was declined). Your first
+job is that section's acceptance checklist, driven in the real `app.dialext.prototype` window, or
+with Joshua by hand if window control is unavailable. Record each outcome individually. Fix only
+defects the checklist exposes.
 
-Two things from that section carry forward:
+Questions are answered through the app's existing provider-agnostic model setting. Joshua approved
+Apple's on-device model for testing only; do not tie anything to it, and do not make a hosted or
+paid call without his explicit approval.
 
-- **The speaker-key defect is fixed** (`dialext_speakers::write_speaker_indexes`). Every account's `provider_speaker_index` hints are derived from the recording's own speakers, in the adoption transaction and as a backfill. Do not reintroduce numbering by the provider label string, and do not add hints to the import envelope — that would change its content hash and turn an identical repeat import into a revision conflict.
-- **Defect B is still present, by decision.** `language-practice`'s English account has passage 0 = `"I"` and passage 1 = `"would like to order tea. You can ask for coffee with milk."`, because the 17 September baseline edit was typed across a passage boundary. The text a reader sees is right; the anchor association is not. It was deliberately left as found. Do not quietly repair it to make something else pass, and do not re-point the saved `Dialext Test Speaker` assignment.
+Milestone 4 remains complete: the native provider bridge, fixture helper and durable stages are
+recorded in `HANDOFF.md`. No live or paid provider call has been made.
 
-**There may be unpushed commits.** `git push` from an agent session was refused by the permission classifier as a "Remote Repoint", so Joshua pushes manually. Check `git log origin/main..HEAD` before assuming the remote is current, and ask him to push rather than working around it.
+Carry forward these boundaries:
 
-Now begin **milestone 3**: native version-pinned account edits with history, and atomic summary proposals. `ARCHITECTURE.md` has the contract — submit account ID plus transcript `content_version`, document ID plus document `content_version` and stable block IDs; compare both versions, apply and transition status in one native transaction; a stale write must refuse with the person's typing intact. Undo is another checked edit and must survive restart, and accepting a targeted proposal must preserve unrelated manual edits.
+- Rust owns task state, cancellation, validation, fences and durable writes. The Node helper stays
+  stateless, bounded, stderr-for-diagnostics only, with no HTTP listener, database or workspace
+  writes.
+- The current provider is deterministic and fixture-only. A short live-provider sample still
+  requires Joshua's explicit approval and is assessed separately. Do not use credentials or make a
+  paid call without it.
+- Keep `effective_transcripts` as the selected-account projection. Preserve immutable ASR and
+  generated originals, edited accounts, edit history, contacts, saved selection and retained
+  metadata.
+- Milestone 3's invariants still apply: pin the version behind what the reader was shown;
+  `dialextBlock` wrappers are block identity; chat/CLI/MCP inbox proposals retain the upstream
+  timestamp path; Defect B remains by decision; do not quietly fix the missing stale-edit refresh.
+- `dd281ca` appeared during the milestone authored as Joshua and tracks `dialext/.Rhistory`, which
+  had previously been untracked. Do not rewrite that commit or remove the file without Joshua's
+  direction.
+- The live prototype intentionally contains the synthetic **Milestone 4 provider bridge**
+  recording and its queue/stage/vault artefacts. The temporary pre-migration comparison backup is
+  `/tmp/dialext-pre-m4.mCbuVJ/app.backup.db`; do not assume `/tmp` is durable.
 
-Read `apps/desktop/src/session/queries/proposals.ts` first. It has been read, and the handover's description is confirmed exactly: `applySessionProposal` loads the proposal, compares a `base_updated_at` **timestamp** rather than a `content_version`, then performs the document update and the status update as two separate writes, replacing the whole markdown via `md2json(proposal.proposedMarkdown)` rather than the affected blocks. That is useful interface infrastructure and not an atomic stale-write guarantee. Fix the transaction before connecting automatic correction proposals.
+After milestone 5 is accepted, agree the next bounded step with Joshua (for example the approved
+short live-provider sample, or improving retrieval beyond lexical matching). Do not start one
+unasked.
 
-Use deterministic summary outputs and the existing template UI. Do not implement the provider bridge, rebranding or a new chat UI.
-
-Use prepared fixtures and local synthetic audio without paid provider calls, live customer recordings, provider credentials or cloud deployment. Preserve `effective_transcripts` as the one selected-account projection for readers, search, export, enhancer and chat inputs; account selection remains a checked native transaction and never changes an existing summary. Keep immutable ASR and generated originals, existing edited accounts, contacts and retained metadata intact, and keep personal tables outside enabled CloudSync.
-
-Driving the native window needs full-screen control and a Finder grant: background clicks are delivered to the Tauri webview and ignored, and the file-open panel is hosted by a separate process. Start the app with `node dialext/dev.mjs` and never substitute a release build or browser mocks. The browser relay at `http://localhost:1422` still stalls; `HANDOFF.md` records the confirmed root cause and the shape of a fix, which is development tooling and not milestone work. The Export dialog resets to PDF each time it opens — select TXT and Transcript explicitly.
-
-Keep `dialext/HANDOFF.md` current after each step, document exact native outcomes and limitations, and commit completed work. Write a prompt for the following session when milestone 3 is complete.
+Use synthetic samples until a live-provider test is explicitly approved. Drive the real desktop
+with `node dialext/dev.mjs`, never a release build or browser mock. Keep `dialext/HANDOFF.md`
+current, record exact native outcomes and limitations, run focused regressions plus affected
+package checks, and commit completed work. Do not write to upstream Linear or publish upstream
+services.

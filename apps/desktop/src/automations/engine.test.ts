@@ -185,6 +185,81 @@ describe("runMeetingCompletedAutomations (markdown export)", () => {
   });
 });
 
+describe("personal automation execution policy", () => {
+  it("skips saved Anarlog-hosted starters and workflows without deleting them", async () => {
+    storedSettings({
+      automation_slack_recap_enabled: true,
+      automation_slack_recap_channel: JSON.stringify({
+        id: "C123",
+        name: "general",
+      }),
+      automation_workflows: JSON.stringify([
+        {
+          id: "wf-hosted",
+          title: "Saved Slack workflow",
+          enabled: true,
+          trigger: "note_enhanced",
+          steps: [
+            {
+              id: "step-1",
+              type: "slack_recap",
+              target: { id: "C123", name: "general" },
+            },
+          ],
+          lastRun: null,
+          processedSessionIds: [],
+          chatGroupId: null,
+        },
+      ]),
+    });
+
+    await runNoteEnhancedAutomations("session-1", {
+      allowHostedServices: false,
+    });
+
+    expect(mocks.getSession).not.toHaveBeenCalled();
+    expect(mocks.sendSlackRecap).not.toHaveBeenCalled();
+    expect(mocks.listConnections).not.toHaveBeenCalled();
+    expect(mocks.setSettingValue).not.toHaveBeenCalled();
+  });
+
+  it("still runs a local Markdown workflow", async () => {
+    storedSettings({
+      automation_workflows: JSON.stringify([
+        {
+          id: "wf-local",
+          title: "Local export",
+          enabled: true,
+          trigger: "meeting_completed",
+          steps: [
+            {
+              id: "step-1",
+              type: "markdown_export",
+              directory: "/exports",
+            },
+          ],
+          lastRun: null,
+          processedSessionIds: [],
+          chatGroupId: null,
+        },
+      ]),
+    });
+    mocks.exportMeetingMarkdown.mockResolvedValue({
+      status: "ok",
+      data: "/exports/local.md",
+    });
+
+    await runMeetingCompletedAutomations("session-1", {
+      allowHostedServices: false,
+    });
+
+    expect(mocks.exportMeetingMarkdown).toHaveBeenCalledWith(
+      "session-1",
+      "/exports",
+    );
+  });
+});
+
 describe("runNoteEnhancedAutomations (slack recap)", () => {
   it("posts the summary to the configured channel", async () => {
     storedSettings({

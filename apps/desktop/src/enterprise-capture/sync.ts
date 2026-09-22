@@ -12,6 +12,7 @@ import {
   recordRejectedDelivery,
 } from "./store";
 
+import { PERSONAL_AUTOMATION_EXECUTION_POLICY } from "~/automations/access";
 import { runMeetingCompletedAutomations } from "~/automations/engine";
 
 const MAX_PAGES_PER_SYNC = 100;
@@ -95,7 +96,10 @@ export async function dispatchPendingEnterpriseCompletions(): Promise<void> {
       completion.sessionId,
     );
     if (result.status === "error") throw new Error(result.error);
-    await runMeetingCompletedAutomations(completion.sessionId);
+    await runMeetingCompletedAutomations(
+      completion.sessionId,
+      PERSONAL_AUTOMATION_EXECUTION_POLICY,
+    );
     await markCompletionDispatched(completion.sourceId);
   }
 }

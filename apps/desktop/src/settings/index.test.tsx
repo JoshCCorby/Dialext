@@ -7,14 +7,12 @@ vi.mock("~/settings/hydration-boundary", () => ({
 }));
 
 vi.mock("./general", () => ({
-  SettingsAccount: () => <div>Account settings</div>,
-  SettingsApp: () => null,
+  SettingsApp: () => <div>General settings</div>,
   SettingsMeetings: () => null,
   SettingsNotifications: () => null,
   SettingsPermissions: () => null,
 }));
 
-vi.mock("./todo", () => ({ SettingsTodo: () => null }));
 vi.mock("~/settings/ai/llm", () => ({ LLM: () => null }));
 vi.mock("~/settings/ai/stt", () => ({ STT: () => null }));
 vi.mock("~/settings/appearance", () => ({ SettingsAppearance: () => null }));
@@ -28,8 +26,6 @@ vi.mock("~/settings/stats", () => ({
 vi.mock("~/settings/stats/insights", () => ({
   SettingsInsights: () => <div>Personal insights</div>,
 }));
-vi.mock("~/settings/sync", () => ({ SettingsSync: () => null }));
-vi.mock("~/settings/team", () => ({ SettingsTeam: () => null }));
 vi.mock("~/shared/main", () => ({
   StandardContentWrapper: ({ children }: { children: React.ReactNode }) =>
     children,
@@ -59,6 +55,19 @@ describe("TabContentSettings", () => {
     );
     expect(screen.getByText("Personal stats")).toBeTruthy();
   });
+
+  it.each(["account", "sync", "team", "todo"])(
+    "restores the unsupported %s destination to General",
+    (tab) => {
+      render(
+        <TabContentSettings
+          tab={createSettingsTab({ state: { tab: tab as never } })}
+        />,
+      );
+
+      expect(screen.getByText("General settings")).toBeTruthy();
+    },
+  );
 
   it("lets settings pages scroll and shrink instead of clipping", () => {
     render(

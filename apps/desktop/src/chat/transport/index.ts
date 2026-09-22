@@ -1,6 +1,7 @@
 import {
   type ChatTransport,
   convertToModelMessages,
+  createUIMessageStream,
   type LanguageModel,
   smoothStream,
   stepCountIs,
@@ -30,6 +31,18 @@ import {
 
 import { trackAnalyticsEvent } from "~/analytics";
 
+/// A question about exactly one recording that a narrower, evidence-bound answerer
+/// owns. It returns null to leave the question to the ordinary agent.
+export type GroundedAnswerer = (input: {
+  sessionId: string;
+  question: string;
+  abortSignal?: AbortSignal;
+}) => Promise<{
+  text: string;
+  dataType: `data-${string}`;
+  data: unknown;
+} | null>;
+
 export type ResolvedChatContext =
   | { kind: "session"; context: SessionContext }
   | { kind: "text"; text: string };
@@ -42,7 +55,49 @@ export class CustomChatTransport implements ChatTransport<AnlgUIMessage> {
     private resolveContextRef?: (
       ref: ContextRef,
     ) => Promise<ResolvedChatContext | null>,
+    private answerGrounded?: GroundedAnswerer,
   ) {}
+
+  private async groundedReply(
+    options: Parameters<ChatTransport<AnlgUIMessage>["sendMessages"]>[0],
+  ) {
+    if (!this.answerGrounded) return null;
+    const last = options.messages[options.messages.length - 1];
+    if (!last || last.role !== "user") return null;
+    const refs = extractContextRefsFromMessages([last]);
+    const [ref] = refs;
+    if (refs.length !== 1 || ref?.kind !== "session") return null;
+    const question = last.parts
+      .flatMap((part: AnlgUIMessage["parts"][number]) =>
+        part.type === "text" ? [part.text] : [],
+      )
+      .join("\n")
+      .trim();
+    if (!question) return null;
+
+    const reply = await this.answerGrounded({
+      sessionId: ref.sessionId,
+      question,
+      abortSignal: options.abortSignal,
+    });
+    if (!reply) return null;
+
+    return createUIMessageStream<AnlgUIMessage>({
+      originalMessages: options.messages,
+      execute: ({ writer }) => {
+        const textId = crypto.randomUUID();
+        writer.write({
+          type: "start",
+          messageMetadata: { createdAt: Date.now() },
+        });
+        writer.write({ type: "text-start", id: textId });
+        writer.write({ type: "text-delta", id: textId, delta: reply.text });
+        writer.write({ type: "text-end", id: textId });
+        writer.write({ type: reply.dataType, data: reply.data });
+        writer.write({ type: "finish" });
+      },
+    });
+  }
 
   private async renderContextBlock(
     contextRefs: ContextRef[],
@@ -174,6 +229,11 @@ export class CustomChatTransport implements ChatTransport<AnlgUIMessage> {
   sendMessages: ChatTransport<AnlgUIMessage>["sendMessages"] = async (
     options,
   ) => {
+    const grounded = await this.groundedReply(options);
+    if (grounded) {
+      return grounded;
+    }
+
     const cache = new Map<string, string | null>();
     const tools = this.buildHydratingToolSet(cache);
 

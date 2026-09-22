@@ -1,0 +1,5 @@
+export const ANARLOG_HOSTED_AUTOMATIONS_ENABLED = false;
+
+export const PERSONAL_AUTOMATION_EXECUTION_POLICY = {
+  allowHostedServices: ANARLOG_HOSTED_AUTOMATIONS_ENABLED,
+} as const;

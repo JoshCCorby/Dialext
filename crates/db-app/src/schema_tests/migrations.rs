@@ -94,8 +94,12 @@ async fn migrations_apply_cleanly() {
             "cloudsync_session_evictions",
             "cloudsync_writable_workspaces",
             "daily_notes",
+            "dialext_account_edits",
             "dialext_accounts",
+            "dialext_block_evidence",
             "dialext_evidence",
+            "dialext_provider_stages",
+            "dialext_provider_tasks",
             "dialext_recordings",
             "dialext_source_speakers",
             "dialext_speakers",
@@ -602,7 +606,10 @@ async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose(
     for name in [
         "dialext_recordings",
         "dialext_accounts",
+        "dialext_account_edits",
         "dialext_evidence",
+        "dialext_provider_stages",
+        "dialext_provider_tasks",
         "dialext_speakers",
         "dialext_source_speakers",
     ] {
@@ -614,6 +621,87 @@ async fn dialext_schema_upgrades_previous_database_without_changing_saved_prose(
                 .enabled
         );
     }
+}
+
+#[tokio::test]
+async fn dialext_provider_queue_upgrades_without_touching_saved_work() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260922120000_dialext_provider_tasks"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('kept')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO transcripts(id,session_id,words_json) VALUES('kept-reading','kept','[4]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+
+    let saved: String =
+        sqlx::query_scalar("SELECT words_json FROM transcripts WHERE id = 'kept-reading'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(saved, "[4]");
+    for table in ["dialext_provider_tasks", "dialext_provider_stages"] {
+        assert!(
+            cloudsync_table_registry()
+                .iter()
+                .any(|entry| entry.table_name == table && !entry.enabled)
+        );
+    }
+}
+
+#[tokio::test]
+async fn dialext_block_evidence_upgrades_without_touching_saved_summaries() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260923120000_dialext_block_evidence"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('kept')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO session_documents(id,session_id,kind,body,body_format)
+         VALUES('kept-summary','kept','summary','{\"type\":\"doc\"}','prosemirror_json')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    let before: String =
+        sqlx::query_scalar("SELECT content_version FROM session_documents WHERE id = 'kept-summary'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+
+    let after: String =
+        sqlx::query_scalar("SELECT content_version FROM session_documents WHERE id = 'kept-summary'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(before, after, "the migration must not rewrite an existing summary");
+    let rows: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM dialext_block_evidence")
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+    assert_eq!(rows, 0, "evidence is never backfilled by guessing");
+    assert!(
+        cloudsync_table_registry()
+            .iter()
+            .any(|entry| entry.table_name == "dialext_block_evidence" && !entry.enabled)
+    );
 }
 
 #[tokio::test]
@@ -679,4 +767,120 @@ async fn dialext_speaker_identity_upgrades_and_keeps_attribution_immutable() {
             .is_err(),
         "an attribution may not borrow another recording's speaker"
     );
+}
+
+#[tokio::test]
+async fn dialext_edit_history_upgrades_and_stays_append_only() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260921120000_dialext_account_edits"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query("INSERT INTO sessions(id) VALUES('kept')")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO transcripts(id,session_id,words_json) VALUES('kept-reading','kept','[3]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO dialext_accounts(id,session_id,transcript_id,target_language,
+            input_evidence_digest,original_sha256)
+         VALUES('account-1','kept','kept-reading','en',
+            'aa00000000000000000000000000000000000000000000000000000000000001',
+            'aa00000000000000000000000000000000000000000000000000000000000002')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+    let saved: String =
+        sqlx::query_scalar("SELECT words_json FROM transcripts WHERE id = 'kept-reading'")
+            .fetch_one(db.pool())
+            .await
+            .unwrap();
+    assert_eq!(saved, "[3]", "adding history must not touch saved prose");
+
+    sqlx::query(
+        "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json)
+         VALUES('e1','kept','account-1',1,'[]')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    assert!(
+        sqlx::query("UPDATE dialext_account_edits SET changes_json = '[9]' WHERE id = 'e1'")
+            .execute(db.pool())
+            .await
+            .is_err(),
+        "history is evidence of what the reader did; it may not be rewritten"
+    );
+
+    sqlx::query(
+        "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json,undoes_edit_id)
+         VALUES('e2','kept','account-1',2,'[]','e1')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    assert!(
+        sqlx::query(
+            "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json,undoes_edit_id)
+             VALUES('e3','kept','account-1',3,'[]','e1')",
+        )
+        .execute(db.pool())
+        .await
+        .is_err(),
+        "one edit may be undone once, so an undo stack cannot double-revert it"
+    );
+    assert!(
+        sqlx::query(
+            "INSERT INTO dialext_account_edits(id,session_id,account_id,sequence,changes_json)
+             VALUES('e4','kept','account-1',2,'[]')",
+        )
+        .execute(db.pool())
+        .await
+        .is_err(),
+        "an account's edit sequence is dense and unique"
+    );
+}
+
+#[tokio::test]
+async fn dialext_proposal_pins_upgrade_without_disturbing_existing_proposals() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    let old = anlg_db_migrate::DbSchema {
+        steps: migration_steps_before("20260921120100_dialext_proposal_versions"),
+        ..schema()
+    };
+    anlg_db_migrate::migrate(&db, old).await.unwrap();
+    sqlx::query(
+        "INSERT INTO session_proposals(id,session_id,kind,target_id,base_updated_at,
+            current_markdown,proposed_markdown,status,source)
+         VALUES('old-1','s1','summary_replace','doc-1','2026-09-17T10:00:00.000Z',
+            'before','after','pending','chat')",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+
+    prepare_schema(&db).await.unwrap();
+
+    // An inbox proposal made before the pins existed keeps its own behaviour: empty
+    // pins mean there is nothing to compare, so it still takes the existing path.
+    let (status, base, pins, blocks): (String, String, String, String) = sqlx::query_as(
+        "SELECT status, base_updated_at, base_document_version, target_blocks_json
+         FROM session_proposals WHERE id = 'old-1'",
+    )
+    .fetch_one(db.pool())
+    .await
+    .unwrap();
+    assert_eq!(status, "pending");
+    assert_eq!(base, "2026-09-17T10:00:00.000Z");
+    assert_eq!(pins, "");
+    assert_eq!(blocks, "[]");
 }

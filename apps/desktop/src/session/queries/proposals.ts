@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { md2json } from "@anlg/editor/markdown";
+import { applyDialextProposal } from "@anlg/plugin-db";
 
 import { executeTransaction, liveQueryClient } from "~/db";
 import { enqueueDatabaseWrite } from "~/db/write-queue";
@@ -12,7 +13,9 @@ export type SessionProposalRecord = {
   sessionId: string;
   kind: "summary_replace" | "memo_replace" | string;
   targetId: string;
+  accountId: string;
   baseUpdatedAt: string;
+  targetBlocks: Array<{ block_id: string; text: string }>;
   currentMarkdown: string;
   proposedMarkdown: string;
   status: "pending" | "applied" | "declined" | string;
@@ -26,7 +29,9 @@ type ProposalSqlRow = {
   session_id: string;
   kind: string;
   target_id: string;
+  account_id: string;
   base_updated_at: string;
+  target_blocks_json: string;
   current_markdown: string;
   proposed_markdown: string;
   status: string;
@@ -41,7 +46,9 @@ const PROPOSAL_COLUMNS = `
     session_id,
     kind,
     target_id,
+    account_id,
     base_updated_at,
+    target_blocks_json,
     current_markdown,
     proposed_markdown,
     status,
@@ -146,6 +153,18 @@ export async function persistChatSessionProposal(input: {
   });
 }
 
+/// Raised when a proposal is answered against a base that has since moved. The
+/// summary and the proposal are both left as they were, so the reader can refresh
+/// and review rather than losing the proposal.
+export class StaleProposalError extends Error {
+  constructor() {
+    super(
+      "This proposal is stale. The meeting changed after it was created. It is still here to review.",
+    );
+    this.name = "StaleProposalError";
+  }
+}
+
 export async function applySessionProposal(proposalId: string): Promise<void> {
   const proposal = await loadSessionProposal(proposalId);
   if (!proposal) {
@@ -156,6 +175,18 @@ export async function applySessionProposal(proposalId: string): Promise<void> {
   }
   if (proposal.status !== "pending") {
     throw new Error(`Proposal is ${proposal.status}`);
+  }
+
+  // A Dialext proposal names the blocks it changes and pins both the summary's and
+  // the account reading's versions. The native owner compares them, replaces only
+  // those blocks and settles the proposal in one transaction, so an unrelated manual
+  // edit survives and the document and status can never disagree.
+  if (proposal.targetBlocks.length > 0) {
+    const result = await applyDialextProposal(proposalId);
+    if (result.outcome === "stale") {
+      throw new StaleProposalError();
+    }
+    return;
   }
 
   const currentUpdatedAt = await loadTargetUpdatedAt(proposal);
@@ -226,13 +257,27 @@ async function loadTargetUpdatedAt(proposal: {
   return rows[0]?.updated_at ?? null;
 }
 
+function parseTargetBlocks(
+  value: string | undefined,
+): Array<{ block_id: string; text: string }> {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function mapProposal(row: ProposalSqlRow): SessionProposalRecord {
   return {
     id: row.id,
     sessionId: row.session_id,
     kind: row.kind,
     targetId: row.target_id,
+    accountId: row.account_id,
     baseUpdatedAt: row.base_updated_at,
+    targetBlocks: parseTargetBlocks(row.target_blocks_json),
     currentMarkdown: row.current_markdown,
     proposedMarkdown: row.proposed_markdown,
     status: row.status,

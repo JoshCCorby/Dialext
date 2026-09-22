@@ -58,6 +58,28 @@ const nodes: Record<string, NodeSpec> = {
 
   text: { group: "inline" },
 
+  // A generated Dialext summary block. Only generated summaries contain it, so every
+  // other document's JSON is unchanged. Its id is the block's identity through the
+  // editor, so a targeted proposal replaces this block and nothing else; position is
+  // not identity, because the reader may add or remove blocks in between.
+  dialextBlock: {
+    content: "block+",
+    group: "block",
+    defining: true,
+    attrs: { id: { default: "" } },
+    parseDOM: [
+      {
+        tag: "div[data-dialext-block]",
+        getAttrs: (dom) => ({
+          id: (dom as HTMLElement).getAttribute("data-dialext-block") ?? "",
+        }),
+      },
+    ],
+    toDOM(node) {
+      return ["div", { "data-dialext-block": node.attrs.id }, 0];
+    },
+  },
+
   heading: {
     content: "inline*",
     group: "block",

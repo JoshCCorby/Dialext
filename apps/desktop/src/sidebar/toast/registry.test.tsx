@@ -80,7 +80,7 @@ describe("sidebar toast registry", () => {
     expect(toast?.lifecycle).toEqual({ type: "condition-bound" });
   });
 
-  it("suggests signing in before provider setup", () => {
+  it("shows required provider setup without a sign-in promotion", () => {
     const toast = getToastToShow(
       createToastRegistry({
         ...baseParams,
@@ -91,23 +91,22 @@ describe("sidebar toast registry", () => {
       () => false,
     );
 
-    expect(toast?.id).toBe("sign-in-benefits");
-    expect(toast?.description).toBe("Sign in to get the most out of Anarlog");
-    expect(toast?.primaryAction?.label).toBe("Sign in");
+    expect(toast?.id).toBe("missing-stt");
+    expect(toast?.description).toBe("Transcription provider needed");
   });
 
-  it("asks for a usable transcription provider after sign-in is dismissed", () => {
+  it("does not offer an upgrade when direct providers are configured", () => {
     const toast = getToastToShow(
       createToastRegistry({
         ...baseParams,
         isAuthenticated: false,
-        hasProSttConfigured: true,
+        hasProSttConfigured: false,
+        hasProLlmConfigured: false,
       }),
-      (toast) => toast.id === "sign-in-benefits",
+      () => false,
     );
 
-    expect(toast?.id).toBe("missing-stt");
-    expect(toast?.description).toBe("Transcription provider needed");
+    expect(toast).toBeNull();
   });
 
   it("keeps Pro providers usable while authentication is loading", () => {
@@ -162,14 +161,7 @@ describe("sidebar toast registry", () => {
     expect(toast?.description).toBe("Starting transcription...");
   });
 
-  it("renders the pro upgrade toast without an icon", () => {
-    const toast = getToastToShow(
-      createToastRegistry({
-        ...baseParams,
-        isAuthenticated: false,
-      }),
-      (toast) => toast.id === "sign-in-benefits",
-    );
+  it("keeps the explicit devtools Pro preview icon-free", () => {
     const previewToast = createDevtoolsToastPreview({
       preview: "pro",
       onSignIn: vi.fn(),
@@ -177,24 +169,7 @@ describe("sidebar toast registry", () => {
       onOpenSTTSettings: vi.fn(),
     });
 
-    expect(toast?.id).toBe("upgrade-to-pro");
-    expect(toast?.description).toBe("Pro features available");
-    expect(toast?.icon).toBeUndefined();
     expect(previewToast.icon).toBeUndefined();
-  });
-
-  it("uses one permanent dismissal for sign-in and Pro promotions", () => {
-    const toast = getToastToShow(
-      createToastRegistry({
-        ...baseParams,
-        isAuthenticated: false,
-      }),
-      (candidate) =>
-        candidate.lifecycle.type === "persistent" &&
-        candidate.lifecycle.dismissalId === "auth-promotion",
-    );
-
-    expect(toast).toBeNull();
   });
 
   it("offers an available desktop update with a one-day snooze", () => {

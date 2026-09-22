@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 
 import {
   ArrowUpRight,
-  ArrowsClockwise,
   Bell,
   BookOpen,
   Brain,
@@ -21,9 +20,7 @@ import {
   MagnifyingGlass,
   ShieldCheck,
   Sun,
-  User,
   Users,
-  UsersThree,
   VideoCamera,
   Waveform,
   X,
@@ -35,7 +32,6 @@ import { CustomSidebarHeader } from "./custom-sidebar-header";
 
 import { useBillingAccess } from "~/auth/billing-context";
 import { privacyMessages } from "~/settings/general/app-settings";
-import { useMyWorkspacesWithMirror } from "~/settings/team/mirror";
 import { type SettingsTab, type TabInput, useTabs } from "~/store/zustand/tabs";
 
 type SettingsNavItem =
@@ -57,9 +53,7 @@ type SettingsNavGroup = { label: string; items: SettingsNavItem[] };
 
 export function SettingsNav() {
   const { i18n, t } = useLingui();
-  const { isPro } = useBillingAccess();
-  const workspaces = useMyWorkspacesWithMirror();
-  const hasExistingWorkspace = (workspaces.data?.length ?? 0) > 0;
+  const { localFeatures } = useBillingAccess();
   const [search, setSearch] = useState("");
   const searchRef = useSquircleRef<HTMLDivElement>();
   const currentTab = useTabs((state) => state.currentTab);
@@ -86,15 +80,8 @@ export function SettingsNav() {
       label: t`App`,
       items: [
         { id: "app", label: t`General`, icon: Gear },
-        { id: "account", label: t`Account`, icon: User },
         { id: "stats", label: t`Stats`, icon: ChartBar },
         { id: "insights", label: t`Insights`, icon: ChartLineUp },
-        {
-          id: "team",
-          label: t`Teams`,
-          icon: UsersThree,
-          requiresPro: !workspaces.isLoading && !hasExistingWorkspace,
-        },
         { id: "appearance", label: t`Appearance`, icon: Sun },
         { id: "notifications", label: t`Notifications`, icon: Bell },
       ],
@@ -108,7 +95,7 @@ export function SettingsNav() {
           id: "dictionary",
           label: t`Dictionary`,
           icon: BookOpen,
-          requiresPro: true,
+          requiresPro: !localFeatures.dictionary,
         },
       ],
     },
@@ -145,21 +132,13 @@ export function SettingsNav() {
           label: t`Automations`,
           icon: Lightning,
           destination: { type: "automations" },
-          requiresPro: true,
+          requiresPro: !localFeatures.localAutomations,
         },
       ],
     },
     {
       label: t`Data`,
-      items: [
-        {
-          id: "sync",
-          label: t`Sync`,
-          icon: ArrowsClockwise,
-          requiresPro: true,
-        },
-        { id: "imports", label: t`Imports`, icon: DownloadSimple },
-      ],
+      items: [{ id: "imports", label: t`Imports`, icon: DownloadSimple }],
     },
     {
       label: t`Advanced`,
@@ -250,7 +229,7 @@ export function SettingsNav() {
                 {group.label}
               </span>
               {group.items.map((item) => {
-                const requiresPro = Boolean(item.requiresPro && !isPro);
+                const requiresPro = Boolean(item.requiresPro);
 
                 return (
                   <div key={item.id} className="relative">

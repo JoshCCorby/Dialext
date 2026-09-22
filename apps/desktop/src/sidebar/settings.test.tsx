@@ -20,15 +20,13 @@ const mocks = vi.hoisted(() => ({
     };
   }>,
   openNew: vi.fn(),
-  isPro: true,
+  localFeatures: { dictionary: true, localAutomations: true },
   isUpgradingToPro: false,
   select: vi.fn(),
   transitionChatMode: vi.fn(),
   upgradeToPro: vi.fn(),
   updateSettingsTabState: vi.fn(),
   updateTemplatesTabState: vi.fn(),
-  workspaces: [] as Array<{ workspaceId: string }> | undefined,
-  workspacesLoading: false,
 }));
 
 const lingui = vi.hoisted(() => {
@@ -80,17 +78,9 @@ vi.mock("./custom-sidebar-header", () => ({
 
 vi.mock("~/auth/billing-context", () => ({
   useBillingAccess: () => ({
-    isPro: mocks.isPro,
     isUpgradingToPro: mocks.isUpgradingToPro,
     upgradeToPro: mocks.upgradeToPro,
-  }),
-}));
-
-vi.mock("~/settings/team/mirror", () => ({
-  useMyWorkspacesWithMirror: () => ({
-    data: mocks.workspaces,
-    isLoading: mocks.workspacesLoading,
-    isPending: mocks.workspacesLoading,
+    localFeatures: mocks.localFeatures,
   }),
 }));
 
@@ -122,7 +112,8 @@ describe("SettingsNav", () => {
   beforeEach(() => {
     mocks.currentTab = { type: "settings", state: { tab: "app" } };
     mocks.tabs = [];
-    mocks.isPro = true;
+    mocks.localFeatures.dictionary = true;
+    mocks.localFeatures.localAutomations = true;
     mocks.isUpgradingToPro = false;
     mocks.openNew.mockClear();
     mocks.select.mockClear();
@@ -130,8 +121,6 @@ describe("SettingsNav", () => {
     mocks.upgradeToPro.mockClear();
     mocks.updateSettingsTabState.mockClear();
     mocks.updateTemplatesTabState.mockClear();
-    mocks.workspaces = [];
-    mocks.workspacesLoading = false;
   });
 
   it("renders every settings menu label", () => {
@@ -141,8 +130,6 @@ describe("SettingsNav", () => {
       "App",
       "General",
       "Appearance",
-      "Account",
-      "Teams",
       "Notifications",
       "AI",
       "Transcription",
@@ -156,7 +143,6 @@ describe("SettingsNav", () => {
       "Templates",
       "Automations",
       "Data",
-      "Sync",
       "Imports",
       "Advanced",
       "Privacy",
@@ -248,7 +234,6 @@ describe("SettingsNav", () => {
   });
 
   it("opens personal stats for free users", () => {
-    mocks.isPro = false;
     render(<SettingsNav />);
     fireEvent.click(screen.getByRole("button", { name: "Stats" }));
     expect(mocks.updateSettingsTabState).toHaveBeenCalledWith(
@@ -258,7 +243,6 @@ describe("SettingsNav", () => {
   });
 
   it("finds and opens Insights for free users", () => {
-    mocks.isPro = false;
     render(<SettingsNav />);
     fireEvent.change(screen.getByPlaceholderText("Search settings..."), {
       target: { value: "insights" },
@@ -304,114 +288,19 @@ describe("SettingsNav", () => {
     );
   });
 
-  it("opens Sync inside settings", () => {
-    render(<SettingsNav />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sync" }));
-
-    expect(mocks.updateSettingsTabState).toHaveBeenCalledWith(
-      mocks.currentTab,
-      { tab: "sync" },
-    );
-  });
-
-  it("keeps locked Pro features visible and opens them", () => {
-    mocks.isPro = false;
+  it("keeps the entitlement seam when local automations are denied", () => {
+    mocks.localFeatures.localAutomations = false;
 
     render(<SettingsNav />);
 
-    expect(screen.getByText("Sync")).toBeTruthy();
-    expect(screen.getByText("Imports")).toBeTruthy();
     expect(
-      screen.getAllByLabelText("Requires Anarlog Pro").length,
-    ).toBeGreaterThan(0);
-
-    fireEvent.click(screen.getByRole("button", { name: /Sync/ }));
-
-    expect(mocks.updateSettingsTabState).toHaveBeenCalledWith(
-      mocks.currentTab,
-      { tab: "sync" },
-    );
-    expect(mocks.upgradeToPro).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["Teams", { tab: "team" }],
-    ["Dictionary", { tab: "dictionary" }],
-    ["Sync", { tab: "sync" }],
-  ] as const)("opens locked %s navigation", (label, state) => {
-    mocks.isPro = false;
-
-    render(<SettingsNav />);
-
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(label) }));
-
-    expect(mocks.updateSettingsTabState).toHaveBeenCalledWith(
-      mocks.currentTab,
-      state,
-    );
-  });
-
-  it("opens locked Automations from settings", () => {
-    mocks.isPro = false;
-
-    render(<SettingsNav />);
-
+      screen
+        .getByRole("button", { name: /Automations/ })
+        .querySelector("[aria-label='Requires Anarlog Pro']"),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Automations/ }));
 
     expect(mocks.openNew).toHaveBeenCalledWith({ type: "automations" });
-  });
-
-  it("shows Teams with the Pro lock on the free plan", () => {
-    mocks.isPro = false;
-
-    render(<SettingsNav />);
-
-    expect(screen.getByRole("button", { name: /Teams/ })).toBeTruthy();
-    expect(
-      screen
-        .getByRole("button", { name: /Teams/ })
-        .querySelector("[aria-label='Requires Anarlog Pro']"),
-    ).toBeTruthy();
-  });
-
-  it("opens Teams for free members of an existing workspace", () => {
-    mocks.isPro = false;
-    mocks.workspaces = [{ workspaceId: "ws-1" }];
-
-    render(<SettingsNav />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Teams" }));
-
-    expect(mocks.updateSettingsTabState).toHaveBeenCalledWith(
-      mocks.currentTab,
-      { tab: "team" },
-    );
-    expect(
-      screen
-        .getByRole("button", { name: "Teams" })
-        .querySelector("[aria-label='Requires Anarlog Pro']"),
-    ).toBeNull();
-  });
-
-  it("does not lock Teams while workspaces are still loading", () => {
-    mocks.isPro = false;
-    mocks.workspaces = undefined;
-    mocks.workspacesLoading = true;
-
-    render(<SettingsNav />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Teams" }));
-
-    expect(mocks.updateSettingsTabState).toHaveBeenCalledWith(
-      mocks.currentTab,
-      { tab: "team" },
-    );
-    expect(
-      screen
-        .getByRole("button", { name: "Teams" })
-        .querySelector("[aria-label='Requires Anarlog Pro']"),
-    ).toBeNull();
   });
 
   it("opens Imports inside settings", () => {

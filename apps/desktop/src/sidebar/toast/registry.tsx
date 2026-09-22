@@ -7,7 +7,6 @@ import type { DownloadProgress, ToastCondition, ToastType } from "./types";
 import type { DesktopUpdateControl } from "~/main/update-banner";
 import type { DevtoolsToastPreview } from "~/store/zustand/devtools-toast-preview";
 
-const ANARLOG_ICON_SRC = "/assets/anarlog-icon.png";
 const DESKTOP_UPDATE_TOAST_PREFIX = "desktop-update:";
 
 type ToastRegistryEntry = {
@@ -61,7 +60,6 @@ export function createToastRegistry({
   localSttStatus,
   isLocalSttModel,
   update,
-  onSignIn,
   onOpenLLMSettings,
   onOpenSTTSettings,
 }: ToastRegistryParams): ToastRegistryEntry[] {
@@ -129,29 +127,6 @@ export function createToastRegistry({
     },
     {
       toast: {
-        id: "sign-in-benefits",
-        icon: (
-          <img
-            src={ANARLOG_ICON_SRC}
-            alt="Anarlog"
-            className="size-5 object-contain object-center"
-          />
-        ),
-        description: t`Sign in to get the most out of Anarlog`,
-        primaryAction: {
-          label: t`Sign in`,
-          onClick: onSignIn,
-        },
-        lifecycle: {
-          type: "persistent",
-          dismissal: "permanent",
-          dismissalId: "auth-promotion",
-        },
-      },
-      condition: () => !isAuthLoading && !isAuthenticated,
-    },
-    {
-      toast: {
         id: "missing-stt",
         description: t`Transcription provider needed`,
         primaryAction: {
@@ -176,29 +151,6 @@ export function createToastRegistry({
         hasUsableSttConfigured &&
         !hasUsableLlmConfigured &&
         !isAiIntelligenceTabActive,
-    },
-    {
-      toast: {
-        id: "upgrade-to-pro",
-        description: t`Pro features available`,
-        primaryAction: {
-          label: t`Upgrade`,
-          onClick: onSignIn,
-        },
-        lifecycle: {
-          type: "persistent",
-          dismissal: "permanent",
-          dismissalId: "auth-promotion",
-        },
-      },
-      // suppress until auth resolves to avoid flash on startup
-      condition: () =>
-        !isAuthLoading &&
-        !isAuthenticated &&
-        hasLLMConfigured &&
-        hasSttConfigured &&
-        !hasProSttConfigured &&
-        !hasProLlmConfigured,
     },
   ];
 }

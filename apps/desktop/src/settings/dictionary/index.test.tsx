@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
     isPro: true,
     isUpgradingToPro: false,
     upgradeToPro: vi.fn(),
+    localFeatures: { dictionary: true },
   },
   toastWarning: vi.fn(),
 }));
@@ -58,6 +59,7 @@ import { DictionarySettings, SettingsDictionary } from "./index";
 describe("DictionarySettings", () => {
   beforeEach(() => {
     mocks.billing.isPro = true;
+    mocks.billing.localFeatures.dictionary = true;
     mocks.billing.isUpgradingToPro = false;
     mocks.billing.upgradeToPro.mockClear();
     mocks.toastWarning.mockClear();
@@ -65,12 +67,22 @@ describe("DictionarySettings", () => {
 
   afterEach(cleanup);
 
-  it("shows the dictionary editor and toasts on the free plan", () => {
+  it("keeps the dictionary available on the personal free plan", () => {
     mocks.billing.isPro = false;
 
     render(<SettingsDictionary />);
 
     expect(screen.getByRole("textbox")).toBeTruthy();
+    fireEvent.click(screen.getByRole("textbox"));
+
+    expect(mocks.toastWarning).not.toHaveBeenCalled();
+  });
+
+  it("keeps the entitlement seam for providers that deny dictionary access", () => {
+    mocks.billing.localFeatures.dictionary = false;
+
+    render(<SettingsDictionary />);
+
     fireEvent.click(screen.getByRole("textbox"));
 
     expect(mocks.toastWarning).toHaveBeenCalledWith(

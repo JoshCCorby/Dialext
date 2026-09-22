@@ -21,6 +21,12 @@ const mocks = vi.hoisted(() => ({
   runAction: vi.fn(),
   copyDiagnostics: vi.fn(),
   startDevtoolsMetrics: vi.fn(() => vi.fn()),
+  diagnosticsOptedIn: true,
+}));
+
+vi.mock("~/shared/config", () => ({
+  useConfigValue: (key: string) =>
+    key === "show_developer_diagnostics" ? mocks.diagnosticsOptedIn : undefined,
 }));
 
 vi.mock("@tauri-apps/api/app", () => ({
@@ -176,6 +182,7 @@ describe("DevtoolsStatusBar", () => {
     mocks.billing.plan = "trial";
     mocks.billing.trialDaysRemaining = 12;
     vi.mocked(commands.showDevtool).mockResolvedValue(true);
+    mocks.diagnosticsOptedIn = true;
     resetDevtoolsMetrics();
     useDevtoolsMetrics.setState({
       fps: [58, 60],
@@ -193,6 +200,17 @@ describe("DevtoolsStatusBar", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  it("stays hidden in a development build until the person opts in", async () => {
+    mocks.diagnosticsOptedIn = false;
+    renderBar();
+    await vi.waitFor(() => expect(commands.showDevtool).toHaveBeenCalled());
+    // Let the availability query settle; an enabled bar would mount by then.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByTestId("devtools-status-bar")).toBeNull();
+    expect(mocks.startDevtoolsMetrics).not.toHaveBeenCalled();
+    expect(getIdentifier).not.toHaveBeenCalled();
   });
 
   it("renders nothing when devtools are disabled", async () => {

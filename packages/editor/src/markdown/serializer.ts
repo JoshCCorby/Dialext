@@ -132,6 +132,10 @@ export function getSerializer(): MarkdownSerializer {
 
   _serializer = new MarkdownSerializer(
     {
+      // Markdown has no block identity; a generated block renders as its content.
+      dialextBlock(state, node) {
+        state.renderContent(node);
+      },
       blockquote(state, node) {
         state.wrapBlock("> ", null, node, () => state.renderContent(node));
       },

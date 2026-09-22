@@ -12,6 +12,7 @@ import {
 import {
   buildRenderTranscriptRequestFromRows,
   collectAssignedHumanIdsFromTranscriptRows,
+  type RenderedTranscriptSegmentWithWordMetadata,
   renderTranscriptSegments,
 } from "~/stt/render-transcript";
 
@@ -31,17 +32,32 @@ function extractEventName(event: unknown): string | null {
   return null;
 }
 
-async function buildTranscript(
-  transcripts: SessionContentSnapshot["transcripts"],
-  humans: Array<{ id: string; name: string }>,
-  participantHumanIds: string[],
+/// The effective transcript rendered into speaker-labelled segments, exactly as chat
+/// context, export and the transcript panel label them. For a Dialext recording the
+/// snapshot holds only the selected reading, so the labels are that reading's.
+export async function renderSessionSegments(
+  snapshot: SessionContentSnapshot,
   selfHumanId?: string,
-): Promise<Transcript | null> {
-  if (transcripts.length === 0) {
-    return null;
+): Promise<RenderedTranscriptSegmentWithWordMetadata[]> {
+  if (snapshot.transcripts.length === 0) {
+    return [];
   }
+  const participantHumanIds = snapshot.participants.map(
+    (participant) => participant.humanId,
+  );
+  const assignedHumanIds = collectAssignedHumanIdsFromTranscriptRows(
+    snapshot.transcripts,
+  );
+  const humanIds = [
+    ...new Set(
+      [...participantHumanIds, ...assignedHumanIds, selfHumanId ?? ""].filter(
+        Boolean,
+      ),
+    ),
+  ];
+  const humans = await loadHumansByIds(humanIds);
   const request = buildRenderTranscriptRequestFromRows(
-    transcripts,
+    snapshot.transcripts,
     {
       selfHumanId,
       humans: humans
@@ -50,10 +66,21 @@ async function buildTranscript(
     },
     participantHumanIds,
   );
-  if (!request) {
+  return request ? renderTranscriptSegments(request) : [];
+}
+
+async function buildTranscript(
+  snapshot: SessionContentSnapshot,
+  selfHumanId?: string,
+): Promise<Transcript | null> {
+  const { transcripts } = snapshot;
+  if (transcripts.length === 0) {
     return null;
   }
-  const segments = await renderTranscriptSegments(request);
+  const segments = await renderSessionSegments(snapshot, selfHumanId);
+  if (segments.length === 0) {
+    return null;
+  }
 
   const startedAtCandidates = transcripts.map(
     (transcript) => transcript.started_at,
@@ -81,20 +108,6 @@ export async function hydrateSessionContext(
   const snapshot = await loadSessionContentSnapshot(sessionId);
   if (!snapshot) return null;
 
-  const participantHumanIds = snapshot.participants.map(
-    (participant) => participant.humanId,
-  );
-  const assignedHumanIds = collectAssignedHumanIdsFromTranscriptRows(
-    snapshot.transcripts,
-  );
-  const humanIds = [
-    ...new Set(
-      [...participantHumanIds, ...assignedHumanIds, selfHumanId ?? ""].filter(
-        Boolean,
-      ),
-    ),
-  ];
-  const humans = await loadHumansByIds(humanIds);
   const participants = snapshot.participants.flatMap((participant) =>
     participant.name
       ? [{ name: participant.name, jobTitle: participant.jobTitle || null }]
@@ -106,12 +119,7 @@ export async function hydrateSessionContext(
     .filter((note): note is string => Boolean(note))
     .join("\n\n---\n\n");
 
-  const transcript = await buildTranscript(
-    snapshot.transcripts,
-    humans,
-    participantHumanIds,
-    selfHumanId,
-  );
+  const transcript = await buildTranscript(snapshot, selfHumanId);
   const eventName = extractEventName(snapshot.event);
   const meetingChat = formatMeetingChatRecordsAsMarkdown(
     await loadMeetingChatRecords(sessionId),

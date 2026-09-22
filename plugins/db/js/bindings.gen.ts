@@ -134,6 +134,62 @@ async assignDialextSpeaker(sessionId: string, wordId: string, humanId: string | 
     else return { status: "error", error: e  as any };
 }
 },
+async editDialextPassage(sessionId: string, accountId: string, expectedContentVersion: string, wordIds: string[], text: string) : Promise<Result<DialextEditResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|edit_dialext_passage", { sessionId, accountId, expectedContentVersion, wordIds, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async undoDialextEdit(sessionId: string, accountId: string, expectedContentVersion: string) : Promise<Result<DialextEditResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|undo_dialext_edit", { sessionId, accountId, expectedContentVersion }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async applyDialextProposal(proposalId: string) : Promise<Result<DialextProposalResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|apply_dialext_proposal", { proposalId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async generateDialextOutput(sessionId: string, documentId: string, title: string) : Promise<Result<DialextOutputResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|generate_dialext_output", { sessionId, documentId, title }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createDialextProviderTask(title: string, targetLanguage: string, audio: number[]) : Promise<Result<DialextProviderTaskStart, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|create_dialext_provider_task", { title, targetLanguage, audio }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startDialextProviderTask(sessionId: string, targetLanguage: string) : Promise<Result<DialextProviderTaskStart, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|start_dialext_provider_task", { sessionId, targetLanguage }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async cancelDialextProviderTask(taskId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:db|cancel_dialext_provider_task", { taskId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getE2eeIdentityStatus(accountUserId: string) : Promise<Result<E2eeIdentityStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:db|get_e2ee_identity_status", { accountUserId }) };
@@ -349,6 +405,24 @@ export type CloudsyncWorkspaceProjection = { accountUserId: string; personalWork
 export type CloudsyncWorkspaceProjectionEntry = { id: string; ownerUserId: string; kind: string; name: string; membershipId: string; role: string; membershipCreatedAt: string; membershipUpdatedAt: string; createdAt: string; updatedAt: string }
 export type DependencyAnalysis = { kind: "reactive"; data: { targets: DependencyTarget[] } } | { kind: "non_reactive"; data: { reason: string } }
 export type DependencyTarget = { kind: "table"; data: string } | { kind: "virtual_table"; data: string }
+/**
+ * The result of a version-pinned Dialext account edit. `outcome` is `applied`,
+ * `stale` or `unchanged`; a stale answer is an expected outcome, not an error, so
+ * the interface keeps what the reader typed and offers `contentVersion` to refresh.
+ */
+export type DialextEditResult = { outcome: string; contentVersion: string; editId: string | null; sequence: number | null }
+/**
+ * The result of generating a deterministic Dialext output. `outcome` is `written`,
+ * `already_has_text` (nothing was replaced) or `no_passages`.
+ */
+export type DialextOutputResult = { outcome: string; documentVersion: string | null; blocks: number | null }
+/**
+ * The result of applying a Dialext summary proposal. `outcome` is `applied`,
+ * `stale` or `settled`. A stale answer leaves both the summary and the proposal
+ * untouched, so the reader can refresh and review rather than losing the proposal.
+ */
+export type DialextProposalResult = { outcome: string; documentVersion: string | null; transcriptVersion: string | null; blocksChanged: number | null; status: string | null }
+export type DialextProviderTaskStart = { taskId: string; sessionId: string }
 export type DialextSourceAudio = { sha256: string; durationMs: number }
 export type DialextSourceInterval = { sourceId: string; revision: number; evidenceSha256: string; startMs: number; endMs: number; evidenceText: string; providerLabel: string | null; speakerKey: string | null; speakerDisplayIndex: number | null; humanId: string | null; audio: DialextSourceIntervalAudio | null; audioUnavailable: string | null }
 export type DialextSourceIntervalAudio = { measuredDurationMs: number; clipWav: number[] }

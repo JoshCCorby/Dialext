@@ -14,6 +14,14 @@ msgstr ""
 "Plural-Forms: \n"
 
 #: src/dialext/reading-selector.tsx
+msgid " (generate)"
+msgstr " (generate)"
+
+#: src/dialext/reading-selector.tsx
+msgid " (generating…)"
+msgstr " (generating…)"
+
+#: src/dialext/reading-selector.tsx
 msgid " (unavailable)"
 msgstr " (unavailable)"
 
@@ -184,6 +192,10 @@ msgstr "30 days"
 msgid "7 days"
 msgstr "7 days"
 
+#: src/settings/developers/diagnostics.tsx
+msgid "A bar at the bottom of the window with memory, delay and render counts. For troubleshooting; nothing is sent anywhere."
+msgstr "A bar at the bottom of the window with memory, delay and render counts. For troubleshooting; nothing is sent anywhere."
+
 #: src/automations/starters.tsx
 msgid "A dated Notion update with the meeting summary."
 msgstr "A dated Notion update with the meeting summary."
@@ -253,7 +265,6 @@ msgstr "Accessibility"
 
 #: src/onboarding/index.tsx
 #: src/settings/general/account.tsx
-#: src/sidebar/settings.tsx
 msgid "Account"
 msgstr "Account"
 
@@ -611,9 +622,21 @@ msgstr "Anarlog will retry automatically. This does not affect your notes."
 msgid "Anarlog will sync your calendar to get meeting reminders"
 msgstr "Anarlog will sync your calendar to get meeting reminders"
 
+#: src/settings/automations/index.tsx
+msgid "Anarlog-hosted automation actions are unavailable in this personal build."
+msgstr "Anarlog-hosted automation actions are unavailable in this personal build."
+
 #: src/templates/template-icon-picker.tsx
 msgid "Animals & Nature"
 msgstr "Animals & Nature"
+
+#: src/dialext/answer-citations.tsx
+msgid "Answer written by the model from these passages of the {reading} reading:"
+msgstr "Answer written by the model from these passages of the {reading} reading:"
+
+#: src/dialext/answer-citations.tsx
+msgid "Answer written by the model from these passages:"
+msgstr "Answer written by the model from these passages:"
 
 #: src/session-sharing/general-access.tsx
 msgid "Anyone with the link"
@@ -905,6 +928,8 @@ msgid "Can view"
 msgstr "Can view"
 
 #: src/calendar/components/apple/permission.tsx
+#: src/dialext/provider-generation.tsx
+#: src/dialext/reading-selector.tsx
 #: src/imports/screen.tsx
 #: src/resource-sharing/library.tsx
 #: src/session-sharing/comments.tsx
@@ -1179,6 +1204,10 @@ msgstr "Choose template icon"
 #: src/settings/general/audio-settings.tsx
 msgid "Choose the microphone that captures your voice."
 msgstr "Choose the microphone that captures your voice."
+
+#: src/dialext/provider-generation.tsx
+msgid "Choose WAV recording"
+msgstr "Choose WAV recording"
 
 #: src/settings/general/week-start.tsx
 msgid "Choose which day begins your calendar week."
@@ -1587,6 +1616,10 @@ msgstr "Copy this key now — it is only shown once."
 #: src/settings/developers/webhooks.tsx
 msgid "Copy this signing secret now — it is only shown once."
 msgstr "Copy this signing secret now — it is only shown once."
+
+#: src/dialext/undo-correction.tsx
+msgid "Correction undone."
+msgstr "Correction undone."
 
 #. placeholder {0}: error.message
 #: src/settings/developers/cli.tsx
@@ -2297,6 +2330,7 @@ msgstr "Expected output"
 
 #: src/session/components/outer-header/overflow/export-modal.tsx
 #: src/session/components/outer-header/overflow/index.tsx
+#: src/session/components/outer-header/personal-export-button.tsx
 msgid "Export"
 msgstr "Export"
 
@@ -2311,6 +2345,10 @@ msgstr "Export folder"
 #: src/settings/general/storage/export-location.tsx
 msgid "Export location"
 msgstr "Export location"
+
+#: src/session/components/outer-header/personal-export-button.tsx
+msgid "Export note"
+msgstr "Export note"
 
 #: src/settings/automations/workflow-builder.tsx
 msgid "Export the meeting as Markdown"
@@ -2397,6 +2435,10 @@ msgstr "Finish sign-in"
 msgid "Finishing connection…"
 msgstr "Finishing connection…"
 
+#: src/dialext/provider-generation.tsx
+msgid "First reading"
+msgstr "First reading"
+
 #: src/settings/stats/badge-collection.tsx
 msgid "First Words"
 msgstr "First Words"
@@ -2477,6 +2519,10 @@ msgstr "General"
 msgid "General access"
 msgstr "General access"
 
+#: src/dialext/provider-generation.tsx
+msgid "Generate a Dialext reading"
+msgstr "Generate a Dialext reading"
+
 #: src/session/components/note-input/enhanced/streaming.tsx
 #: src/session/components/title-input.tsx
 msgid "Generating title..."
@@ -2552,10 +2598,6 @@ msgstr "Guest email"
 #: src/resource-sharing/share-dialog.tsx
 msgid "guest@company.com"
 msgstr "guest@company.com"
-
-#: src/settings/developers/index.tsx
-msgid "Guide"
-msgstr "Guide"
 
 #: src/settings/general/app-settings.tsx
 msgid "Have Anarlog ready when you sign in."
@@ -3420,6 +3462,10 @@ msgstr "No community templates available"
 msgid "No content."
 msgstr "No content."
 
+#: src/dialext/undo-correction.tsx
+msgid "No correction to undo in this reading."
+msgstr "No correction to undo in this reading."
+
 #: src/task/resource-view.tsx
 msgid "No description provided."
 msgstr "No description provided."
@@ -3619,6 +3665,10 @@ msgstr "Notes list"
 msgid "Notes stay in All notes. Materials in this folder will be deleted."
 msgstr "Notes stay in All notes. This folder, its nested folders, and all their materials will be deleted."
 
+#: src/dialext/answer-citations.tsx
+msgid "Nothing in the selected reading mentions this, so no model was asked."
+msgstr "Nothing in the selected reading mentions this, so no model was asked."
+
 #. placeholder {0}: latestResult.conflicts
 #. placeholder {1}: latestResult.errors
 #: src/imports/screen.tsx
@@ -3740,6 +3790,10 @@ msgstr "Open in right panel"
 #: src/task/resource-view.tsx
 msgid "Open on GitHub"
 msgstr "Open on GitHub"
+
+#: src/dialext/provider-generation.tsx
+msgid "Open recording"
+msgstr "Open recording"
 
 #: src/settings/todo/github.tsx
 msgid "Open repository on GitHub"
@@ -4140,6 +4194,10 @@ msgstr "Recording not found. It may have been deleted."
 msgid "Recording status prompts"
 msgstr "Recording status prompts"
 
+#: src/dialext/provider-generation.tsx
+msgid "Recording title"
+msgstr "Recording title"
+
 #: src/main/windows-title-bar.tsx
 msgid "Redo"
 msgstr "Redo"
@@ -4390,6 +4448,7 @@ msgid "Retention (days)"
 msgstr "Retention (days)"
 
 #: src/chat/components/message/error.tsx
+#: src/dialext/provider-generation.tsx
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 #: src/settings/general/storage/legacy-cleanup.tsx
 #: src/settings/sync/index.tsx
@@ -4412,6 +4471,10 @@ msgstr "Review transfer"
 #: src/settings/developers/api-key-row.tsx
 msgid "Revoke"
 msgstr "Revoke"
+
+#: src/dialext/provider-generation.tsx
+msgid "Run the deterministic development provider on a WAV recording. It makes no paid call and does not assess transcription quality."
+msgstr "Run the deterministic development provider on a WAV recording. It makes no paid call and does not assess transcription quality."
 
 #: src/settings/ai/shared/index.tsx
 #: src/settings/ai/stt/select.tsx
@@ -4608,6 +4671,10 @@ msgstr "Select a provider"
 #: src/main/windows-title-bar.tsx
 msgid "Select All"
 msgstr "Select All"
+
+#: src/dialext/answer-citations.tsx
+msgid "Select an available reading to ask about this recording."
+msgstr "Select an available reading to ask about this recording."
 
 #: src/contacts/organization-details.tsx
 msgid "Select an organization to view details"
@@ -4834,6 +4901,10 @@ msgstr "Show Apple Calendar events in Anarlog."
 msgid "Show Deleted Events"
 msgstr "Show Deleted Events"
 
+#: src/settings/developers/diagnostics.tsx
+msgid "Show developer diagnostics"
+msgstr "Show developer diagnostics"
+
 #: src/sidebar/timeline/item.tsx
 msgid "Show Event"
 msgstr "Show Event"
@@ -4898,7 +4969,6 @@ msgstr "Show when initial cloud sync finishes."
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 #: src/settings/sync/index.tsx
 #: src/shared-notes/index.tsx
-#: src/sidebar/toast/registry.tsx
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -4943,10 +5013,6 @@ msgstr "Sign in to create a shared workspace for your team."
 #: src/session/components/note-input/enhanced/enhance-error.tsx
 msgid "Sign in to generate this summary"
 msgstr "Sign in to generate this summary"
-
-#: src/sidebar/toast/registry.tsx
-msgid "Sign in to get the most out of Anarlog"
-msgstr "Sign in to get the most out of Anarlog"
 
 #: src/session-sharing/index.tsx
 msgid "Sign in to share"
@@ -5173,6 +5239,7 @@ msgid "Starting your trial..."
 msgstr "Starting your trial..."
 
 #: src/chat/components/input/index.tsx
+#: src/dialext/provider-generation.tsx
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -5307,7 +5374,6 @@ msgid "Symbols"
 msgstr "Symbols"
 
 #: src/settings/sync/index.tsx
-#: src/sidebar/settings.tsx
 msgid "Sync"
 msgstr "Sync"
 
@@ -5403,7 +5469,6 @@ msgid "teammate@company.com"
 msgstr "teammate@company.com"
 
 #: src/settings/team/index.tsx
-#: src/sidebar/settings.tsx
 msgid "Teams"
 msgstr "Teams"
 
@@ -5444,6 +5509,10 @@ msgstr "Test failed ({0})"
 msgid "Test runs are not available yet."
 msgstr "Test runs are not available yet."
 
+#: src/dialext/source-panel.tsx
+msgid "The answer quoted this passage:"
+msgstr "The answer quoted this passage:"
+
 #: src/onboarding/folder-location.tsx
 msgid "The app will restart after onboarding to apply your storage changes"
 msgstr "The app will restart after onboarding to apply your storage changes"
@@ -5451,6 +5520,14 @@ msgstr "The app will restart after onboarding to apply your storage changes"
 #: src/shared-notes/index.tsx
 msgid "The link may have expired or its access may have changed."
 msgstr "The link may have expired or its access may have changed."
+
+#: src/dialext/answer-citations.tsx
+msgid "The model found no passage that answers this."
+msgstr "The model found no passage that answers this."
+
+#: src/dialext/answer-citations.tsx
+msgid "The model's answer did not check out against the reading, so it is not shown."
+msgstr "The model's answer did not check out against the reading, so it is not shown."
 
 #: src/shared-notes/index.tsx
 msgid "The note may have been unshared or moved out of a workspace you can access."
@@ -5533,6 +5610,14 @@ msgstr "This note was edited on another device at the same time. The later edit 
 msgid "This passage names no source interval."
 msgstr "This passage names no source interval."
 
+#: src/dialext/undo-correction.tsx
+msgid "This reading changed in another window. Nothing was undone."
+msgstr "This reading changed in another window. Nothing was undone."
+
+#: src/session/components/note-input/transcript/renderer/segment.tsx
+msgid "This reading changed in another window. Your text is still here. Refresh and review it before saving."
+msgstr "This reading changed in another window. Your text is still here. Refresh and review it before saving."
+
 #: src/dialext/source-panel.tsx
 msgid "This reading did not attribute a voice."
 msgstr "This reading did not attribute a voice."
@@ -5561,6 +5646,18 @@ msgstr "This requires Anarlog Pro"
 #: src/settings/plan-gate.tsx
 msgid "This requires Anarlog Team"
 msgstr "This requires Anarlog Team"
+
+#: src/settings/automations/workflow-builder.tsx
+msgid "This saved Anarlog-hosted action is unavailable in the personal build."
+msgstr "This saved Anarlog-hosted action is unavailable in the personal build."
+
+#: src/dialext/source-panel.tsx
+msgid "This summary block was generated from this passage of the {reading} reading."
+msgstr "This summary block was generated from this passage of the {reading} reading."
+
+#: src/dialext/source-panel.tsx
+msgid "This summary block was generated from this passage."
+msgstr "This summary block was generated from this passage."
 
 #. placeholder {0}: status.fileCount
 #. placeholder {1}: formatBytes(status.totalBytes)
@@ -5702,6 +5799,14 @@ msgstr "Unavailable"
 #: src/sidebar/toast/undo-delete-toast.tsx
 msgid "Undo"
 msgstr "Undo"
+
+#: src/dialext/undo-correction.tsx
+msgid "Undo last correction"
+msgstr "Undo last correction"
+
+#: src/dialext/undo-correction.tsx
+msgid "Undoing…"
+msgstr "Undoing…"
 
 #: src/session/components/note-input/transcript/renderer/speaker-assign.tsx
 msgid "Unknown"
@@ -6093,6 +6198,10 @@ msgstr "You can use up to three example summaries."
 #: src/onboarding/account/after-login.tsx
 msgid "You have an active plan"
 msgstr "You have an active plan"
+
+#: src/dialext/source-panel.tsx
+msgid "You have edited this summary block since it was generated. The passage below supports the generated wording, not your edit."
+msgstr "You have edited this summary block since it was generated. The passage below supports the generated wording, not your edit."
 
 #: src/settings/team/index.tsx
 msgid "You will become the owner of {workspaceName}, with control over its members, billing, and deletion. The current owner will become an admin."

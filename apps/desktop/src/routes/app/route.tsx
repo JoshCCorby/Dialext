@@ -10,7 +10,6 @@ import {
   shouldCheckOnboarding,
 } from "./-resolve-entry-path";
 
-import { useDeeplinkHandler } from "~/shared/hooks/useDeeplinkHandler";
 import { ListenerProvider } from "~/stt/contexts";
 
 export const Route = createFileRoute("/app")({
@@ -41,8 +40,6 @@ export const Route = createFileRoute("/app")({
 
 function Component() {
   const { listenerStore } = Route.useLoaderData();
-
-  useDeeplinkHandler();
 
   return (
     <TooltipProvider>

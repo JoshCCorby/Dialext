@@ -17,6 +17,10 @@ import {
 import { trackAnalyticsEvent } from "~/analytics";
 import { retryDatabaseLock } from "~/db/retry";
 import {
+  generateDialextOutputIfEmpty,
+  isDialextRecording,
+} from "~/dialext/summary";
+import {
   loadSessionContentSnapshot,
   type SessionContentSnapshot,
 } from "~/session/content-queries";
@@ -443,6 +447,10 @@ export class EnhancerService {
   }
 
   async enhance(sessionId: string, opts?: EnhanceOpts): Promise<EnhanceResult> {
+    if (await isDialextRecording(sessionId)) {
+      return this.enhanceDialext(sessionId, opts);
+    }
+
     const { aiTaskStore, getModel, getLLMConn, getSelectedTemplateId } =
       this.deps;
 
@@ -584,6 +592,43 @@ export class EnhancerService {
       });
 
     return { type: "started", noteId: note.id };
+  }
+
+  /// A Dialext recording gets a deterministic output and never a model call. A
+  /// template is another output beside the existing ones rather than a replacement
+  /// of the one on screen, so `targetNoteId` is deliberately not honoured here, and
+  /// an output that already has text is never regenerated over.
+  private async enhanceDialext(
+    sessionId: string,
+    opts?: EnhanceOpts,
+  ): Promise<EnhanceResult> {
+    // The pending auto-enhance record exists to resume a model run; there is none
+    // here, and leaving it would requeue this recording on every launch.
+    if (opts?.pendingAutoEnhance) {
+      await retryDatabaseLock(() =>
+        discardPendingAutoEnhanceJob(opts.pendingAutoEnhance!),
+      );
+    }
+    const templateId = opts?.templateId || undefined;
+    const note = await this.ensureNoteRecord(sessionId, templateId);
+    if (note.content.trim()) {
+      return { type: "already_active", noteId: note.id };
+    }
+    const title =
+      opts?.templateTitle?.trim() ||
+      (templateId ? (await getTemplateById(templateId))?.title?.trim() : "") ||
+      "Summary";
+    const outcome = await generateDialextOutputIfEmpty({
+      sessionId,
+      noteId: note.id,
+      title,
+    });
+    if (outcome === "no_passages") {
+      return { type: "too_short" };
+    }
+    return outcome === "written"
+      ? { type: "started", noteId: note.id }
+      : { type: "already_active", noteId: note.id };
   }
 
   async ensureNote(sessionId: string, templateId?: string): Promise<string> {

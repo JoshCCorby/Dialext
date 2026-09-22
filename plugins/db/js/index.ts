@@ -1,6 +1,10 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 
 import type {
+  DialextEditResult,
+  DialextOutputResult,
+  DialextProposalResult,
+  DialextProviderTaskStart,
   DialextSourceAudio,
   DialextSourceInterval,
   GetMeetingInput,
@@ -30,6 +34,10 @@ import type {
 
 export type {
   CloudsyncE2eeWitness,
+  DialextEditResult,
+  DialextOutputResult,
+  DialextProposalResult,
+  DialextProviderTaskStart,
   DialextSourceAudio,
   DialextSourceInterval,
   DialextSourceIntervalAudio,
@@ -263,6 +271,78 @@ export async function assignDialextSpeaker(
     wordId,
     humanId,
     expectedHumanId,
+  });
+}
+
+export async function editDialextPassage(
+  sessionId: string,
+  accountId: string,
+  expectedContentVersion: string,
+  wordIds: string[],
+  text: string,
+): Promise<DialextEditResult> {
+  return invoke("plugin:db|edit_dialext_passage", {
+    sessionId,
+    accountId,
+    expectedContentVersion,
+    wordIds,
+    text,
+  });
+}
+
+export async function undoDialextEdit(
+  sessionId: string,
+  accountId: string,
+  expectedContentVersion: string,
+): Promise<DialextEditResult> {
+  return invoke("plugin:db|undo_dialext_edit", {
+    sessionId,
+    accountId,
+    expectedContentVersion,
+  });
+}
+
+export async function applyDialextProposal(
+  proposalId: string,
+): Promise<DialextProposalResult> {
+  return invoke("plugin:db|apply_dialext_proposal", { proposalId });
+}
+
+export async function createDialextProviderTask(
+  title: string,
+  targetLanguage: "en" | "ga",
+  audio: number[],
+): Promise<DialextProviderTaskStart> {
+  return invoke("plugin:db|create_dialext_provider_task", {
+    title,
+    targetLanguage,
+    audio,
+  });
+}
+
+export async function startDialextProviderTask(
+  sessionId: string,
+  targetLanguage: "en" | "ga",
+): Promise<DialextProviderTaskStart> {
+  return invoke("plugin:db|start_dialext_provider_task", {
+    sessionId,
+    targetLanguage,
+  });
+}
+
+export async function cancelDialextProviderTask(taskId: string): Promise<void> {
+  return invoke("plugin:db|cancel_dialext_provider_task", { taskId });
+}
+
+export async function generateDialextOutput(
+  sessionId: string,
+  documentId: string,
+  title: string,
+): Promise<DialextOutputResult> {
+  return invoke("plugin:db|generate_dialext_output", {
+    sessionId,
+    documentId,
+    title,
   });
 }
 

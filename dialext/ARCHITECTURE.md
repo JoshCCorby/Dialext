@@ -1,6 +1,6 @@
 # Personal Dialext: implementation decisions
 
-Updated 18 September 2026. Native baseline and milestone 1 are implemented and verified; [HANDOFF.md](HANDOFF.md) records the completed checks. Later milestones below remain implementation direction, not completed features. The user's [product brief](product/product-vision.md) is authoritative. Build one milestone at a time; prove it in the desktop interface before adding the next.
+Updated 22 September 2026. Native baseline and milestones 1–4 are implemented and verified; milestone 5 is implemented with its real-window acceptance outstanding. [HANDOFF.md](HANDOFF.md) records the completed checks. Later milestones below remain implementation direction, not completed features. The user's [product brief](product/product-vision.md) is authoritative. Build one milestone at a time; prove it in the desktop interface before adding the next.
 
 ## Product and reuse boundary
 
@@ -93,7 +93,7 @@ Read the existing `session/queries/proposals.ts` before extending it. It current
 
 A new template is a separate output/version. Auto should adapt headings to the recording; do not transplant the old mandatory decisions/actions minutes schema.
 
-Store summary evidence alongside stable blocks when generating them. An edited block must not keep an apparently verified source association unless its text still matches the pinned content. Do not infer provenance later from bullet position, and do not let Markdown round-trips silently discard block identity. Expose one source/detail control on hover, focus or selection; transcript marks and chat citations reuse the same source-audio panel.
+Store summary evidence alongside stable blocks when generating them. An edited block must not keep an apparently verified source association unless its text still matches the pinned content. Do not infer provenance later from bullet position, and do not let Markdown round-trips silently discard block identity. Expose one source/detail control on hover, focus or selection; transcript marks and chat citations reuse the same source-audio panel. Milestone 5 stores this evidence natively when an output is generated (`dialext_block_evidence`), and re-pins it only inside an accepted, version-checked proposal. Questions go through the existing, provider-agnostic chat model setting (Joshua, 21 September: on-device for testing, never locked to one provider); retrieval, refusal and citation validation stay deterministic and model-independent.
 
 ## Processing boundary
 
@@ -122,6 +122,10 @@ Use deterministic fixture providers for interface and crash/retry testing first.
 | 3 — checked editing and proposals | Native version-pinned account edits/history and atomic summary proposals; use deterministic summary outputs and existing template UI. | Stale edit/proposal refuses without lost typing; undo survives restart; accepting a targeted proposal preserves unrelated manual edits; applying Lecture creates another output. |
 | 4 — provider bridge | Native task lifecycle plus stateless helper and independent-stage persistence. Wire preferred-language generation, then on-demand alternate generation. | Cancel/restart/failure tests preserve successful stages; no duplicate paid ASR on downstream retry; one approved short live sample assessed separately. |
 | 5 — coherent personal workflow | Quiet source controls on stable summary blocks, footer question input, corrected-text retrieval and simple TXT/Markdown sharing. | A question months later uses the chosen effective account, refuses missing evidence, and opens the same source panel; exports match what the reader sees. |
+| 6 — quiet interface | Developer diagnostics (status bar, render outlines, metrics) off by default with an explicit opt-in; analytics off by default. | A fresh launch of the debug prototype shows no status bar or outlines; opting in restores them; nothing is sent anywhere by default. |
+| 7 — independent entitlements | Replace Anarlog billing/plan gating with a local personal entitlement provider behind the existing `useBillingAccess` seam: local features unlocked; Anarlog-hosted features hidden, not upsold. | No "requires Anarlog Pro/Team" gate or login prompt blocks a local feature; hosted-only surfaces are absent; the seam still accepts another provider. |
+| 8 — Dialext branding | Every user-visible "Anarlog" becomes Dialext (strings, window/menu titles, app name, icons, exports); internal `@anlg`/`anlg_` identifiers unchanged; MIT notice retained. | A search of shipped UI strings and catalogs finds no user-facing Anarlog; licence notices intact. |
+| 9 — personal look | Fonts, colours and related tokens in the shared UI theme, per Joshua's choices. | Joshua approves the result in the real window. |
 
 Milestones are implementation scopes, not instructions to defer all interface work until the end. Every milestone includes a visible, testable desktop path. Stop a slice from expanding into rebranding, new cloud infrastructure, all-language support or a second chat product.
 

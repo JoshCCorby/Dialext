@@ -12,6 +12,7 @@ const {
   listenCaptureStatusMock,
   listMicUsingApplicationsMock,
   runEventHooksMock,
+  runMeetingCompletedAutomationsMock,
   setRecordingIndicatorMock,
   startCaptureMock,
   stopCaptureMock,
@@ -26,6 +27,7 @@ const {
   listenCaptureStatusMock: vi.fn(),
   listMicUsingApplicationsMock: vi.fn(),
   runEventHooksMock: vi.fn(),
+  runMeetingCompletedAutomationsMock: vi.fn(),
   setRecordingIndicatorMock: vi.fn(),
   startCaptureMock: vi.fn(),
   stopCaptureMock: vi.fn(),
@@ -96,8 +98,8 @@ vi.mock("@anlg/plugin-transcription", () => ({
   },
 }));
 
-vi.mock("~/cloud-api/client", () => ({
-  syncCloudApiSnapshotBestEffort: vi.fn(),
+vi.mock("~/automations/engine", () => ({
+  runMeetingCompletedAutomations: runMeetingCompletedAutomationsMock,
 }));
 
 import { createListenerStore } from ".";
@@ -964,6 +966,10 @@ describe("General Listener Slice", () => {
           "meeting.completed",
           "session-a",
         ),
+      );
+      expect(runMeetingCompletedAutomationsMock).toHaveBeenCalledWith(
+        "session-a",
+        { allowHostedServices: false },
       );
     });
   });

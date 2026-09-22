@@ -298,6 +298,245 @@ pub(crate) async fn assign_dialext_speaker(
     .map_err(|error| error.to_string())
 }
 
+fn dialext_edit_result(
+    outcome: anlg_session_ingest::dialext_edits::EditOutcome,
+) -> crate::DialextEditResult {
+    use anlg_session_ingest::dialext_edits::EditOutcome;
+    match outcome {
+        EditOutcome::Applied {
+            edit_id,
+            sequence,
+            content_version,
+        } => crate::DialextEditResult {
+            outcome: "applied".to_string(),
+            content_version,
+            edit_id: Some(edit_id),
+            sequence: Some(sequence),
+        },
+        EditOutcome::Stale { content_version } => crate::DialextEditResult {
+            outcome: "stale".to_string(),
+            content_version,
+            edit_id: None,
+            sequence: None,
+        },
+        EditOutcome::Unchanged { content_version } => crate::DialextEditResult {
+            outcome: "unchanged".to_string(),
+            content_version,
+            edit_id: None,
+            sequence: None,
+        },
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn edit_dialext_passage(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    account_id: String,
+    expected_content_version: String,
+    word_ids: Vec<String>,
+    text: String,
+) -> Result<crate::DialextEditResult, String> {
+    anlg_session_ingest::dialext_edits::edit_passage(
+        state.pool(),
+        &session_id,
+        &account_id,
+        &expected_content_version,
+        &word_ids,
+        &text,
+    )
+    .await
+    .map(dialext_edit_result)
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn undo_dialext_edit(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    account_id: String,
+    expected_content_version: String,
+) -> Result<crate::DialextEditResult, String> {
+    anlg_session_ingest::dialext_edits::undo_last_edit(
+        state.pool(),
+        &session_id,
+        &account_id,
+        &expected_content_version,
+    )
+    .await
+    .map(dialext_edit_result)
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn apply_dialext_proposal(
+    state: tauri::State<'_, ManagedState>,
+    proposal_id: String,
+) -> Result<crate::DialextProposalResult, String> {
+    use anlg_session_ingest::dialext_proposals::ProposalOutcome;
+    anlg_session_ingest::dialext_proposals::apply_proposal(state.pool(), &proposal_id)
+        .await
+        .map(|outcome| match outcome {
+            ProposalOutcome::Applied {
+                document_version,
+                blocks_changed,
+            } => crate::DialextProposalResult {
+                outcome: "applied".to_string(),
+                document_version: Some(document_version),
+                transcript_version: None,
+                blocks_changed: Some(blocks_changed as u32),
+                status: None,
+            },
+            ProposalOutcome::Stale {
+                document_version,
+                transcript_version,
+            } => crate::DialextProposalResult {
+                outcome: "stale".to_string(),
+                document_version: Some(document_version),
+                transcript_version: Some(transcript_version),
+                blocks_changed: None,
+                status: None,
+            },
+            ProposalOutcome::Settled { status } => crate::DialextProposalResult {
+                outcome: "settled".to_string(),
+                document_version: None,
+                transcript_version: None,
+                blocks_changed: None,
+                status: Some(status),
+            },
+        })
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn generate_dialext_output(
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    document_id: String,
+    title: String,
+) -> Result<crate::DialextOutputResult, String> {
+    use anlg_session_ingest::dialext_outputs::OutputOutcome;
+    anlg_session_ingest::dialext_outputs::generate_output(
+        state.pool(),
+        &session_id,
+        &document_id,
+        &title,
+    )
+    .await
+    .map(|outcome| match outcome {
+        OutputOutcome::Written {
+            document_version,
+            blocks,
+        } => crate::DialextOutputResult {
+            outcome: "written".to_string(),
+            document_version: Some(document_version),
+            blocks: Some(blocks as u32),
+        },
+        OutputOutcome::AlreadyHasText => crate::DialextOutputResult {
+            outcome: "already_has_text".to_string(),
+            document_version: None,
+            blocks: None,
+        },
+        OutputOutcome::NoPassages => crate::DialextOutputResult {
+            outcome: "no_passages".to_string(),
+            document_version: None,
+            blocks: None,
+        },
+    })
+    .map_err(|error| error.to_string())
+}
+
+fn provider_helper_path() -> Result<std::path::PathBuf, String> {
+    let path = std::env::var_os("DIALEXT_PROVIDER_HELPER")
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| "The Dialext development provider helper is not configured".to_string())?;
+    path.canonicalize()
+        .map_err(|_| "The Dialext development provider helper is unavailable".to_string())
+}
+
+fn run_dialext_provider_task(
+    pool: sqlx::SqlitePool,
+    vault: std::path::PathBuf,
+    helper: std::path::PathBuf,
+    task_id: String,
+) {
+    tauri::async_runtime::spawn(async move {
+        if let Err(error) =
+            anlg_session_ingest::dialext_provider::run_task(&pool, &vault, &helper, &task_id).await
+        {
+            tracing::warn!(%task_id, %error, "Dialext provider task failed");
+        }
+    });
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn create_dialext_provider_task<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    state: tauri::State<'_, ManagedState>,
+    title: String,
+    target_language: String,
+    audio: Vec<u8>,
+) -> Result<crate::DialextProviderTaskStart, String> {
+    let helper = provider_helper_path()?;
+    let vault =
+        crate::import::resolve_startup_vault_base(&app).map_err(|error| error.to_string())?;
+    let started = anlg_session_ingest::dialext_provider::create_recording_task(
+        state.pool(),
+        &vault,
+        &title,
+        &target_language,
+        &audio,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    run_dialext_provider_task(state.pool().clone(), vault, helper, started.task_id.clone());
+    Ok(crate::DialextProviderTaskStart {
+        task_id: started.task_id,
+        session_id: started.session_id,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn start_dialext_provider_task<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    state: tauri::State<'_, ManagedState>,
+    session_id: String,
+    target_language: String,
+) -> Result<crate::DialextProviderTaskStart, String> {
+    let helper = provider_helper_path()?;
+    let vault =
+        crate::import::resolve_startup_vault_base(&app).map_err(|error| error.to_string())?;
+    let started = anlg_session_ingest::dialext_provider::create_alternate_task(
+        state.pool(),
+        &session_id,
+        &target_language,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    run_dialext_provider_task(state.pool().clone(), vault, helper, started.task_id.clone());
+    Ok(crate::DialextProviderTaskStart {
+        task_id: started.task_id,
+        session_id: started.session_id,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn cancel_dialext_provider_task(
+    state: tauri::State<'_, ManagedState>,
+    task_id: String,
+) -> Result<(), String> {
+    anlg_session_ingest::dialext_provider::cancel_task(state.pool(), &task_id)
+        .await
+        .map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub(crate) async fn apply_session_ingest<R: tauri::Runtime>(

@@ -1,10 +1,7 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
-import {
-  events as windowsEvents,
-  getCurrentWebviewWindowLabel,
-} from "@anlg/plugin-windows";
+import { events as windowsEvents } from "@anlg/plugin-windows";
 
 import {
   openNewNoteAndListen,
@@ -12,13 +9,9 @@ import {
   useNewNote,
 } from "./useNewNote";
 
-import { AuthProvider } from "~/auth";
-import { BillingProvider } from "~/auth/billing";
-import { EnterpriseCaptureSync } from "~/enterprise-capture/lifecycle";
-import { MeetingImportSync } from "~/services/meeting-import-sync";
+import { PersonalBillingProvider } from "~/auth/personal-billing";
+import { PersonalAuthProvider } from "~/auth/personal-context";
 import { getOrCreateSessionForEventId } from "~/session/queries";
-import { WorkspaceInvitationToasts } from "~/settings/team/invitation-toast";
-import { useMyWorkspacesWithMirror } from "~/settings/team/mirror";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 import { UndoDeleteToast } from "~/sidebar/toast/undo-delete-toast";
 import { isTabInputSupported, useTabs } from "~/store/zustand/tabs";
@@ -27,24 +20,18 @@ export default function MainAppLayout() {
   useNavigationEvents();
 
   return (
-    <AuthProvider>
-      <BillingProvider>
-        <SharedWorkspaceMirror />
+    <PersonalAuthProvider>
+      <PersonalBillingProvider>
         <MainAppContent />
-      </BillingProvider>
-    </AuthProvider>
+      </PersonalBillingProvider>
+    </PersonalAuthProvider>
   );
 }
 
 function MainAppContent() {
-  const isMainWindow = getCurrentWebviewWindowLabel() === "main";
-
   return (
     <>
       <Outlet />
-      {isMainWindow ? <MeetingImportSync /> : null}
-      {isMainWindow ? <EnterpriseCaptureSync /> : null}
-      {isMainWindow ? <WorkspaceInvitationToasts /> : null}
       <UndoDeleteToast />
     </>
   );
@@ -164,10 +151,3 @@ const useNavigationEvents = () => {
     };
   });
 };
-
-// Renders nothing; keeps the local workspace mirror fresh so sharing scopes are
-// available without visiting Team settings.
-function SharedWorkspaceMirror() {
-  useMyWorkspacesWithMirror();
-  return null;
-}

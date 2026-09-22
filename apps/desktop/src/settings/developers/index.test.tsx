@@ -5,7 +5,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -180,7 +179,7 @@ describe("SettingsDevelopers", () => {
     cleanup();
   });
 
-  it("shows one guide button in the page header", () => {
+  it("keeps hosted developer services out of the personal shell", () => {
     mocks.checkEmbeddedCli.mockResolvedValue({
       status: "ok",
       data: {
@@ -201,19 +200,14 @@ describe("SettingsDevelopers", () => {
       </QueryClientProvider>,
     );
 
-    const heading = screen.getByRole("heading", { name: "Developers" });
-    const guideButton = within(heading.parentElement as HTMLElement).getByRole(
-      "button",
-      { name: "Guide" },
-    );
-    expect(screen.getAllByRole("button", { name: "Guide" })).toHaveLength(1);
-
-    fireEvent.click(guideButton);
-
-    expect(mocks.openUrl).toHaveBeenCalledWith(
-      "https://docs.anarlog.so/agents/overview",
-      null,
-    );
+    expect(screen.getByRole("heading", { name: "Developers" })).toBeTruthy();
+    expect(
+      screen.queryByRole("switch", {
+        name: "Enable Cloud API & Connectors",
+      }),
+    ).toBeNull();
+    expect(screen.queryByText("Webhooks")).toBeNull();
+    expect(mocks.getCloudApiSettings).not.toHaveBeenCalled();
   });
 
   it("uses the installed CLI path when copying the MCP configuration", async () => {
@@ -293,155 +287,6 @@ describe("SettingsDevelopers", () => {
     expect(
       screen.queryByText(/\/Users\/test\/\.local\/bin\/anarlog-dev/),
     ).toBeNull();
-  });
-
-  it("keeps a one-time API key visible when clipboard access fails", async () => {
-    mocks.checkEmbeddedCli.mockResolvedValue({
-      status: "ok",
-      data: {
-        supported: false,
-        commandName: "anarlog",
-        installPath: "/Users/test/.local/bin/anarlog",
-        state: "unsupported",
-        details: "Unavailable.",
-      },
-    });
-    mocks.getCloudApiSettings.mockResolvedValue({
-      enabled: true,
-      updated_at: "2026-07-28T00:00:00Z",
-    });
-    mocks.createCloudApiKey.mockResolvedValue({
-      id: "key-1",
-      name: "Claude Code",
-      key_prefix: "anl_test",
-      key: "anl_test_secret",
-      created_at: "2026-07-28T00:00:00Z",
-      last_used_at: null,
-    });
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: {
-        writeText: vi.fn().mockRejectedValue(new Error("Clipboard denied")),
-      },
-    });
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <SettingsDevelopers />
-      </QueryClientProvider>,
-    );
-
-    fireEvent.change(
-      await screen.findByPlaceholderText("Key name (e.g. Claude Code)"),
-      {
-        target: { value: "Claude Code" },
-      },
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Create key" }));
-
-    const secret = await screen.findByText("anl_test_secret");
-    fireEvent.click(
-      within(secret.parentElement as HTMLElement).getByRole("button", {
-        name: "Copy",
-      }),
-    );
-
-    await waitFor(() =>
-      expect(mocks.toastError).toHaveBeenCalledWith("Clipboard denied"),
-    );
-    expect(screen.getByText("anl_test_secret")).toBeTruthy();
-  });
-
-  it("requires explicit cloud opt-in and backfills existing meetings", async () => {
-    mocks.checkEmbeddedCli.mockResolvedValue({
-      status: "ok",
-      data: {
-        supported: false,
-        commandName: "anarlog",
-        installPath: "/Users/test/.local/bin/anarlog",
-        state: "unsupported",
-        details: "Unavailable.",
-      },
-    });
-    mocks.setCloudApiEnabled.mockResolvedValue({
-      enabled: true,
-      updated_at: "2026-07-28T00:00:00Z",
-    });
-    mocks.backfillCloudApiSnapshots.mockResolvedValue(2);
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <SettingsDevelopers />
-      </QueryClientProvider>,
-    );
-
-    expect(await screen.findByText(/Uploads meeting content/)).toBeTruthy();
-    const toggle = await screen.findByRole("switch", {
-      name: "Enable Cloud API & Connectors",
-    });
-    await waitFor(() => expect(toggle.hasAttribute("disabled")).toBe(false));
-    expect(toggle.getAttribute("data-state")).toBe("unchecked");
-    expect(screen.queryByText("REST API")).toBeNull();
-
-    fireEvent.click(toggle);
-
-    await waitFor(() => {
-      expect(mocks.setCloudApiEnabled).toHaveBeenCalledWith(true);
-      expect(mocks.backfillCloudApiSnapshots).toHaveBeenCalledOnce();
-      expect(mocks.toastSuccess).toHaveBeenCalledWith(
-        "Cloud API enabled — 2 meetings uploaded",
-      );
-    });
-    expect(screen.getByText("REST API")).toBeTruthy();
-    expect(screen.getByText("Remote MCP")).toBeTruthy();
-  });
-
-  it("shows Cloud API controls and toasts on the free plan", () => {
-    mocks.billing.isPro = false;
-    mocks.checkEmbeddedCli.mockResolvedValue({
-      status: "ok",
-      data: {
-        supported: false,
-        commandName: "anarlog",
-        installPath: "/Users/test/.local/bin/anarlog",
-        state: "unsupported",
-        details: "Unavailable.",
-      },
-    });
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <SettingsDevelopers />
-      </QueryClientProvider>,
-    );
-
-    fireEvent.click(
-      screen.getByRole("switch", {
-        name: "Enable Cloud API & Connectors",
-      }),
-    );
-
-    expect(screen.getByText("REST API")).toBeTruthy();
-    expect(mocks.getCloudApiSettings).not.toHaveBeenCalled();
-    expect(mocks.toastWarning).toHaveBeenCalledWith(
-      "This requires Anarlog Pro",
-      {
-        action: {
-          label: "Upgrade",
-          onClick: expect.any(Function),
-        },
-      },
-    );
-    expect(mocks.billing.upgradeToPro).not.toHaveBeenCalled();
   });
 
   it("installs the skill into every detected agent from one action", async () => {
