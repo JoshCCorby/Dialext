@@ -14,6 +14,7 @@ vi.mock("ai", async (importOriginal) => ({
   },
 }));
 
+import type { ContextRef } from "../context/entities";
 import { CustomChatTransport } from "./index";
 
 describe("CustomChatTransport", () => {
@@ -59,7 +60,7 @@ describe("CustomChatTransport", () => {
     );
   });
 
-  const question = (contextRefs: unknown[]) => ({
+  const question = (contextRefs: ContextRef[]) => ({
     abortSignal: new AbortController().signal,
     chatId: "chat-1",
     messageId: undefined,
@@ -73,7 +74,7 @@ describe("CustomChatTransport", () => {
     ],
     trigger: "submit-message" as const,
   });
-  const recording = {
+  const recording: ContextRef = {
     kind: "session",
     key: "session:auto:recording",
     source: "auto-current",
