@@ -26,6 +26,7 @@ import { getTemplateCopyTitle, type UserTemplate } from "./queries";
 import { TemplateIconGlyph } from "./template-icon";
 import { AUTO_TEMPLATE_ID, useTemplateTab } from "./utils";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import {
   parseSharedTemplatePayload,
   SharedResourceLibrarySection,
@@ -525,16 +526,18 @@ export function TemplatesSidebarContent({
                 </div>
               </div>
             )}
-            <SharedResourceLibrarySection
-              resourceType="template"
-              search={search}
-              onImport={async (resource) => {
-                const id = await createTemplate(
-                  parseSharedTemplatePayload(resource.payload),
-                );
-                if (id) setSelectedMineId(id);
-              }}
-            />
+            {ANARLOG_ACCOUNT_SERVICES_ENABLED ? (
+              <SharedResourceLibrarySection
+                resourceType="template"
+                search={search}
+                onImport={async (resource) => {
+                  const id = await createTemplate(
+                    parseSharedTemplatePayload(resource.payload),
+                  );
+                  if (id) setSelectedMineId(id);
+                }}
+              />
+            ) : null}
           </>
         )}
       </div>

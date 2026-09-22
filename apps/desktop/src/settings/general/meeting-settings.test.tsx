@@ -3,6 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   platform: vi.fn(() => "macos"),
+  accountServicesEnabled: true,
+}));
+
+vi.mock("~/auth/account-services", () => ({
+  get ANARLOG_ACCOUNT_SERVICES_ENABLED() {
+    return mocks.accountServicesEnabled;
+  },
 }));
 
 vi.mock("@tauri-apps/plugin-os", () => ({
@@ -49,12 +56,22 @@ describe("MeetingSettingsView", () => {
   afterEach(() => {
     cleanup();
     mocks.platform.mockReturnValue("macos");
+    mocks.accountServicesEnabled = true;
   });
 
   it("keeps the floating bar setting available on macOS", () => {
     renderMeetingSettings({ floatingBar: false });
 
     expect(screen.getByText("Default sharing selector")).toBeTruthy();
+    expect(screen.getByText("Show floating bar")).toBeTruthy();
+  });
+
+  it("omits hosted default sharing without Anarlog account services", () => {
+    mocks.accountServicesEnabled = false;
+    renderMeetingSettings();
+
+    expect(screen.queryByText("Default sharing selector")).toBeNull();
+    expect(screen.getByText("Start when meeting begins")).toBeTruthy();
     expect(screen.getByText("Show floating bar")).toBeTruthy();
   });
 

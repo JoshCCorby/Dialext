@@ -38,6 +38,7 @@ import {
 } from "./shared";
 
 import { useAuth } from "~/auth";
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { useBillingAccess } from "~/auth/billing-context";
 import { useConnections } from "~/auth/useConnections";
 import {
@@ -115,11 +116,74 @@ function ProviderIcon({ provider }: { provider: CalendarProvider }) {
   );
 }
 
+function isVisibleOnPlatform(provider: CalendarProvider, isMacos: boolean) {
+  return (
+    provider.platform === "all" || (provider.platform === "macos" && isMacos)
+  );
+}
+
+function DisabledProviderRow({ provider }: { provider: CalendarProvider }) {
+  return (
+    <div className="-mx-2 flex items-center gap-2 px-2 py-3 opacity-50">
+      <ProviderIcon provider={provider} />
+      <span className="text-sm font-medium">{provider.displayName}</span>
+      {provider.badge && (
+        <span className={getProviderBadgeClassName(provider.badge)}>
+          {provider.badge}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function CalendarSidebarContent({
   returnTo = "calendar",
 }: {
   returnTo?: string;
 }) {
+  return ANARLOG_ACCOUNT_SERVICES_ENABLED ? (
+    <AccountCalendarSidebarContent returnTo={returnTo} />
+  ) : (
+    <LocalCalendarSidebarContent returnTo={returnTo} />
+  );
+}
+
+const noConnectionPolling = () => {};
+
+// Google and Outlook connect through Anarlog's hosted integration service, so
+// only calendars the operating system provides are offered here.
+function LocalCalendarSidebarContent({ returnTo }: { returnTo: string }) {
+  const isMacos = platform() === "macos";
+  const calendar = usePermission("calendar");
+  const visibleProviders = PROVIDERS.filter(
+    (provider) =>
+      !provider.nangoIntegrationId && isVisibleOnPlatform(provider, isMacos),
+  );
+
+  return (
+    <Accordion
+      type="multiple"
+      defaultValue={visibleProviders.map((provider) => provider.id)}
+    >
+      {visibleProviders.map((provider) =>
+        provider.disabled ? (
+          <DisabledProviderRow key={provider.id} provider={provider} />
+        ) : (
+          <ProviderAccordionItem
+            key={provider.id}
+            provider={provider}
+            calendar={calendar}
+            returnTo={returnTo}
+            onConnectStarted={noConnectionPolling}
+            account={null}
+          />
+        ),
+      )}
+    </Accordion>
+  );
+}
+
+function AccountCalendarSidebarContent({ returnTo }: { returnTo: string }) {
   const isMacos = platform() === "macos";
   const calendar = usePermission("calendar");
   const { isPaid } = useBillingAccess();
@@ -163,10 +227,7 @@ export function CalendarSidebarContent({
   }, [connectionKey, isPollingConnections]);
 
   const visibleProviders = useMemo(
-    () =>
-      PROVIDERS.filter(
-        (p) => p.platform === "all" || (p.platform === "macos" && isMacos),
-      ),
+    () => PROVIDERS.filter((p) => isVisibleOnPlatform(p, isMacos)),
     [isMacos],
   );
   const defaultOpenProviders = useMemo(
@@ -190,20 +251,9 @@ export function CalendarSidebarContent({
     >
       {visibleProviders.map((provider) =>
         provider.disabled ? (
-          <div
-            key={provider.id}
-            className="-mx-2 flex items-center gap-2 px-2 py-3 opacity-50"
-          >
-            <ProviderIcon provider={provider} />
-            <span className="text-sm font-medium">{provider.displayName}</span>
-            {provider.badge && (
-              <span className={getProviderBadgeClassName(provider.badge)}>
-                {provider.badge}
-              </span>
-            )}
-          </div>
+          <DisabledProviderRow key={provider.id} provider={provider} />
         ) : (
-          <ProviderAccordionItem
+          <AccountProviderAccordionItem
             key={provider.id}
             provider={provider}
             calendar={calendar}
@@ -216,41 +266,77 @@ export function CalendarSidebarContent({
   );
 }
 
+type ProviderAccordionItemProps = {
+  provider: CalendarProvider;
+  calendar: ReturnType<typeof usePermission>;
+  returnTo: string;
+  onConnectStarted: () => void;
+};
+
+type AccountCalendarAccess = {
+  connectionCount: number;
+  canAddAccount: boolean;
+  requiresPro: boolean;
+  openIntegration: ReturnType<typeof useOpenIntegrationUrl>["openIntegration"];
+  openingAction: ReturnType<typeof useOpenIntegrationUrl>["openingAction"];
+};
+
+function AccountProviderAccordionItem(props: ProviderAccordionItemProps) {
+  const auth = useAuth();
+  const { isPaid, isPro } = useBillingAccess();
+  const { openIntegration, openingAction } = useOpenIntegrationUrl();
+  const { data: connections, isPending, isError } = useConnections(isPaid);
+  const { nangoIntegrationId } = props.provider;
+  const account = useMemo<AccountCalendarAccess>(
+    () => ({
+      connectionCount:
+        connections?.filter(
+          (connection) => connection.integration_id === nangoIntegrationId,
+        ).length ?? 0,
+      canAddAccount:
+        !!nangoIntegrationId &&
+        !!auth.session &&
+        isPaid &&
+        !isPending &&
+        !isError,
+      requiresPro: !!nangoIntegrationId && !isPro,
+      openIntegration,
+      openingAction,
+    }),
+    [
+      auth.session,
+      connections,
+      isError,
+      isPaid,
+      isPending,
+      isPro,
+      nangoIntegrationId,
+      openIntegration,
+      openingAction,
+    ],
+  );
+
+  return <ProviderAccordionItem {...props} account={account} />;
+}
+
 function ProviderAccordionItem({
   provider,
   calendar,
   returnTo,
   onConnectStarted,
-}: {
-  provider: CalendarProvider;
-  calendar: ReturnType<typeof usePermission>;
-  returnTo: string;
-  onConnectStarted: () => void;
-}) {
+  account,
+}: ProviderAccordionItemProps & { account: AccountCalendarAccess | null }) {
   const { t } = useLingui();
-  const auth = useAuth();
-  const { isPaid, isPro } = useBillingAccess();
-  const { openIntegration, openingAction } = useOpenIntegrationUrl();
-  const { data: connections, isPending, isError } = useConnections(isPaid);
   const [isApplePermissionDialogOpen, setIsApplePermissionDialogOpen] =
     useState(false);
-  const providerConnections =
-    connections?.filter(
-      (connection) => connection.integration_id === provider.nangoIntegrationId,
-    ) ?? [];
 
-  const requiresPro = !!provider.nangoIntegrationId && !isPro;
+  const requiresPro = account?.requiresPro ?? false;
   const appleNeedsPermission =
     provider.id === "apple" && calendar.status !== "authorized";
 
-  const canAddAccount =
-    !!provider.nangoIntegrationId &&
-    !!auth.session &&
-    isPaid &&
-    !isPending &&
-    !isError;
-  const shouldConnectOnClick =
-    canAddAccount && providerConnections.length === 0;
+  const canAddAccount = account?.canAddAccount ?? false;
+  const openingAction = account?.openingAction ?? null;
+  const shouldConnectOnClick = canAddAccount && account?.connectionCount === 0;
 
   const canDisconnectApple =
     provider.id === "apple" && calendar.status === "authorized";
@@ -290,17 +376,17 @@ function ProviderAccordionItem({
       if (!shouldConnectOnClick) return;
       event.preventDefault();
       onConnectStarted();
-      openIntegration({
+      account?.openIntegration({
         nangoIntegrationId: provider.nangoIntegrationId,
         action: "connect",
         returnTo,
       });
     },
     [
+      account,
       appleNeedsPermission,
       handleAppleConnect,
       onConnectStarted,
-      openIntegration,
       provider.nangoIntegrationId,
       returnTo,
       shouldConnectOnClick,
@@ -312,16 +398,16 @@ function ProviderAccordionItem({
       event.preventDefault();
       event.stopPropagation();
       onConnectStarted();
-      openIntegration({
+      account?.openIntegration({
         nangoIntegrationId: provider.nangoIntegrationId,
         action: "connect",
         returnTo,
       });
     },
     [
+      account,
       canAddAccount,
       onConnectStarted,
-      openIntegration,
       provider.nangoIntegrationId,
       returnTo,
     ],
@@ -335,7 +421,7 @@ function ProviderAccordionItem({
               text: t`Add ${provider.displayName} account`,
               action: () => {
                 onConnectStarted();
-                void openIntegration({
+                void account?.openIntegration({
                   nangoIntegrationId: provider.nangoIntegrationId,
                   action: "connect",
                   returnTo,
@@ -364,6 +450,7 @@ function ProviderAccordionItem({
             ]
           : [],
     [
+      account,
       calendar.isPending,
       canAddAccount,
       canDisconnectApple,
@@ -373,7 +460,6 @@ function ProviderAccordionItem({
       provider.displayName,
       provider.id,
       provider.nangoIntegrationId,
-      openIntegration,
       returnTo,
       t,
     ],
@@ -484,7 +570,7 @@ function ProviderAccordionItem({
               />
             </div>
           )}
-          {provider.nangoIntegrationId && (
+          {account && provider.nangoIntegrationId && (
             <OAuthProviderContent
               config={provider}
               returnTo={returnTo}

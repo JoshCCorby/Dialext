@@ -37,6 +37,7 @@ import { useSync } from "./context";
 import { DayCell } from "./day-cell";
 import { getCalendarConnectionKey } from "./shared";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { useBillingAccess } from "~/auth/billing-context";
 import { useConnections } from "~/auth/useConnections";
 import {
@@ -85,8 +86,11 @@ function useVisibleCols(ref: React.RefObject<HTMLDivElement | null>) {
   return cols;
 }
 
-export function CalendarView() {
-  const { scheduleSync } = useSync();
+function AccountCalendarConnectionSync({
+  scheduleSync,
+}: {
+  scheduleSync: () => void;
+}) {
   const { isPaid } = useBillingAccess();
   const { data: connections } = useConnections(isPaid);
   const connectionKey = useMemo(
@@ -94,6 +98,11 @@ export function CalendarView() {
     [connections],
   );
   useSyncWhenCalendarConnectionsChange(connectionKey, scheduleSync);
+  return null;
+}
+
+export function CalendarView() {
+  const { scheduleSync } = useSync();
   const now = useNow();
   const weekStartsOn = useWeekStartsOn();
   const weekOpts = useMemo(() => ({ weekStartsOn }), [weekStartsOn]);
@@ -234,6 +243,9 @@ export function CalendarView() {
 
   return (
     <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
+      {ANARLOG_ACCOUNT_SERVICES_ENABLED ? (
+        <AccountCalendarConnectionSync scheduleSync={scheduleSync} />
+      ) : null}
       <div
         data-tauri-drag-region
         className={cn([

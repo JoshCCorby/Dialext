@@ -1,9 +1,14 @@
 import "./test-matchers";
 
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { useTabs } from ".";
 import { createSessionTab, resetTabsStore, seedTabsStore } from "./test-utils";
+
+// These cases cover the retained Anarlog account-backed behavior.
+vi.mock("~/auth/account-services", () => ({
+  ANARLOG_ACCOUNT_SERVICES_ENABLED: true,
+}));
 
 const openTabs = (...tabs: ReturnType<typeof createSessionTab>[]) => {
   tabs.forEach((tab) => useTabs.getState().openNew(tab));

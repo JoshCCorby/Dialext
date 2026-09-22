@@ -10,6 +10,11 @@ import {
   resetTabsStore,
 } from "./test-utils";
 
+// These cases cover the retained Anarlog account-backed behavior.
+vi.mock("~/auth/account-services", () => ({
+  ANARLOG_ACCOUNT_SERVICES_ENABLED: true,
+}));
+
 const isSessionsTab = (tab: Tab): tab is Extract<Tab, { type: "sessions" }> =>
   tab.type === "sessions";
 
