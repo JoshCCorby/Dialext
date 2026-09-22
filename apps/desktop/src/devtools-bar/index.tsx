@@ -39,6 +39,7 @@ import {
 
 import { useAuth } from "~/auth";
 import { useBillingAccess } from "~/auth/billing-context";
+import { useConfigValue } from "~/shared/config";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 import { commands } from "~/types/tauri.gen";
 
@@ -97,7 +98,10 @@ export function DevtoolsStatusBar(props: Record<never, never>) {
     staleTime: Infinity,
   });
 
-  if (enabledQuery.data !== true) {
+  const optedIn = useConfigValue("show_developer_diagnostics");
+
+  // A development build can show the bar; the person decides whether it does.
+  if (enabledQuery.data !== true || !optedIn) {
     return null;
   }
 

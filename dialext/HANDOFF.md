@@ -892,3 +892,51 @@ Launch with `node dialext/dev.mjs`, never a release build. Use `Sample · Source
    visible block text, `Gary:` lines, no `dialextBlock` or passage ids.
 8. Re-run the fingerprint query and compare it to the backup, expecting differences only from
    steps 1–5. Inspect `dialext_block_evidence` for the new output.
+
+## New direction from Joshua (22 September) and milestone 6 — quiet interface
+
+Joshua added a "Making it Dialext's own" section to `product/product-vision.md`, and
+`ARCHITECTURE.md` now lists milestones 6–9:
+
+- **6** quiet interface
+- **7** independent entitlements: no Anarlog login or plan gates on local features, hosted-only
+  features hidden, and the `useBillingAccess` seam kept for a future account system
+- **8** user-visible Dialext branding, with the MIT notice retained
+- **9** a personal look (fonts and colours), which waits for Joshua's choices
+
+**Milestone 6 is implemented; not seen in the real window.** Root cause of the "purple
+pop-ups":
+
+- The devtools status bar shows in every debug build (`should_show_devtool` returns true under
+  `debug_assertions`), and the launcher always builds debug.
+- Its render outlines defaulted to `import.meta.env.DEV`, so every re-render drew purple boxes
+  labelled with component names.
+
+Fix:
+
+- A new setting, `show_developer_diagnostics`, defaults to **off**. The bar, and with it the
+  metrics and the render tracker, mounts only when the build allows it **and** the person has
+  opted in.
+- The opt-in is Settings → Developers → **Show developer diagnostics**. It is shown only in
+  builds that can display the bar.
+- Outlines now default to off even when opted in, and are toggled from the bar's Renders metric.
+
+Nothing was deleted. Analytics: debug builds compile no PostHog key, so nothing is sent today.
+Making analytics off by default for release builds is tracked in milestone 6's scope but not yet
+changed; there is no release build.
+
+Checks:
+
+- Desktop typecheck passed.
+- Full suite: **476 files / 4,484 tests** passed.
+- Oxlint: 207 inherited warnings, 0 errors. Changed-file dprint and ESLint are clean.
+- Lingui extract and strict compile passed.
+- Negative control: removing the opt-in gate turns
+  `stays hidden in a development build until the person opts in` red. The first version of that
+  test asserted before the query settled and passed with the gate removed. It was strengthened,
+  and only then trusted.
+- Also fixed: a typing error in the milestone 5 transport test (`unknown[]` context refs), which
+  the earlier typecheck had run before that test existed.
+
+**Real-window check outstanding:** relaunch `node dialext/dev.mjs` and confirm there is no black
+bar and no purple outlines. Turn the Developers setting on and confirm the bar returns.

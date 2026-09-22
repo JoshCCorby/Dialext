@@ -192,6 +192,10 @@ msgstr "30 days"
 msgid "7 days"
 msgstr "7 days"
 
+#: src/settings/developers/diagnostics.tsx
+msgid "A bar at the bottom of the window with memory, delay and render counts. For troubleshooting; nothing is sent anywhere."
+msgstr "A bar at the bottom of the window with memory, delay and render counts. For troubleshooting; nothing is sent anywhere."
+
 #: src/automations/starters.tsx
 msgid "A dated Notion update with the meeting summary."
 msgstr "A dated Notion update with the meeting summary."
@@ -4892,6 +4896,10 @@ msgstr "Show Apple Calendar events in Anarlog."
 #: src/sidebar/timeline/index.tsx
 msgid "Show Deleted Events"
 msgstr "Show Deleted Events"
+
+#: src/settings/developers/diagnostics.tsx
+msgid "Show developer diagnostics"
+msgstr "Show developer diagnostics"
 
 #: src/sidebar/timeline/item.tsx
 msgid "Show Event"

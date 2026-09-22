@@ -204,6 +204,11 @@ export const SETTING_DEFINITIONS = {
     path: ["general", "consent_auto_send_chat"],
     default: false as boolean,
   },
+  show_developer_diagnostics: {
+    type: "boolean",
+    path: ["general", "show_developer_diagnostics"],
+    default: false as boolean,
+  },
   capture_meeting_chat: {
     type: "boolean",
     path: ["general", "capture_meeting_chat"],

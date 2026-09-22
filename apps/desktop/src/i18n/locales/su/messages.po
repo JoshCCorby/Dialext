@@ -192,6 +192,10 @@ msgstr ""
 msgid "7 days"
 msgstr ""
 
+#: src/settings/developers/diagnostics.tsx
+msgid "A bar at the bottom of the window with memory, delay and render counts. For troubleshooting; nothing is sent anywhere."
+msgstr ""
+
 #: src/automations/starters.tsx
 msgid "A dated Notion update with the meeting summary."
 msgstr ""
@@ -4891,6 +4895,10 @@ msgstr ""
 
 #: src/sidebar/timeline/index.tsx
 msgid "Show Deleted Events"
+msgstr ""
+
+#: src/settings/developers/diagnostics.tsx
+msgid "Show developer diagnostics"
 msgstr ""
 
 #: src/sidebar/timeline/item.tsx
