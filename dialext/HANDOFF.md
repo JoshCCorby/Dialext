@@ -752,13 +752,11 @@ One parallel plugin-test run transiently timed out in an existing CloudSync acti
 while db-app's full suite was consuming the same machine. The required isolated rerun passed all
 162 tests; this was load-induced test scheduling, not a retained failure.
 
-## Milestone 5 — coherent personal workflow (implemented; real-window acceptance outstanding)
+## Milestone 5 — coherent personal workflow (implemented; native checklist passed)
 
-Built on 22 September 2026. **This milestone is not accepted yet.** Every automated check
-below passed, the additive migration ran against the live prototype database without
-changing saved work, but the real-window journey was not driven: window control of
-`Dialext Prototype` was declined for this session and was not retried. Do the checklist at the
-end of this section before calling milestone 5 complete.
+Built on 22 September 2026. The additive migration ran against the live prototype database
+without changing saved work. The native checklist was driven on 23 September in the existing
+acceptance worktree; exact results and remaining limitations are recorded below.
 
 ### Decision recorded with Joshua
 
@@ -855,9 +853,10 @@ The pre-milestone backup is at
 
 ### Limitations, stated exactly
 
-- **Real-window acceptance outstanding**, including whether Apple's on-device model returns
-  parseable answer JSON. If it often does not, the reader sees the "did not check out" refusal,
-  never unsupported prose.
+- Apple's on-device model can return citation fields in varying shapes. The validator now
+  accepts an exact supplied labelled passage as a reference and derives a quotation from it
+  only when the model omitted `quote`. It still rejects unknown references and mismatched
+  quotations. Invalid model prose is never displayed as a grounded answer.
 - Retrieval is lexical: shared terms, a four-letter shared stem, and English/Irish stopwords.
   A paraphrased question about a long recording can be refused as no-match. Short recordings
   get the whole reading within the budget.
@@ -871,7 +870,7 @@ The pre-milestone backup is at
 - Exports stay plain, with no source annotations. Share means a TXT/Markdown file, not a
   hosted link.
 
-### Real-window acceptance checklist (do this next)
+### Real-window acceptance checklist (completed 23 September)
 
 Launch with `node dialext/dev.mjs`, never a release build. Use `Sample · Source review with audio`.
 
@@ -894,6 +893,102 @@ Launch with `node dialext/dev.mjs`, never a release build. Use `Sample · Source
    visible block text, `Gary:` lines, no `dialextBlock` or passage ids.
 8. Re-run the fingerprint query and compare it to the backup, expecting differences only from
    steps 1–5. Inspect `dialext_block_evidence` for the new output.
+
+### Native acceptance continuation (23 September)
+
+Shared base: `d3e718225d125bc71284270acdf2af2cc09bbd54`, the requested local
+milestone 7 checkpoint. Acceptance ran on `codex/m5-native-acceptance` in
+`/Users/joshuacorbett/Coding/Dialext-m5-native`; nothing was pushed or published.
+Dependencies were installed offline with `npx --yes pnpm@11.1.1 install --offline
+--frozen-lockfile` (2,494 packages reused). The worktree used separate build caches
+and the synthetic vault with the existing checkout-local Rust toolchain.
+
+**Native checklist.** Launched and relaunched only with `node dialext/dev.mjs` using
+`Sample · Source review with audio`, synthetic evidence and the configured
+`apple_foundation` / `System Language Model`. No live or paid provider was called.
+
+1. Generated the unused Customer Discovery Interview output alongside Summary and
+   Lecture. Its first block showed `source · translated · Irish`; the panel showed
+   the English reading, Irish ASR `Ba mhaith liom dhá thicéad, le do thoil.`,
+   and exact 0:00–0:04 audio. Playback reached four seconds. The older Lecture
+   output had no block-source controls.
+2. Edited the first block to `I would like three tickets, please. Native
+   acceptance edit.` It showed `edited · source`; the panel explicitly qualified
+   the generated wording. A transcript correction first produced no Interview
+   proposal because the block was hand-edited. This is the intentional
+   `a_block_the_reader_rewrote_is_never_proposed_over` protection. Restored the
+   Interview block to the current four-ticket reading, corrected that passage to
+   five tickets, and applied the new Interview proposal. The block then read
+   `I would like five tickets, please.`, showed generated-source semantics and
+   opened the same 0:00–0:04 panel. Its proposal is `applied`; unrelated Lecture
+   proposals remain untouched.
+3. Asked `How many tickets did Gary want?` The first on-device reply was safely
+   rejected with `unknown_passage`: the model returned an entire labelled
+   passage where the validator expected `P1`. After the exact-line fix, the
+   native retry answered `five`, quoted the corrected English reading and
+   opened the source panel. Asked `What is the capital of France?` and saw
+   `The recording does not answer that.` with `no model was asked`.
+4. Switched to Gaeilge and asked `Cé mhéad ticéad a bhí Gary ag iarraidh?`
+   The first response was safely rejected as `unparseable_answer`: one citation
+   lacked a `quote` although it supplied the exact passage line. After the
+   narrow fallback and prompt clarification, the native retry answered
+   `Dá thicéad` with Irish quotations. The Gary citation reopened the Irish
+   0:00–0:04 source panel.
+5. Fully quit via the native application menu; process and port 1422 stopped.
+   Relaunched with the supported launcher, opened Chat history → Tickets for
+   Gary, and verified the saved English citation still opened its source panel
+   and interval.
+6. Exported the selected Interview output plus transcript through the real UI
+   as TXT (487 bytes) and Markdown (462 bytes). Both files contain the visible
+   five-ticket block, `Gary:` speaker lines and no `dialextBlock` or
+   passage/account IDs. The transcript is Irish because Gaeilge was selected
+   for the current reading.
+7. Compared the live SQLite database with `app.pre-window.db`. The sample
+   has one added output and four block-evidence rows. Its first pin has the
+   five-ticket text, the current English `content_version`, the Irish ASR
+   anchor and 0–4000 ms interval. The other three pins retain their original
+   account version and anchors. The English transcript has the expected
+   corrections and history entries; the active selection changed to Gaeilge.
+   All `dialext_accounts` and all 15 `dialext_evidence` rows are unchanged;
+   all 15 evidence files still match `evidence.before.json` SHA-256 values.
+   SQLite `integrity_check` is `ok`. Three non-sample documents also differ
+   from the pre-window backup; this acceptance work did not edit them. The
+   sample's older output was not overwritten.
+
+**Startup and validation details.** A copied Swift build cache referenced the original
+checkout, so only this worktree's generated `*/out/swift-rs` caches were removed.
+The first native build then failed at
+`plugins/permissions/swift/check-permissions.swift:87` with
+`cannot find AXIsProcessTrusted in scope`. The installed SDK declares it in
+ApplicationServices; importing that framework fixed direct Swift compilation
+and the full debug launch. Its read-only accessibility query returned
+`untrusted`. Swift formatting matched; strict Swift lint still has two
+inherited `TCC_PATH` naming warnings. Another checkout's launcher occupied
+port 1422; Joshua authorized stopping that specific process tree, after which
+this worktree launched. Earlier, connecting window control by display name
+briefly opened the old debug bundle; it was quit without acceptance actions.
+All subsequent connections used this worktree's exact bundle path.
+
+Before the citation changes, focused milestone 5 tests passed **5 files /
+31 tests**, desktop typecheck passed, the licence suite passed **9 tests** plus
+the boundary scan, and the complete CI Node command passed **82 tests**.
+The first full desktop run overlapped native compilation: **474 files /
+4,474 tests passed**, with **5 files / 8 tests** hitting the existing five-second
+timeout. An unchanged rerun of those files passed **28 tests**; a full rerun
+without native compilation passed **479 files / 4,482 tests** in 128.78 seconds.
+After the citation fixes, focused tests passed **3 files / 26 tests**,
+desktop typecheck, changed-file ESLint and dprint passed, and Oxlint found
+**206 existing warnings, 0 errors**. The post-change full desktop suite
+passed **479 files / 4,484 tests** in 162.61 seconds.
+`uvx zizmor --format sarif .` reported 358 inherited findings (160 error,
+81 warning, 117 note); no workflows changed. Logs and the pre-window backup
+remain under the ignored `.dialext-data/m5-acceptance/` directory.
+
+Keyboard reachability of the quiet block source control was not established:
+one Tab from the editor did not focus it. This is a documented interaction
+limitation, not a claim of keyboard acceptance. The generated output and
+on-device answers are deterministic-fixture and one-model acceptance only,
+not a general language-quality evaluation.
 
 ## New direction from Joshua (22 September) and milestone 6 — quiet interface
 

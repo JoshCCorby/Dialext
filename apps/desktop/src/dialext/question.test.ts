@@ -125,6 +125,79 @@ describe("validating a grounded answer", () => {
     });
   });
 
+  it("accepts the exact labelled passage returned by the on-device model", () => {
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted three tickets.",
+          citations: [
+            {
+              passage: "P1 (Gary): I would like three tickets, please.",
+              quote: "three tickets",
+            },
+          ],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({
+      kind: "answer",
+      text: "Gary wanted three tickets.",
+      citations: [{ passage: passages[0], quote: "three tickets" }],
+    });
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted five tickets.",
+          citations: [
+            {
+              passage: "P1 (Gary): I would like five tickets, please.",
+              quote: "three tickets",
+            },
+          ],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({ kind: "invalid", code: "unknown_passage" });
+  });
+
+  it("uses exact labelled text when the on-device model omits a quote", () => {
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted three tickets.",
+          citations: [
+            {
+              passage: "P1 (Gary): I would like three tickets, please.",
+            },
+          ],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({
+      kind: "answer",
+      text: "Gary wanted three tickets.",
+      citations: [
+        {
+          passage: passages[0],
+          quote: "I would like three tickets, please.",
+        },
+      ],
+    });
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted three tickets.",
+          citations: [{ passage: "P1" }],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({ kind: "invalid", code: "quote_mismatch" });
+  });
+
   it.each([
     [
       "an uncited answer",

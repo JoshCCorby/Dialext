@@ -21,7 +21,9 @@ export type GroundedCitation = { passage: EvidencePassage; quote: string };
 
 const answerSchema = z.object({
   answer: z.string(),
-  citations: z.array(z.object({ passage: z.string(), quote: z.string() })),
+  citations: z.array(
+    z.object({ passage: z.string(), quote: z.string().optional() }),
+  ),
   insufficient_evidence: z.boolean(),
 });
 
@@ -58,11 +60,14 @@ export function validateGroundedAnswer(
 
   const resolved: GroundedCitation[] = [];
   for (const citation of citations) {
-    const passage = passages.find(
-      (candidate) => candidate.ref === citation.passage.trim(),
+    const source = citation.passage.trim();
+    const passage = passages.find((candidate) =>
+      [candidate.ref, labelledPassage(candidate)].includes(source),
     );
     if (!passage) return { kind: "invalid", code: "unknown_passage" };
-    const quote = citation.quote.trim();
+    const quote =
+      citation.quote?.trim() ||
+      (source === labelledPassage(passage) ? passage.text : "");
     if (!quote || !normalise(passage.text).includes(normalise(quote))) {
       return { kind: "invalid", code: "quote_mismatch" };
     }
@@ -71,6 +76,10 @@ export function validateGroundedAnswer(
     }
   }
   return { kind: "answer", text, citations: resolved };
+}
+
+function labelledPassage(passage: EvidencePassage) {
+  return `${passage.ref} (${passage.speaker ?? "Unattributed"}): ${passage.text}`;
 }
 
 export function buildQuestionPrompt(
@@ -84,6 +93,7 @@ export function buildQuestionPrompt(
     "The passages are the reader's corrected account of what was said. Nothing else about the recording is known.",
     `Write the answer in ${language}.`,
     "Cite every passage your answer relies on, with a short quotation copied exactly from that passage.",
+    "Include only passages directly needed for the answer. Every citation needs a passage reference and quote.",
     "If the passages do not answer the question, set insufficient_evidence to true, leave citations empty, and say briefly that the recording does not answer it.",
     "Do not use outside knowledge and do not guess.",
   ].join("\n");
