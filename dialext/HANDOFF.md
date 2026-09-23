@@ -41,7 +41,7 @@ The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. 
 ## What is not implemented
 
 - A live Azure/other speech provider, provider credentials, quality claims or packaged helper runtime. Only the deterministic development fixture provider is offered. One approved short live sample remains a separate assessment.
-- Completion of milestone 7. Folder/template resource sharing and connected-import/calendar surfaces still need a bounded personal-shell pass; their legacy implementation remains in the tree but must not become the route to a blanket paid entitlement.
+- Completion of milestone 7. Folder/template resource sharing still needs a bounded personal-shell pass, and connected imports and calendar follow [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md); their legacy implementation remains in the tree but must not become the route to a blanket paid entitlement.
 - A real summary. The Dialext outputs are deterministic, fixture-grade copies of the selected reading's passages, for checking corrections and proposals end to end.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 - Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
@@ -1300,6 +1300,11 @@ owns the prototype vault and synthetic samples:
 
 #### What remains in milestone 7
 
+- **Connectors and service seam:** [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md) (plan only, 23
+  September). It opens the local MCP/CLI importers without sign-in, makes other services see
+  Dialext, and routes hosted imports and Google/Outlook calendar through a Dialext service seam
+  that is unset by default, so nothing calls Anarlog. It supersedes this section's "detected
+  apps show only Choose files" for MCP/CLI providers.
 - The real-window acceptance above.
 - **App icon:** Joshua chose to hide the picker for now, so its Pro gate — the only reachable
   Pro interruption this audit found — is gone. Milestone 8 still has to choose Dialext's icons

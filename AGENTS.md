@@ -62,6 +62,11 @@ release build, which maps to the stable app's data directory.
   `origin/codex/dialext-personal-prototype`, never `origin/main`, to see unpushed
   work. Commit locally; Joshua pushes. Never push to the Anarlog remote.
 
+Nothing in the personal build may call Anarlog's servers. Hosted connectors and calendar go
+through a Dialext service seam that is unset by default, so a Dialext server can fill it later
+for Joshua and friends; local MCP/CLI importers need no sign-in, and other services must see
+"Dialext" (Joshua, 23 September 2026; see `dialext/CONNECTORS_PLAN.md`).
+
 Verify each slice with its focused regressions, affected package type/lint checks
 and a real desktop workflow. Run the full desktop suite at milestone boundaries.
 The release/platform matrix below is reference material, not a requirement to
