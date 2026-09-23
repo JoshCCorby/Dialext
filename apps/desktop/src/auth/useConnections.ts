@@ -5,7 +5,7 @@ import { createClient } from "@anlg/api-client/client";
 
 import { useAuth } from "./auth-context";
 
-import { env } from "~/env";
+import { dialextService } from "~/shared/dialext-service";
 
 export function useConnections(
   enabled = true,
@@ -13,23 +13,24 @@ export function useConnections(
 ) {
   const auth = useAuth();
   const userId = auth?.session?.user.id;
+  const service = dialextService();
 
   // eslint-disable-next-line @tanstack/query/exhaustive-deps -- Auth supplies request headers; the user ID is the connection-list identity.
   return useQuery({
     queryKey: ["integration-status", userId],
     queryFn: async () => {
       const headers = auth?.getHeaders();
-      if (!headers) {
+      if (!headers || !service) {
         return [];
       }
-      const client = createClient({ baseUrl: env.VITE_API_URL, headers });
+      const client = createClient({ baseUrl: service.apiUrl, headers });
       const { data, error } = await listConnections({ client });
       if (error) {
         throw new Error("Failed to load integrations");
       }
       return data?.connections ?? [];
     },
-    enabled: enabled && !!userId,
+    enabled: enabled && !!userId && !!service,
     refetchInterval: options?.refetchInterval,
   });
 }

@@ -9,8 +9,8 @@ import { openUrlWithInstruction } from "@anlg/plugin-windows";
 import { sonnerToast } from "@anlg/ui/components/ui/toast";
 
 import { useAuth } from "~/auth";
-import { env } from "~/env";
 import { captureOperationalError } from "~/error-reporting";
+import { dialextService } from "~/shared/dialext-service";
 import { addNangoSessionHandoff } from "~/shared/integration-handoff";
 import { buildWebAppUrl } from "~/shared/utils";
 
@@ -23,6 +23,8 @@ export async function openIntegrationUrl(
   showInstruction = true,
 ) {
   if (!nangoIntegrationId) return;
+  const service = dialextService();
+  if (!service) return;
 
   try {
     const params: Record<string, string> = {
@@ -36,14 +38,14 @@ export async function openIntegrationUrl(
       params.connection_id = connectionId;
     }
 
-    let url = await buildWebAppUrl("/app/integration", params);
+    let url = await buildWebAppUrl("/app/integration", params, service.appUrl);
 
     if (action !== "disconnect") {
       if (!headers) {
         throw new Error("No authentication session is available");
       }
 
-      const client = createClient({ baseUrl: env.VITE_API_URL, headers });
+      const client = createClient({ baseUrl: service.apiUrl, headers });
       const { data, error } = await createSession({
         client,
         body: {

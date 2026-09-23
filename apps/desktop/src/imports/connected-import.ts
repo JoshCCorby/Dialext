@@ -25,7 +25,7 @@ import {
   type MeetingImportResult,
 } from "./queries";
 
-import { env } from "~/env";
+import { dialextService } from "~/shared/dialext-service";
 import { openIntegrationUrl } from "~/shared/integration";
 
 const CONNECTED_IMPORT_SECRET_SCOPE = "meeting-imports";
@@ -239,7 +239,10 @@ async function waitForNangoConnection(
   headers: Record<string, string>,
   signal?: AbortSignal,
 ) {
-  const client = createClient({ baseUrl: env.VITE_API_URL, headers });
+  const client = createClient({
+    baseUrl: requireDialextService().apiUrl,
+    headers,
+  });
   const deadline = Date.now() + NANGO_CONNECTION_TIMEOUT_MS;
 
   while (true) {
@@ -291,7 +294,10 @@ async function syncNangoMeetings(
   headers: Record<string, string>,
 ): Promise<ConnectedImportSyncSummary> {
   const knownMeetingIds = await getImportedMeetingIds(provider.id);
-  const client = createClient({ baseUrl: env.VITE_API_URL, headers });
+  const client = createClient({
+    baseUrl: requireDialextService().apiUrl,
+    headers,
+  });
   const body = {
     connection_id: connectionId,
     known_meeting_ids: knownMeetingIds,
@@ -403,4 +409,11 @@ function nangoImportMeetings(
     default:
       throw new Error(`${providerId} import is not available`);
   }
+}
+
+// Hosted imports run only against a configured Dialext service, never Anarlog's.
+function requireDialextService() {
+  const service = dialextService();
+  if (!service) throw new Error("No Dialext service is configured");
+  return service;
 }

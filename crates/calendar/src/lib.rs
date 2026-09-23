@@ -46,8 +46,10 @@ pub fn available_providers() -> Vec<CalendarProviderType> {
     providers
 }
 
+/// `api_base_url` is the Dialext service. With none, only Apple is listed and no
+/// request leaves the machine.
 pub async fn list_connection_ids(
-    api_base_url: &str,
+    api_base_url: Option<&str>,
     access_token: Option<&str>,
     apple_authorized: bool,
 ) -> Result<Vec<ProviderConnectionIds>, Error> {
@@ -67,7 +69,9 @@ pub async fn list_connection_ids(
     #[cfg(not(target_os = "macos"))]
     let _ = apple_authorized;
 
-    if let Some(token) = access_token.filter(|t| !t.is_empty()) {
+    if let (Some(api_base_url), Some(token)) =
+        (api_base_url, access_token.filter(|t| !t.is_empty()))
+    {
         match fetch::list_all_connection_ids(api_base_url, token).await {
             Ok(all) => {
                 for provider in [CalendarProviderType::Google, CalendarProviderType::Outlook] {
@@ -117,7 +121,7 @@ fn is_local_api_base_url(api_base_url: &str) -> bool {
 }
 
 pub async fn is_provider_enabled(
-    api_base_url: &str,
+    api_base_url: Option<&str>,
     access_token: Option<&str>,
     apple_authorized: bool,
     provider: CalendarProviderType,
@@ -129,7 +133,7 @@ pub async fn is_provider_enabled(
 }
 
 pub async fn list_calendars(
-    api_base_url: &str,
+    api_base_url: Option<&str>,
     access_token: &str,
     provider: CalendarProviderType,
     connection_id: &str,
@@ -140,11 +144,13 @@ pub async fn list_calendars(
             Ok(convert::convert_apple_calendars(calendars))
         }
         CalendarProviderType::Google => {
+            let api_base_url = service(api_base_url, provider)?;
             let calendars =
                 fetch::list_google_calendars(api_base_url, access_token, connection_id).await?;
             Ok(convert::convert_google_calendars(calendars))
         }
         CalendarProviderType::Outlook => {
+            let api_base_url = service(api_base_url, provider)?;
             let calendars =
                 fetch::list_outlook_calendars(api_base_url, access_token, connection_id).await?;
             Ok(convert::convert_outlook_calendars(calendars))
@@ -153,7 +159,7 @@ pub async fn list_calendars(
 }
 
 pub async fn list_events(
-    api_base_url: &str,
+    api_base_url: Option<&str>,
     access_token: &str,
     provider: CalendarProviderType,
     connection_id: &str,
@@ -165,6 +171,7 @@ pub async fn list_events(
             Ok(convert::convert_apple_events(events))
         }
         CalendarProviderType::Google => {
+            let api_base_url = service(api_base_url, provider)?;
             let calendar_id = filter.calendar_tracking_id.clone();
             let events =
                 fetch::list_google_events(api_base_url, access_token, connection_id, filter)
@@ -172,6 +179,7 @@ pub async fn list_events(
             Ok(convert::convert_google_events(events, &calendar_id))
         }
         CalendarProviderType::Outlook => {
+            let api_base_url = service(api_base_url, provider)?;
             let calendar_id = filter.calendar_tracking_id.clone();
             let events =
                 fetch::list_outlook_events(api_base_url, access_token, connection_id, filter)
@@ -179,6 +187,10 @@ pub async fn list_events(
             Ok(convert::convert_outlook_events(events, &calendar_id))
         }
     }
+}
+
+fn service(api_base_url: Option<&str>, provider: CalendarProviderType) -> Result<&str, Error> {
+    api_base_url.ok_or(Error::ServiceUnavailable { provider })
 }
 
 pub fn open_calendar(provider: CalendarProviderType) -> Result<(), Error> {
@@ -229,6 +241,34 @@ pub fn parse_meeting_link(text: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // With no service these paths return without awaiting anything, so one poll
+    // finishes them; a pending result would mean a request was attempted.
+    fn ready<T>(future: impl std::future::Future<Output = T>) -> T {
+        let mut cx = std::task::Context::from_waker(std::task::Waker::noop());
+        match std::pin::pin!(future).poll(&mut cx) {
+            std::task::Poll::Ready(value) => value,
+            std::task::Poll::Pending => panic!("made a request with no service configured"),
+        }
+    }
+
+    #[test]
+    fn lists_no_hosted_calendars_without_a_service() {
+        let ids = ready(list_connection_ids(None, Some("token"), false)).unwrap();
+        assert!(
+            ids.iter().all(|entry| !matches!(
+                entry.provider,
+                CalendarProviderType::Google | CalendarProviderType::Outlook
+            )),
+            "{ids:?}"
+        );
+        for provider in [CalendarProviderType::Google, CalendarProviderType::Outlook] {
+            assert!(matches!(
+                ready(list_calendars(None, "token", provider, "connection")),
+                Err(Error::ServiceUnavailable { .. })
+            ));
+        }
+    }
 
     #[test]
     fn detects_local_api_base_urls() {

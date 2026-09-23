@@ -8,7 +8,8 @@ pub use error::Error;
 pub use events::*;
 
 pub(crate) struct PluginConfig {
-    pub api_base_url: String,
+    /// The Dialext service behind Google and Outlook calendars; none by default.
+    pub api_base_url: Option<String>,
 }
 
 const PLUGIN_NAME: &str = "calendar";
@@ -47,23 +48,25 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
         .build()
 }
 
-fn get_api_base_url() -> String {
-    #[cfg(not(debug_assertions))]
-    {
-        env!("VITE_API_URL").to_string()
-    }
-
-    #[cfg(debug_assertions)]
-    {
-        option_env!("VITE_API_URL")
-            .unwrap_or("http://localhost:3001")
-            .to_string()
-    }
+// Google and Outlook calendars go through a Dialext service, never Anarlog's API.
+// Dialext has none yet, so builds without `DIALEXT_SERVICE_URL` list Apple only.
+fn get_api_base_url() -> Option<String> {
+    option_env!("DIALEXT_SERVICE_URL")
+        .filter(|url| !url.is_empty())
+        .map(str::to_string)
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn hosted_calendars_never_use_anarlogs_api() {
+        let anarlog_api = concat!("VITE_", "API_URL");
+        assert!(!include_str!("lib.rs").contains(anarlog_api));
+        assert!(!include_str!("commands.rs").contains(anarlog_api));
+        assert_eq!(get_api_base_url(), None);
+    }
 
     #[test]
     fn export_types() {
