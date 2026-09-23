@@ -10,7 +10,15 @@ import {
 } from "@anlg/plugin-db";
 import { Button } from "@anlg/ui/components/ui/button";
 
-import { providerTaskLabel, useDialextProviderTask } from "./provider-task";
+import {
+  providerTaskLabel,
+  useDialextProviderTask,
+} from "./provider-task";
+import {
+  READING_CODES,
+  READING_NAMES,
+  type ReadingCode,
+} from "./reading-languages";
 
 import { useStoredSettingValue } from "~/settings/queries";
 import { useTabs } from "~/store/zustand/tabs";
@@ -23,12 +31,8 @@ export function DialextProviderGeneration() {
   const { value: preferredLanguage } = useStoredSettingValue(
     "dialext_reading_language",
   );
-  const form = useForm({
-    defaultValues: {
-      title: "",
-      language: (preferredLanguage === "ga" ? "ga" : "en") as "en" | "ga",
-    },
-  });
+  const defaultLanguage: ReadingCode = preferredLanguage === "ga" ? "ga" : "en";
+  const form = useForm({ defaultValues: { title: "", language: defaultLanguage } });
   const create = useMutation({
     mutationFn: async (file: File) => {
       if (!file.name.toLowerCase().endsWith(".wav")) {
@@ -97,12 +101,15 @@ export function DialextProviderGeneration() {
               value={field.state.value}
               disabled={create.isPending || active}
               onChange={(event) =>
-                field.handleChange(event.target.value as "en" | "ga")
+                field.handleChange(event.target.value === "ga" ? "ga" : "en")
               }
               className="bg-background rounded-md border px-2 py-1"
             >
-              <option value="en">English</option>
-              <option value="ga">Gaeilge</option>
+              {READING_CODES.map((language) => (
+                <option key={language} value={language}>
+                  {READING_NAMES[language]}
+                </option>
+              ))}
             </select>
           </label>
         )}

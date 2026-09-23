@@ -1,9 +1,11 @@
+import type { ReadingCode } from "./reading-languages";
+
 import { useLiveQuery } from "~/db";
 
 export type DialextProviderTask = {
   id: string;
   session_id: string;
-  target_language: "en" | "ga";
+  target_language: ReadingCode;
   status:
     | "queued"
     | "running"
@@ -57,7 +59,7 @@ export function providerTaskLabel(task: DialextProviderTask): string {
       return "Cancelling…";
     case "queued":
     case "running":
-      return stageLabel(task.current_stage);
+      return STAGE_LABELS[task.current_stage];
     default: {
       const unhandled: never = task.status;
       return unhandled;
@@ -65,13 +67,11 @@ export function providerTaskLabel(task: DialextProviderTask): string {
   }
 }
 
-function stageLabel(stage: DialextProviderTask["current_stage"]): string {
-  return {
-    queued: "Waiting to start…",
-    asr_ga: "Reading the Irish speech source…",
-    asr_en: "Reading the English speech source…",
-    reconstruct: "Building the requested reading…",
-    store: "Saving the checked reading…",
-    done: "Reading ready.",
-  }[stage];
-}
+const STAGE_LABELS: Record<DialextProviderTask["current_stage"], string> = {
+  queued: "Waiting to start…",
+  asr_ga: "Reading the Irish speech source…",
+  asr_en: "Reading the English speech source…",
+  reconstruct: "Building the requested reading…",
+  store: "Saving the checked reading…",
+  done: "Reading ready.",
+};
