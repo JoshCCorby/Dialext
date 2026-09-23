@@ -1298,7 +1298,7 @@ owns the prototype vault and synthetic samples:
    Recording, permission, download, missing-provider and error notices still appear where
    they apply.
 
-#### Connectors and service seam (23 September): implemented, live acceptance in progress
+#### Connectors and service seam (23 September): implemented, live Granola check completed
 
 Commits `bed4df2` (providers see Dialext), `051bf80` (hosted connections go only through
 `dialextService()` / `DIALEXT_SERVICE_URL`, unset by default) and `d9a2c89` (local MCP/CLI
@@ -1309,23 +1309,36 @@ dprint/ESLint, Lingui extract/compile stable, licence boundary. Inherited, not i
 with tests on `calendar` fails "items after a test module"; ESLint reports two
 `exhaustive-deps` errors in `imports/connected-import.ts` at lines unchanged by this work.
 
-Real window so far: Imports shows Granola with **Connect & import** and **Choose files**, no
+Real window: Imports shows Granola with **Connect & import** and **Choose files**, no
 Documentation link; Calendar lists Apple Calendar only; no Anarlog or `localhost:3001` request in
 the app logs and the native process holds only its relay socket (webview traffic was not
-observed). Pressing Connect opened Granola's sign-in in Chrome; the session ended there, before
-sign-in. **Outstanding:** confirm the consent screen says Dialext, the first sync, a repeat sync
-with no duplicates, and Disconnect. Joshua approved using his own Granola account; its meetings
-import into the prototype database as ordinary notes. Backup before this check:
-`.dialext-data/connectors-0923/app.pre-connectors.db`.
+observed). Joshua completed Granola sign-in in Chrome and confirmed the consent screen names
+**Dialext**. The first sync completed with **0 added, 0 unchanged** and the app said Granola returned
+no accessible meetings for this account and workspace. A repeat **Sync now** again showed **0 added,
+0 unchanged**; no duplicate sessions were created. This does not exercise deduplication of an
+actual imported meeting. **Disconnect** returned the row to **Connect & import**. Comparing the
+live database with `.dialext-data/connectors-0923/app.pre-connectors.db` after the repeat sync:
+all 14 `sessions`, all 15 `transcripts`, and every `dialext_*` table were unchanged. No Dialext
+account was created or changed; no evidence or transcript row changed. Final SQLite
+`PRAGMA integrity_check` was **ok**.
+
+The first connection attempt exposed an invalid macOS prototype app signature when credentials
+were saved: the launcher signed the executable before writing `Info.plist`, and linked bundle
+resources outside the app. `apps/desktop/scripts/dev-runner.mjs` now copies those resources inside
+the prototype bundle and signs the completed app. `codesign --verify --deep --strict` passed on
+the relaunched app, and Granola connected through that app. The backup above remains the
+pre-connection comparison point.
+
+Validation for this acceptance/fix: `node --check` and changed-file dprint/ESLint passed for
+the launcher; desktop typecheck passed; both licence-boundary Python checks passed; the exact
+`ci.yaml` Node test list passed (82 tests). A bare root `node --test` is not the CI command and
+fails by discovering TypeScript tests without their runner and a generated Whisper test without
+its model file (313 failures); this did not affect the scoped CI test result. No full desktop
+suite was rerun for this launcher-only fix; the earlier connector suite result remains above.
 
 #### What remains in milestone 7
 
-- **Connectors and service seam:** [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md) (plan only, 23
-  September). It opens the local MCP/CLI importers without sign-in, makes other services see
-  Dialext, and routes hosted imports and Google/Outlook calendar through a Dialext service seam
-  that is unset by default, so nothing calls Anarlog. It supersedes this section's "detected
-  apps show only Choose files" for MCP/CLI providers.
-- The real-window acceptance above.
+- The remaining real-window acceptance for folders, templates, meetings and appearance above.
 - **App icon:** Joshua chose to hide the picker for now, so its Pro gate — the only reachable
   Pro interruption this audit found — is gone. Milestone 8 still has to choose Dialext's icons
   and decide whether picking one becomes a local capability or stays hidden.

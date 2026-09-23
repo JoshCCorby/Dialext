@@ -15,28 +15,17 @@ old `/Users/joshuacorbett/Coding/Transcip` checkout.
 ## Where the milestones stand
 
 Baseline and milestones 1–6 are complete. Milestone 7 is in progress. Its connectors and
-service-seam work ([CONNECTORS_PLAN.md](CONNECTORS_PLAN.md)) is implemented and committed, and
-its live Granola acceptance was interrupted at the browser sign-in.
+service-seam work ([CONNECTORS_PLAN.md](CONNECTORS_PLAN.md)) is implemented. The live Granola
+check completed on 23 September: consent said Dialext; first and repeat sync each returned zero
+accessible meetings; Disconnect worked; the Dialext database rows were unchanged and integrity
+was ok. See [HANDOFF.md](HANDOFF.md) for the exact results and the empty-meeting limitation.
 
-**First job: finish that acceptance, then stop and report.**
-
-1. Check for a running prototype first (`pgrep -fl "MacOS/desktop$"`, port 1422). Joshua may
-   have finished the Granola sign-in in the instance left running. Never start a second
-   instance; quit it through the app menu before relaunching with `node dialext/dev.mjs`.
-2. In Settings → Imports, Granola is either connected or shows **Connect & import**. If it is not
-   connected, press Connect and ask Joshua to sign in in Chrome (Chrome is hidden from window
-   screenshots). He has approved using his own Granola account.
-3. Record individually: the consent screen names **Dialext**; the first sync result; a repeat
-   **Sync now** adds nothing (compare `sessions` against
-   `.dialext-data/connectors-0923/app.pre-connectors.db`); **Disconnect** returns the row to
-   Connect; no Dialext account, evidence or transcript row changed; `integrity_check` is `ok`.
-4. Update the connectors section of `HANDOFF.md` with the results, fix only defects this exposes,
-   commit locally.
-
-Then milestone 7's remaining real-window checklist (folders, templates, meetings, appearance), and
-the other options Joshua listed: the chat-correction integrity question (can Dialext accounts be
-rewritten without native checked-edit history?), TRIAGE DDIA 3.1 as a report, and the other
-report-only triage rows. Ask Joshua which to take next; do not start one unasked.
+Ask Joshua which to take next: milestone 7's remaining real-window checklist (folders,
+templates, meetings, appearance), the chat-correction integrity question (can Dialext accounts be
+rewritten without native checked-edit history?), TRIAGE DDIA 3.1 as a report, or the other
+report-only triage rows. Do not start one unasked. Before any native work, check for a running
+prototype (`pgrep -fl "MacOS/desktop$"`, port 1422); never run two instances. Quit it through the
+app menu before relaunching with `node dialext/dev.mjs`.
 
 The file picker and Chrome run outside the granted Dialext window: request access for the panel's
 process when it is open, and ask Joshua for browser steps.
