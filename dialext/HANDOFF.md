@@ -1027,11 +1027,23 @@ model only. The pre-smoke backup is `.dialext-data/smoke-0923/app.pre-smoke.db`.
    `dialext_evidence`, `dialext_recordings`, `transcripts`, `session_documents` or
    `dialext_block_evidence`. The only new session is the generated recording.
 
-Limitations: the on-device model answered in English although the prompt asks for the
-selected reading's language (Irish); the validator checks citations, not answer language.
-The macOS Open panel runs in a separate process that window automation may not drive, so
-Joshua chose the files by hand for steps 1 and 2. Legacy Anarlog import rows (ChatGPT
-Record, Granola) still show on the Imports page; that belongs to milestone 7's remaining pass.
+**Answer language (fixed in the follow-up commit).** In step 4 the on-device model answered
+`Two` in English although the prompt asked for Irish, and nothing checked. Answers are now
+checked by the app, not the model: `dialext/answer-language.ts` classifies a short answer as
+English or Irish by marker words (numerals, function words) and fadas, leaving answers with no
+signal (a bare name, digits) alone. An answer clearly in the other language gets one corrective
+retry; if it is still wrong, the reader gets the `invalid` refusal (`code: wrong_language`)
+in the reading's language instead of prose they may not read. The prompt also ends with
+`Answer in <language>.`. The check runs whichever model answers. Native result: the same
+question on the Irish reading answered `dhá thicéad` with both citations. The window does not
+show whether the retry was needed. Only English and Irish are enforced, and the check is a
+heuristic for short answers, not general language identification.
+
+Other notes: the macOS Open panel runs in a separate process. Window control granted for
+Dialext does not cover it, so Joshua chose the files for steps 1 and 2. He has said he will
+grant access to it, so next time request access for the panel's process while it is open.
+The ChatGPT Record and Granola rows on the Imports page are intended: milestone 7 keeps them
+as local **Choose files** imports and removes only their account-linked controls.
 
 ## New direction from Joshua (22 September) and milestone 6 — quiet interface
 

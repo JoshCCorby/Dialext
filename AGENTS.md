@@ -55,8 +55,9 @@ release build, which maps to the stable app's data directory.
 - dprint's JS/TS formatter runs a bare `pnpm`, so it fails with "Cannot start formatter
   process" unless `pnpm` is on PATH; put a two-line shim (`exec corepack pnpm "$@"`) in a
   scratch directory on PATH before `dprint check`.
-- The macOS Open panel is a separate process that window automation may not drive. Ask
-  Joshua to choose the fixture files for import and WAV-generation steps.
+- The macOS Open panel is a separate process; a window-control grant for Dialext does not
+  cover it. With the panel open, request access for its process (Joshua agreed to grant it,
+  23 September 2026); if that is refused, ask him to choose the fixture files.
 - Branch tracking is misleading. Compare against
   `origin/codex/dialext-personal-prototype`, never `origin/main`, to see unpushed
   work. Commit locally; Joshua pushes. Never push to the Anarlog remote.
