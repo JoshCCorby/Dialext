@@ -33,6 +33,10 @@ vi.mock("~/auth/personal-billing", () => ({
   ),
 }));
 
+vi.mock("~/services/meeting-import-sync", () => ({
+  LocalMeetingImportSync: () => <div data-testid="local-import-sync" />,
+}));
+
 vi.mock("~/session/queries", () => ({
   getOrCreateSessionForEventId: vi.fn(),
 }));
@@ -63,5 +67,6 @@ describe("MainAppLayout", () => {
       authProvider.contains(screen.getByTestId("personal-billing-provider")),
     ).toBe(true);
     expect(screen.getByTestId("outlet")).toBeTruthy();
+    expect(screen.getByTestId("local-import-sync")).toBeTruthy();
   });
 });

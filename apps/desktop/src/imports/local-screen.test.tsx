@@ -20,6 +20,9 @@ const mocks = vi.hoisted(() => ({
   nangoImportSyncQueryOptions: vi.fn(),
   connectConnectedImport: vi.fn(),
   connectNangoImport: vi.fn(),
+  disconnectConnectedImport: vi.fn(),
+  credentials: {} as Record<string, unknown>,
+  sync: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
@@ -64,6 +67,7 @@ vi.mock("./connected-import", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./connected-import")>()),
   connectConnectedImport: mocks.connectConnectedImport,
   connectNangoImport: mocks.connectNangoImport,
+  disconnectConnectedImport: mocks.disconnectConnectedImport,
   connectedImportCredentialsQueryOptions:
     mocks.connectedImportCredentialsQueryOptions,
   connectedImportSyncQueryOptions: mocks.connectedImportSyncQueryOptions,
@@ -97,11 +101,35 @@ function renderImports(props: { onNoSourcesDetected?: () => void } = {}) {
 describe("MeetingImportScreen in the personal shell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.credentials = {};
+    mocks.connectedImportCredentialsQueryOptions.mockImplementation(
+      (providerId: string) => ({
+        queryKey: ["meeting-import", providerId, "credentials"],
+        queryFn: async () => mocks.credentials[providerId] ?? null,
+      }),
+    );
+    mocks.connectedImportSyncQueryOptions.mockImplementation(
+      (provider: { id: string }, enabled: boolean) => ({
+        queryKey: ["meeting-import", provider.id, "sync"],
+        queryFn: () => mocks.sync(provider.id),
+        enabled,
+      }),
+    );
+    mocks.sync.mockResolvedValue({
+      result: {
+        discovered: 2,
+        imported: 2,
+        matched: 0,
+        conflicts: 0,
+        errors: 0,
+      },
+      warnings: [],
+    });
   });
 
   afterEach(cleanup);
 
-  it("keeps local file imports and omits connected, account-backed imports", async () => {
+  it("offers local connections without an account and keeps hosted ones file-only", async () => {
     mocks.detectImportSources.mockResolvedValue([
       provider("granola"),
       provider("zoom"),
@@ -120,15 +148,76 @@ describe("MeetingImportScreen in the personal shell", () => {
     expect(
       screen.getAllByRole("button", { name: "Choose files" }),
     ).toHaveLength(4);
-    expect(screen.queryByRole("button", { name: /Connect/ })).toBeNull();
+    expect(
+      await screen.findAllByRole("button", { name: "Connect & import" }),
+    ).toHaveLength(2);
     expect(screen.queryByText(/Sign in/)).toBeNull();
-    expect(screen.queryByText(/while Anarlog is running/)).toBeNull();
+    expect(screen.queryByText(/Anarlog/)).toBeNull();
 
     expect(mocks.useAuth).not.toHaveBeenCalled();
     expect(mocks.useConnections).not.toHaveBeenCalled();
-    expect(mocks.connectedImportCredentialsQueryOptions).not.toHaveBeenCalled();
-    expect(mocks.connectedImportSyncQueryOptions).not.toHaveBeenCalled();
     expect(mocks.nangoImportSyncQueryOptions).not.toHaveBeenCalled();
+    expect(
+      mocks.connectedImportCredentialsQueryOptions.mock.calls.map(([id]) => id),
+    ).not.toContain("zoom");
+    expect(mocks.sync).not.toHaveBeenCalled();
+  });
+
+  it("connects Granola and then imports its meetings", async () => {
+    mocks.detectImportSources.mockResolvedValue([provider("granola")]);
+    mocks.connectConnectedImport.mockResolvedValue({
+      providerId: "granola",
+      clientId: "client",
+      clientSecret: null,
+      tokenJson: "{}",
+      tokenReceivedAt: 1,
+    });
+
+    renderImports();
+    const connect = await screen.findByRole("button", {
+      name: "Connect & import",
+    });
+    await waitFor(() => expect(connect.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(connect);
+
+    await waitFor(() => {
+      expect(mocks.connectConnectedImport).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "granola" }),
+        expect.any(AbortSignal),
+      );
+    });
+    expect(
+      await screen.findByText("Last import: 2 added, 0 unchanged"),
+    ).toBeTruthy();
+    expect(mocks.sync).toHaveBeenCalledWith("granola");
+    expect(screen.getByRole("button", { name: "Sync now" })).toBeTruthy();
+    expect(mocks.connectNangoImport).not.toHaveBeenCalled();
+    expect(mocks.useAuth).not.toHaveBeenCalled();
+  });
+
+  it("syncs on request and disconnects a connected source", async () => {
+    mocks.credentials.granola = { providerId: "granola" };
+    mocks.detectImportSources.mockResolvedValue([provider("granola")]);
+    mocks.disconnectConnectedImport.mockResolvedValue(undefined);
+
+    renderImports();
+    expect(
+      await screen.findByText("Last import: 2 added, 0 unchanged"),
+    ).toBeTruthy();
+    const syncNow = screen.getByRole("button", { name: "Sync now" });
+    await waitFor(() => expect(syncNow.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(syncNow);
+    await waitFor(() => {
+      expect(mocks.sync).toHaveBeenCalledTimes(2);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Disconnect" }));
+    await waitFor(() => {
+      expect(mocks.disconnectConnectedImport).toHaveBeenCalledWith("granola");
+    });
+    expect(
+      await screen.findByRole("button", { name: "Connect & import" }),
+    ).toBeTruthy();
   });
 
   it("imports chosen export files locally", async () => {
@@ -188,7 +277,9 @@ describe("MeetingImportScreen in the personal shell", () => {
       await screen.findByRole("button", { name: "Choose files" }),
     ).toBeTruthy();
     expect(screen.queryByText("Google Meet")).toBeNull();
-    expect(screen.queryByRole("button", { name: /Connect/ })).toBeNull();
+    expect(
+      await screen.findByRole("button", { name: "Connect & import" }),
+    ).toBeTruthy();
     expect(mocks.useConnections).not.toHaveBeenCalled();
   });
 

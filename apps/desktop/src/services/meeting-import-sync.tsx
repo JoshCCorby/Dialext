@@ -51,3 +51,23 @@ export function MeetingImportSync() {
 
   return null;
 }
+
+/// Keeps connected local sources (MCP and CLI) importing while the main window is open.
+/// It needs no account: it runs only for sources with a stored connection.
+export function LocalMeetingImportSync() {
+  const credentialQueries = useQueries({
+    queries: LOCAL_CONNECTED_PROVIDERS.map((provider) =>
+      connectedImportCredentialsQueryOptions(provider.id),
+    ),
+  });
+  useQueries({
+    queries: LOCAL_CONNECTED_PROVIDERS.map((provider, index) =>
+      connectedImportSyncQueryOptions(
+        provider,
+        Boolean(credentialQueries[index]?.data),
+      ),
+    ),
+  });
+
+  return null;
+}
