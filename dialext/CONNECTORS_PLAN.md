@@ -1,8 +1,12 @@
 # Plan: local connectors, Dialext identity and a service seam
 
-Status: **plan only, nothing here is implemented.** Written 23 September 2026 from a read of the
-current code. It completes milestone 7's import and calendar work and replaces the earlier
-approach of hiding every connected import.
+Status (23 September 2026): **phases B, C and A are implemented and committed** (`bed4df2`,
+`051bf80`, `d9a2c89`); the live Granola acceptance is in progress (see `HANDOFF.md`). Two
+departures from the text below: the local connector row is a new component
+(`imports/local-connector.tsx`) used by the personal screen only, because the Anarlog screen is
+unreachable behind its flag; and the client version sent to providers is the importer crate's
+version. Decisions: the name is `Dialext`; hosted rows stay hidden without a Dialext server;
+background sync every five minutes is kept.
 
 ## Joshua's decisions (23 September 2026)
 

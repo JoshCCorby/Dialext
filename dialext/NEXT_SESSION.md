@@ -14,18 +14,32 @@ old `/Users/joshuacorbett/Coding/Transcip` checkout.
 
 ## Where the milestones stand
 
-Baseline and milestones 1–6 are complete and verified in the isolated native app. Milestone 5's
-native checklist passed on 23 September and was integrated with a smoke test the same day
-(see its section in `HANDOFF.md`). **Milestone 7 is implemented with all automated checks
-passing but has not been accepted in the real window**: its folders, templates, imports,
-calendar, meetings and appearance pass is outstanding.
+Baseline and milestones 1–6 are complete. Milestone 7 is in progress. Its connectors and
+service-seam work ([CONNECTORS_PLAN.md](CONNECTORS_PLAN.md)) is implemented and committed, and
+its live Granola acceptance was interrupted at the browser sign-in.
 
-Do not start new work unasked. Joshua chooses the next step from the options recorded at the
-end of the latest session report: milestone 7 acceptance, the chat-correction integrity
-question, the DDIA 3.1 crash-consistency report, other report-only triage rows, or later product
-work. Milestone 7's remaining decisions are at the end of its handoff section: the anarlog.so
-template gallery, the native calendar token guard, and whether the chat `web_search` tool stays
-registered.
+**First job: finish that acceptance, then stop and report.**
+
+1. Check for a running prototype first (`pgrep -fl "MacOS/desktop$"`, port 1422). Joshua may
+   have finished the Granola sign-in in the instance left running. Never start a second
+   instance; quit it through the app menu before relaunching with `node dialext/dev.mjs`.
+2. In Settings → Imports, Granola is either connected or shows **Connect & import**. If it is not
+   connected, press Connect and ask Joshua to sign in in Chrome (Chrome is hidden from window
+   screenshots). He has approved using his own Granola account.
+3. Record individually: the consent screen names **Dialext**; the first sync result; a repeat
+   **Sync now** adds nothing (compare `sessions` against
+   `.dialext-data/connectors-0923/app.pre-connectors.db`); **Disconnect** returns the row to
+   Connect; no Dialext account, evidence or transcript row changed; `integrity_check` is `ok`.
+4. Update the connectors section of `HANDOFF.md` with the results, fix only defects this exposes,
+   commit locally.
+
+Then milestone 7's remaining real-window checklist (folders, templates, meetings, appearance), and
+the other options Joshua listed: the chat-correction integrity question (can Dialext accounts be
+rewritten without native checked-edit history?), TRIAGE DDIA 3.1 as a report, and the other
+report-only triage rows. Ask Joshua which to take next; do not start one unasked.
+
+The file picker and Chrome run outside the granted Dialext window: request access for the panel's
+process when it is open, and ask Joshua for browser steps.
 
 ## Boundaries that carry forward
 

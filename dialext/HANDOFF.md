@@ -1298,6 +1298,26 @@ owns the prototype vault and synthetic samples:
    Recording, permission, download, missing-provider and error notices still appear where
    they apply.
 
+#### Connectors and service seam (23 September): implemented, live acceptance in progress
+
+Commits `bed4df2` (providers see Dialext), `051bf80` (hosted connections go only through
+`dialextService()` / `DIALEXT_SERVICE_URL`, unset by default) and `d9a2c89` (local MCP/CLI
+connectors open without an account; `LocalMeetingImportSync` in the main window). Checks: full
+desktop suite 486 files / 4,558 tests; importer 13, calendar 19 and calendar plugin 2 Rust tests;
+Clippy `-D warnings` on the importer, calendar plugin and calendar library; typecheck, changed-file
+dprint/ESLint, Lingui extract/compile stable, licence boundary. Inherited, not introduced: Clippy
+with tests on `calendar` fails "items after a test module"; ESLint reports two
+`exhaustive-deps` errors in `imports/connected-import.ts` at lines unchanged by this work.
+
+Real window so far: Imports shows Granola with **Connect & import** and **Choose files**, no
+Documentation link; Calendar lists Apple Calendar only; no Anarlog or `localhost:3001` request in
+the app logs and the native process holds only its relay socket (webview traffic was not
+observed). Pressing Connect opened Granola's sign-in in Chrome; the session ended there, before
+sign-in. **Outstanding:** confirm the consent screen says Dialext, the first sync, a repeat sync
+with no duplicates, and Disconnect. Joshua approved using his own Granola account; its meetings
+import into the prototype database as ordinary notes. Backup before this check:
+`.dialext-data/connectors-0923/app.pre-connectors.db`.
+
 #### What remains in milestone 7
 
 - **Connectors and service seam:** [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md) (plan only, 23
