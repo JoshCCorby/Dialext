@@ -25,7 +25,7 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | 1.1 Compiler-driven skeleton | Skip | Scaffolds a fresh crate; Dialext extends existing workspace crates. | — |
 | 1.2 Compiler-fix loop | Skip | Generic working habit, not a task; nothing to run. | — |
 | 1.3 `cargo check` standing rule | Skip | Already required by `AGENTS.md` (`--locked`, per crate, workflow features). | — |
-| 1.4 Panics into `Result` | Keep | Only ~3 non-test `unwrap`/`expect` sites in Dialext code; classify each and convert the recoverable ones to the crate's existing error type. | `session-ingest` (`dialext.rs`, `dialext_provider.rs`) |
+| 1.4 Panics into `Result` | Keep | Only ~3 non-test `unwrap`/`expect` sites in Dialext code; classify each and convert the recoverable ones to the crate's existing error type. Done in `3b3ba9c`. | `session-ingest` (`dialext.rs`, `dialext_provider.rs`) |
 | 1.5 CLI harness with debug prints | Skip | No Dialext CLI; runtime verification is the real desktop workflow via `node dialext/dev.mjs`. | — |
 | 1.6 Ground third-party API usage | Skip | No suspect call site identified; use 3.1 on demand when one appears. | — |
 | 1.7 Doc comments that render | Skip | Crates are internal, not published; `AGENTS.md` limits comments to non-obvious "why". | — |

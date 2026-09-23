@@ -143,7 +143,10 @@ fn interval(value: &Value, duration: i64) -> Result<(i64, i64), Error> {
 }
 fn validate_bundle(bundle: &Value) -> Result<(), Error> {
     if bundle["format"] != "dialext-recording" || bundle["version"] != 1 {
-        return Err(invalid("Unsupported Dialext bundle"));
+        return Err(invalid(&format!(
+            "Unsupported Dialext bundle: expected format \"dialext-recording\" version 1, received format {} version {}",
+            bundle["format"], bundle["version"]
+        )));
     }
     let duration = bundle["recording"]["duration_ms"]
         .as_i64()
@@ -541,6 +544,21 @@ mod tests {
             };
             assert!(validate_bundle(&bundle).is_err());
         }
+    }
+    #[test]
+    fn native_bundle_validation_tolerates_unknown_fields_and_names_bad_versions() {
+        let mut bundle: Value = serde_json::from_str(include_str!(
+            "../../../dialext/fixtures/language-practice.json"
+        ))
+        .unwrap();
+        bundle["future_field"] = json!({"kept": true});
+        assert!(validate_bundle(&bundle).is_ok());
+        bundle["version"] = json!(2);
+        let error = validate_bundle(&bundle).unwrap_err().to_string();
+        assert!(
+            error.contains("received format \"dialext-recording\" version 2"),
+            "{error}"
+        );
     }
     #[tokio::test]
     async fn selected_projection_changes_atomically_and_preserves_all_account_work() {

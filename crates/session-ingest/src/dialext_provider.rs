@@ -61,7 +61,10 @@ struct AsrSpec<'a> {
     duration_ms: i64,
 }
 
+// The helper is ours and versioned, so an unexpected field means a protocol mismatch
+// rather than a newer bundle to preserve.
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct HelperResponse {
     protocol_version: i64,
     stage: String,
@@ -440,11 +443,26 @@ async fn invoke_helper(
             diagnostic.trim().chars().take(500).collect::<String>()
         )));
     }
-    let response: HelperResponse = serde_json::from_slice(&stdout)?;
-    if response.protocol_version != PROTOCOL_VERSION || response.stage != stage {
-        return Err(invalid(
-            "Provider helper returned an unsupported protocol message",
-        ));
+    parse_helper_response(&stdout, stage)
+}
+
+fn parse_helper_response(stdout: &[u8], stage: &str) -> Result<Value, Error> {
+    let response: HelperResponse = serde_json::from_slice(stdout).map_err(|error| {
+        invalid(&format!(
+            "Provider helper returned an unreadable protocol message: {error}"
+        ))
+    })?;
+    if response.protocol_version != PROTOCOL_VERSION {
+        return Err(invalid(&format!(
+            "Provider helper speaks protocol version {}; this app expects {PROTOCOL_VERSION}",
+            response.protocol_version
+        )));
+    }
+    if response.stage != stage {
+        return Err(invalid(&format!(
+            "Provider helper answered stage {:?} when {stage:?} was requested",
+            response.stage
+        )));
     }
     Ok(response.result)
 }
@@ -1024,6 +1042,42 @@ mod tests {
 
     fn helper() -> std::path::PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dialext/engine/provider-helper.mjs")
+    }
+
+    #[test]
+    fn helper_response_names_what_is_wrong() {
+        assert_eq!(
+            parse_helper_response(
+                br#"{"protocol_version":1,"stage":"asr","result":{"a":1}}"#,
+                "asr"
+            )
+            .unwrap(),
+            json!({"a":1})
+        );
+        for (stdout, expected) in [
+            (
+                &br#"{"protocol_version":1,"stage":"asr","result":{},"extra":true}"#[..],
+                "unknown field `extra`",
+            ),
+            (
+                br#"{"protocol_version":1,"stage":"asr"}"#,
+                "missing field `result`",
+            ),
+            (
+                br#"{"protocol_version":2,"stage":"asr","result":{}}"#,
+                "protocol version 2; this app expects 1",
+            ),
+            (
+                br#"{"protocol_version":1,"stage":"reconstruct","result":{}}"#,
+                r#"stage "reconstruct" when "asr" was requested"#,
+            ),
+            (b"not json", "unreadable protocol message"),
+        ] {
+            let error = parse_helper_response(stdout, "asr")
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(expected), "{error}");
+        }
     }
 
     fn slow_helper(directory: &Path) -> std::path::PathBuf {
