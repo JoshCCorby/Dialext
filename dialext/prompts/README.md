@@ -9,6 +9,7 @@ current work and wins on any conflict.
 | --- | --- |
 | [rust-prompts.md](rust-prompts.md) | Phases 1–6: compiler-driven development, crate structure, API grounding, Clippy/CI polish, DDIA reliability and storage |
 | [ddia-architecture-prompts.md](ddia-architecture-prompts.md) | Protobuf/Avro evolvability, replication, event-driven pipelines |
+| [typescript-prompts.md](typescript-prompts.md) | Strict TypeScript: tsconfig audit, discriminated unions, generics, type guards, `Result` error handling |
 
 ## How to run them
 
@@ -17,7 +18,8 @@ Give an agent this prompt:
 > Read `AGENTS.md`, `dialext/HANDOFF.md`, `dialext/ARCHITECTURE.md` and
 > `dialext/prompts/README.md`. Then triage `dialext/prompts/<file>.md`: grade
 > every prompt against Dialext as it actually is (a local-first Tauri desktop
-> app with SQLite, no Kafka, gRPC, etcd or read replicas). Write the result to
+> app with SQLite, no Kafka, gRPC, etcd or read replicas; TypeScript checks run
+> per package with `pnpm -F <package> typecheck`, not bare `npx tsc`). Write the result to
 > `dialext/prompts/TRIAGE.md` as a table — prompt id, keep/adapt/skip, one-line
 > reason, target crate or package. Do not change code yet; wait for my approval.
 
