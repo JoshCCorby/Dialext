@@ -14,20 +14,18 @@ old `/Users/joshuacorbett/Coding/Transcip` checkout.
 
 ## Where the milestones stand
 
-Baseline and milestones 1–4 are complete and verified in the isolated native app. Milestone 6 has
-passed its real-window acceptance. **Milestones 5 and 7 are implemented with all automated checks
-passing, but neither has been accepted in the real window.** Two acceptance checklists are
-outstanding in `HANDOFF.md`: milestone 5's source-control/question/restart/export journey, and
-milestone 7's folders, templates, imports, calendar, meetings and appearance pass.
+Baseline and milestones 1–6 are complete and verified in the isolated native app. Milestone 5's
+native checklist passed on 23 September and was integrated with a smoke test the same day
+(see its section in `HANDOFF.md`). **Milestone 7 is implemented with all automated checks
+passing but has not been accepted in the real window**: its folders, templates, imports,
+calendar, meetings and appearance pass is outstanding.
 
-**Your first job is those two checklists**, driven in the real `app.dialext.prototype` window with
-`node dialext/dev.mjs`, or with Joshua by hand if window control is unavailable. Record each
-outcome individually and fix only defects the checklists expose.
-
-Milestone 7's remaining decisions, once acceptance passes, are recorded at the end of its handoff
-section: the anarlog.so template gallery, the native calendar token guard, and whether the chat
-`web_search` tool stays registered. Agree the next bounded step with Joshua; do not start one
-unasked.
+Do not start new work unasked. Joshua chooses the next step from the options recorded at the
+end of the latest session report: milestone 7 acceptance, the chat-correction integrity
+question, the DDIA 3.1 crash-consistency report, other report-only triage rows, or later product
+work. Milestone 7's remaining decisions are at the end of its handoff section: the anarlog.so
+template gallery, the native calendar token guard, and whether the chat `web_search` tool stays
+registered.
 
 ## Boundaries that carry forward
 
