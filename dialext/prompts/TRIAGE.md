@@ -91,8 +91,8 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | 1.2 Type-driven scaffolding | Skip | Working method; conflicts with "avoid creating types unless shared". | — |
 | 1.3 Autonomous refactor loop | Skip | No current type errors to drive it. | — |
 | 1.4 Self-correcting loop | Skip | Already required: typecheck must pass. | — |
-| 2.1 Ban `any`, add type guards | Keep | No `any` in `src/dialext` now; apply to the untrusted inputs — import bundle JSON and provider results on the TS side — and confirm they are narrowed from `unknown`. Done in `f11ca6a` with 5.1. | `@anlg/desktop` (`src/dialext`) |
-| 2.2 Invalid states unrepresentable | Keep | Import/provider/generation UI state is the likely place for `data?`/`error?` shapes; convert to discriminated unions where found. | `@anlg/desktop` (`src/dialext`) |
+| 2.1 Ban `any`, add type guards | Keep | No `any` in `src/dialext` now; apply to the untrusted inputs — import bundle JSON and provider results on the TS side — and confirm they are narrowed from `unknown`. Done in `f11ca6a` with 5.1; union in `cf0ab75` (2.2). | `@anlg/desktop` (`src/dialext`) |
+| 2.2 Invalid states unrepresentable | Keep | Import/provider/generation UI state is the likely place for `data?`/`error?` shapes; convert to discriminated unions where found. Done in `cf0ab75` (answer outcomes). | `@anlg/desktop` (`src/dialext`) |
 | 2.3 Exhaustiveness guarantee | Keep | Cheap and valuable for reading-language, provider-task and account-status switches. | `@anlg/desktop` (`src/dialext`) |
 | 2.4 Deep immutability (`as const`) | Adapt | Only for static Dialext dictionaries (language codes, labels); no blanket pass. | `@anlg/desktop` (`src/dialext`) |
 | 3.1 Pipeline call signatures | Skip | No utility pipelines needing it. | — |

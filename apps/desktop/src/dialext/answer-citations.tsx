@@ -35,26 +35,7 @@ export function DialextAnswerCitations({ data }: { data: unknown }) {
   if (answer.outcome !== "answer") {
     return (
       <p className="text-muted-foreground mt-1 text-xs">
-        {answer.outcome === "no-match" && (
-          <Trans>
-            Nothing in the selected reading mentions this, so no model was
-            asked.
-          </Trans>
-        )}
-        {answer.outcome === "insufficient" && (
-          <Trans>The model found no passage that answers this.</Trans>
-        )}
-        {answer.outcome === "invalid" && (
-          <Trans>
-            The model's answer did not check out against the reading, so it is
-            not shown.
-          </Trans>
-        )}
-        {answer.outcome === "unavailable" && (
-          <Trans>
-            Select an available reading to ask about this recording.
-          </Trans>
-        )}
+        <RefusalReason outcome={answer.outcome} />
       </p>
     );
   }
@@ -91,6 +72,38 @@ export function DialextAnswerCitations({ data }: { data: unknown }) {
       ))}
     </div>
   );
+}
+
+function RefusalReason({
+  outcome,
+}: {
+  outcome: Exclude<DialextAnswerData["outcome"], "answer">;
+}) {
+  switch (outcome) {
+    case "no-match":
+      return (
+        <Trans>
+          Nothing in the selected reading mentions this, so no model was asked.
+        </Trans>
+      );
+    case "insufficient":
+      return <Trans>The model found no passage that answers this.</Trans>;
+    case "invalid":
+      return (
+        <Trans>
+          The model's answer did not check out against the reading, so it is
+          not shown.
+        </Trans>
+      );
+    case "unavailable":
+      return (
+        <Trans>Select an available reading to ask about this recording.</Trans>
+      );
+    default: {
+      const unhandled: never = outcome;
+      return unhandled;
+    }
+  }
 }
 
 const OUTCOMES = [

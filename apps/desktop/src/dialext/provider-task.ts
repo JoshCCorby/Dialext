@@ -43,14 +43,29 @@ export function useLatestDialextProviderTask(sessionId: string) {
   return query.data?.[0] ?? null;
 }
 
-export function providerTaskLabel(task: DialextProviderTask) {
-  if (task.status === "succeeded") return "Reading ready.";
-  if (task.status === "cancelled") return "Generation cancelled.";
-  if (task.status === "interrupted") {
-    return "Generation stopped when the app closed. Successful stages were kept.";
+export function providerTaskLabel(task: DialextProviderTask): string {
+  switch (task.status) {
+    case "succeeded":
+      return "Reading ready.";
+    case "cancelled":
+      return "Generation cancelled.";
+    case "interrupted":
+      return "Generation stopped when the app closed. Successful stages were kept.";
+    case "failed":
+      return task.error || "Generation failed.";
+    case "cancel_requested":
+      return "Cancelling…";
+    case "queued":
+    case "running":
+      return stageLabel(task.current_stage);
+    default: {
+      const unhandled: never = task.status;
+      return unhandled;
+    }
   }
-  if (task.status === "failed") return task.error || "Generation failed.";
-  if (task.status === "cancel_requested") return "Cancelling…";
+}
+
+function stageLabel(stage: DialextProviderTask["current_stage"]): string {
   return {
     queued: "Waiting to start…",
     asr_ga: "Reading the Irish speech source…",
@@ -58,5 +73,5 @@ export function providerTaskLabel(task: DialextProviderTask) {
     reconstruct: "Building the requested reading…",
     store: "Saving the checked reading…",
     done: "Reading ready.",
-  }[task.current_stage];
+  }[stage];
 }
