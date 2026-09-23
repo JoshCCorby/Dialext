@@ -588,6 +588,54 @@ mod tests {
         );
     }
 
+    /// Nightly and stable share one database, so this build may edit words that a newer
+    /// build wrote. Fields it does not know must survive its read-modify-write.
+    #[tokio::test]
+    async fn edits_and_undo_keep_fields_written_by_a_newer_build() {
+        let vault = tempfile::tempdir().unwrap();
+        let (db, session, account) = adopted(vault.path()).await;
+        sqlx::query(
+            "UPDATE transcripts SET words_json = json_set(words_json,
+               '$[0].future_field', json('{\"kept\":true}'),
+               '$[0].metadata.dialext.future_field', 'kept',
+               '$[1].future_field', 2)
+             WHERE id = (SELECT transcript_id FROM dialext_accounts WHERE id = ?)",
+        )
+        .bind(&account)
+        .execute(db.pool())
+        .await
+        .unwrap();
+        let target = words(&db, &account).await[0].0.clone();
+
+        edit_passage(
+            db.pool(),
+            &session,
+            &account,
+            &version(&db, &account).await,
+            std::slice::from_ref(&target),
+            "Corrected.",
+        )
+        .await
+        .unwrap();
+        undo_last_edit(db.pool(), &session, &account, &version(&db, &account).await)
+            .await
+            .unwrap();
+
+        let (first, first_metadata, second): (String, String, i64) = sqlx::query_as(
+            "SELECT json_extract(t.words_json, '$[0].future_field'),
+                    json_extract(t.words_json, '$[0].metadata.dialext.future_field'),
+                    json_extract(t.words_json, '$[1].future_field')
+             FROM dialext_accounts a JOIN transcripts t ON t.id = a.transcript_id WHERE a.id = ?",
+        )
+        .bind(&account)
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+        assert_eq!(first, r#"{"kept":true}"#);
+        assert_eq!(first_metadata, "kept");
+        assert_eq!(second, 2);
+    }
+
     #[tokio::test]
     async fn a_pinned_edit_applies_and_records_its_history() {
         let vault = tempfile::tempdir().unwrap();

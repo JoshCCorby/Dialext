@@ -42,7 +42,7 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | 3.3 Doc comments with doctests | Skip | Internal crates; see 1.7. | — |
 | 3.4 Public API surface via `cargo doc` | Adapt | Check that `session-ingest` exposes only what `plugins/db` calls; tighten `pub` to `pub(crate)`. No doc build needed. | `session-ingest` |
 | 3.5 TDD loop for a new feature | Skip | Working method, not a task; milestones already ship with focused regressions. | — |
-| 3.6 Error handling with stderr/stdout | Adapt | Only the provider subprocess boundary has streams: verify bounded stdout JSON vs stderr diagnostics and that user-facing errors say what failed. | `session-ingest` (`dialext_provider.rs`) |
+| 3.6 Error handling with stderr/stdout | Adapt | Only the provider subprocess boundary has streams: verify bounded stdout JSON vs stderr diagnostics and that user-facing errors say what failed. Done in `5f65fde`. | `session-ingest` (`dialext_provider.rs`) |
 | 3.7 Monolith → minigrep blueprint | Skip | CLI-shaped refactor; no monolith binary. | — |
 | 4.1 Polish pipeline after every edit | Skip | Duplicates `AGENTS.md` pre-commit verification. | — |
 | 4.2 Warning-free cleanup | Adapt | Run `cargo check`/Clippy on Dialext crates and fix warnings Dialext introduced; report inherited ones, don't blanket `cargo fix` shared code. | `session-ingest`, `db-app`, `plugins/db` |
