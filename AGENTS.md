@@ -1,40 +1,75 @@
-# Dialext personal fork — current authority
+# Dialext — agent instructions
 
-This is Joshua's personal multilingual recording application, based on Anarlog's
-community desktop app at `cbd2468f8f22e173390aa7953f0889e91694591e`.
+**This codebase is Joshua Corbett's. Dialext is his product: a personal
+multilingual recording application.** It began in September 2026 as a fork of
+Anarlog's MIT-licensed community desktop app at
+`cbd2468f8f22e173390aa7953f0889e91694591e`, and the two are separating over
+time. Anarlog is the origin and a source of inherited engineering conventions,
+nothing more: it does not own this product, set its direction, or receive its
+work. Keep the MIT licence and its copyright notice, which the licence requires,
+and do not imply that Anarlog endorses Dialext.
+
+This file is Dialext's. The reference section after the divider is inherited
+Anarlog material, kept because most of the code is still shared. Where the two
+disagree, this section wins.
+
+## Authority
+
 Start with [dialext/HANDOFF.md](dialext/HANDOFF.md) for verified status and the next
 bounded milestone, then [dialext/ARCHITECTURE.md](dialext/ARCHITECTURE.md) for the
 integration contracts. Plans in that document are not implemented features.
 Read [dialext/product/product-vision.md](dialext/product/product-vision.md) before
-changing the product. That brief supersedes upstream positioning and old office
+changing the product. That brief supersedes inherited positioning and old office
 or agency deployment plans. The original Dialext repository is a reference, not
-the working application for this fork.
+the working application.
 
-Use the upstream build, code, data-integrity and licence-boundary rules below.
-Upstream Linear, release automation, hosted services and publication targets are
-not this fork's infrastructure. Do not write to upstream Linear or publish to
-upstream services. Track this fork's work locally or in its own repository.
+Use the inherited build, code, data-integrity and licence-boundary rules below.
+Anarlog's Linear, release automation, hosted services and publication targets are
+not this product's infrastructure. Do not write to Anarlog's Linear or publish to
+its services. Track this work locally or in Joshua's own repository.
 Keep original audio and ASR evidence separate from editable language accounts.
 Use synthetic samples until live provider testing is explicitly in scope.
 
-The development launcher is `node dialext/dev.mjs`. It deliberately builds in
-debug mode with a separate application identifier and vault; never substitute a
-release build, which upstream maps to the stable app's data directory.
+## Running and debugging
 
-For this personal fork, verify each slice with its focused regressions, affected
-package type/lint checks and a real desktop workflow. Run the full desktop suite
-at milestone boundaries. The upstream release/platform matrix below is reference
-material, not a requirement to deploy or run unrelated hosted-service checks on
-every local change. Report inherited warnings and unverified native behaviour
-accurately; do not weaken validation to make a check pass.
+`node dialext/dev.mjs` is the only supported launcher. It deliberately builds in
+debug mode with a separate application identifier and vault; never substitute a
+release build, which maps to the stable app's data directory.
+
+- macOS needs Xcode with the Metal toolchain. The launcher checks `xcrun metal`
+  and exits with that instruction if it is missing.
+- Rust comes from the checkout-local toolchain in `.dialext-tools/`. There is no
+  global `cargo` on Joshua's machine, so a fresh checkout cannot build until that
+  directory exists.
+- The launcher reads the vault from `<checkout>/.dialext-data` but always starts
+  `app.dialext.prototype`. A second checkout or git worktree therefore gets an
+  empty vault pointed at the primary checkout's database. Run native checks only
+  from the checkout that owns the vault and the synthetic samples, and never run
+  two instances against it at once.
+- `ONBOARDING` defaults to `false`; set it to `true` to see the first-run flow.
+- Branch tracking is misleading. Compare against
+  `origin/codex/dialext-personal-prototype`, never `origin/main`, to see unpushed
+  work. Commit locally; Joshua pushes. Never push to the Anarlog remote.
+
+Verify each slice with its focused regressions, affected package type/lint checks
+and a real desktop workflow. Run the full desktop suite at milestone boundaries.
+The release/platform matrix below is reference material, not a requirement to
+deploy or run unrelated hosted-service checks on every local change. Report
+inherited warnings and unverified native behaviour accurately; do not weaken
+validation to make a check pass.
 
 ---
 
-# Overview
+# Inherited Anarlog engineering reference
 
-For Anarlog work, read and follow [.agents/skills/anarlog-workflow/SKILL.md](.agents/skills/anarlog-workflow/SKILL.md). Start requested work immediately and record in Linear alongside execution.
+The rest of this file came from Anarlog and describes the shared workspace. Read
+it for build, test and code conventions. Treat its product positioning, Linear
+usage, release automation, hosted services and publication targets as Anarlog's,
+not Dialext's.
 
-Anarlog is a pnpm and Rust workspace. Read the nearest `AGENTS.md` before changing a component.
+Read [.agents/skills/anarlog-workflow/SKILL.md](.agents/skills/anarlog-workflow/SKILL.md) for the inherited engineering conventions only; ignore its Linear instructions. The skills in `.agents/skills/` that drive Anarlog's infrastructure — release, PR triage, newsletter and cloud-sync QA — are inherited reference, not Dialext workflows. Their `.claude/skills/` discovery shims were removed so they are no longer offered here.
+
+The workspace is a pnpm and Rust workspace. Read the nearest `AGENTS.md` before changing a component.
 
 - `apps/desktop/`: Tauri 2 with React, TypeScript, Vite, and Tailwind. Zustand owns UI state; TanStack Query/Form own queries, mutations, and forms.
 - `apps/web/`: React with TanStack Start/Router, Vite, and Tailwind; deployed through Vercel.

@@ -1073,6 +1073,10 @@ accepted.**
   local calendars but no longer mounts the account connection query.
 - **Settings → Meetings:** the hosted "Default sharing" selector is hidden; the stored
   `default_meeting_share_access` value is untouched.
+- **Settings → Appearance:** the App icon picker is hidden behind
+  `ANARLOG_APP_ICONS_ENABLED` (`settings/appearance/app-icon-access.ts`), so its Pro gate is
+  no longer reachable. Theme and sidebar settings, the picker itself and the stored `app_icon`
+  preference are untouched; milestone 8 decides Dialext's icons.
 - **Restored tabs and navigation:** `getDefaultState` normalizes legacy inputs before a tab is
   created. `shared_sessions` and `shared_note_preview` open the local home (empty) tab;
   settings `account`, `sync`, `team` and `todo` open General. This covers pinned-tab restore,
@@ -1139,17 +1143,17 @@ owns the prototype vault and synthetic samples:
 4. Calendar: only Apple Calendar is listed; permission prompt/recovery, reconnect and disconnect
    still work; no Google/Outlook and no sign-in tooltip.
 5. Settings → Meetings: no Default sharing row.
-6. No sign-in, upgrade or trial prompt appears across launch, restart and the steps above.
+6. Settings → Appearance: theme and sidebar options are present; there is no App icon section.
+7. No sign-in, upgrade or trial prompt appears across launch, restart and the steps above.
    Recording, permission, download, missing-provider and error notices still appear where
    they apply.
 
 #### What remains in milestone 7
 
 - The real-window acceptance above.
-- **Appearance → App icon** still gates choosing another icon behind Pro ("This requires
-  Anarlog Pro" with a no-op Upgrade). Every option is an Anarlog-branded icon, so this was left
-  for milestone 8's icon work rather than adding a fifth local capability here. It is the one
-  reachable Pro interruption this audit found.
+- **App icon:** Joshua chose to hide the picker for now, so its Pro gate — the only reachable
+  Pro interruption this audit found — is gone. Milestone 8 still has to choose Dialext's icons
+  and decide whether picking one becomes a local capability or stays hidden.
 - The chat `web_search` tool targets Anarlog's hosted research endpoint. Without auth headers
   it makes no request; its refusal to the model now reads "Web search is not available in this
   build." instead of asking for a sign-in that cannot happen. The tool itself is still
