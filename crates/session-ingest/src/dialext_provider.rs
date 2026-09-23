@@ -438,9 +438,15 @@ async fn invoke_helper(
     }
     if !status.success() {
         let diagnostic = String::from_utf8_lossy(&stderr);
+        let diagnostic = diagnostic.trim();
+        if diagnostic.is_empty() {
+            return Err(invalid(&format!(
+                "Provider helper exited with {status} and no diagnostic"
+            )));
+        }
         return Err(invalid(&format!(
             "Provider helper failed: {}",
-            diagnostic.trim().chars().take(500).collect::<String>()
+            diagnostic.chars().take(500).collect::<String>()
         )));
     }
     parse_helper_response(&stdout, stage)
@@ -1166,6 +1172,51 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(languages, ["en", "ga"]);
+    }
+
+    #[tokio::test]
+    async fn a_verbose_or_silent_failing_helper_fails_the_task_with_a_reason() {
+        let db = database().await;
+        let vault = tempfile::tempdir().unwrap();
+        let helper_directory = tempfile::tempdir().unwrap();
+        for (script, expected) in [
+            // Past both read limits: the reader closes the pipe and the helper must not hang.
+            (
+                "process.stdin.resume(); process.stdin.on('end', () => { \
+                 process.stderr.write('x'.repeat(512 * 1024) + 'tail'); process.exitCode = 1; });",
+                "Provider helper failed: xxx",
+            ),
+            (
+                "process.stdin.resume(); process.stdin.on('end', () => { \
+                 process.stdout.write(' '.repeat(3 * 1024 * 1024)); });",
+                "Provider protocol output exceeds 2 MiB",
+            ),
+            (
+                "process.stdin.resume(); process.stdin.on('end', () => { process.exitCode = 3; });",
+                "Provider helper exited with exit status: 3 and no diagnostic",
+            ),
+        ] {
+            let helper_path = helper_directory.path().join("failing-provider.mjs");
+            std::fs::write(&helper_path, script).unwrap();
+            let started = create_recording_task(db.pool(), vault.path(), "Fail", "en", &wav(1_000))
+                .await
+                .unwrap();
+            let error = tokio::time::timeout(
+                std::time::Duration::from_secs(10),
+                run_task(db.pool(), vault.path(), &helper_path, &started.task_id),
+            )
+            .await
+            .expect("helper output must be drained so the helper can exit")
+            .unwrap_err()
+            .to_string();
+            assert!(
+                error.starts_with(expected),
+                "{}",
+                &error[..error.len().min(200)]
+            );
+            assert!(error.len() < 1_000, "diagnostic is bounded");
+            assert_eq!(status(db.pool(), &started.task_id).await.0, "failed");
+        }
     }
 
     #[tokio::test]

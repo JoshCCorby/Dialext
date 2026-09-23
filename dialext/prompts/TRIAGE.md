@@ -54,7 +54,7 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | 5.1 Latency percentiles layer | Skip | No request-serving path or endpoints. | — |
 | 5.2 Fan-out tail-latency shield | Skip | No fan-out to backends. | — |
 | 5.3 Circuit breaker | Skip | One local fixture subprocess; revisit timeouts/degradation only when a live provider is approved. | — |
-| 5.4 Config guardrails | Adapt | The idea (reject unknown fields, clear range errors) fits the prepared import bundle and provider protocol; check `deny_unknown_fields` and error wording there — no reload/dry-run machinery. | `session-ingest` (`dialext.rs`, `dialext_provider.rs`) |
+| 5.4 Config guardrails | Adapt | The idea (reject unknown fields, clear range errors) fits the prepared import bundle and provider protocol; check `deny_unknown_fields` and error wording there — no reload/dry-run machinery. Done in `b1c1b59`: strict helper envelope only; bundles stay tolerant because the original is kept verbatim (Joshua, 23 Sept). | `session-ingest` (`dialext.rs`, `dialext_provider.rs`) |
 | 5.5 Load-generation harness | Skip | Single-user desktop app; no service to load. | — |
 | 5.6 Chaos / fault-injection suite | Adapt | Scale down to the faults a desktop app has: provider crash/timeout, malformed provider output, disk-full or missing vault artefact mid-adoption. Deterministic, test-only. | `session-ingest`, `db-app` |
 | 5.7 RSM architecture review (standing) | Skip | Scalability questions don't apply; `ARCHITECTURE.md` covers the contracts. | — |
