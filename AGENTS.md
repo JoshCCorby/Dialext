@@ -67,7 +67,7 @@ it for build, test and code conventions. Treat its product positioning, Linear
 usage, release automation, hosted services and publication targets as Anarlog's,
 not Dialext's.
 
-Read [.agents/skills/anarlog-workflow/SKILL.md](.agents/skills/anarlog-workflow/SKILL.md) for the inherited engineering conventions only; ignore its Linear instructions. The four compatibility skills in `.claude/skills/` (release, PR triage, newsletter, cloud-sync QA) drive Anarlog's infrastructure and must not be invoked here.
+Read [.agents/skills/anarlog-workflow/SKILL.md](.agents/skills/anarlog-workflow/SKILL.md) for the inherited engineering conventions only; ignore its Linear instructions. The skills in `.agents/skills/` that drive Anarlog's infrastructure — release, PR triage, newsletter and cloud-sync QA — are inherited reference, not Dialext workflows. Their `.claude/skills/` discovery shims were removed so they are no longer offered here.
 
 The workspace is a pnpm and Rust workspace. Read the nearest `AGENTS.md` before changing a component.
 
