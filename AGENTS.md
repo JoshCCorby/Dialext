@@ -47,6 +47,15 @@ release build, which maps to the stable app's data directory.
   from the checkout that owns the vault and the synthetic samples, and never run
   two instances against it at once.
 - `ONBOARDING` defaults to `false`; set it to `true` to see the first-run flow.
+- `pnpm` is not on the shell PATH; run it as `corepack pnpm …`. For `cargo`, `rustfmt`
+  and dprint's Rust formatting, first export `CARGO_HOME` and `RUSTUP_HOME` to
+  `.dialext-tools/cargo` and `.dialext-tools/rustup` and prepend
+  `.dialext-tools/cargo/bin` to `PATH`, as `dialext/dev.mjs` does; without them
+  dprint reports "Cannot start formatter process" for `.rs` files.
+- `cargo test -p session-ingest` fails about one run in six with "no such table:
+  dialext_provider_tasks" (seen at `b1c1b59`, 23 September 2026): the tests' single
+  in-memory connection is sometimes replaced. Rerun before blaming a change. Delete this
+  line once it is fixed.
 - Branch tracking is misleading. Compare against
   `origin/codex/dialext-personal-prototype`, never `origin/main`, to see unpushed
   work. Commit locally; Joshua pushes. Never push to the Anarlog remote.

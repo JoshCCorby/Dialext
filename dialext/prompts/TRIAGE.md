@@ -71,7 +71,7 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | Prompt | Grade | Reason | Target |
 | --- | --- | --- | --- |
 | 1.1 Protobuf evolvability + buf lint | Skip | No `.proto` files or gRPC. | — |
-| 1.2 Read-modify-write unknown-field trap | Adapt | Real risk: Nightly and stable share one database, and JSON stored in SQLite (provider tasks, bundle metadata, ProseMirror documents) round-trips through serde structs. Audit whether an older build drops newer fields on write; add a round-trip test where it does. | `session-ingest`, `db-app` |
+| 1.2 Read-modify-write unknown-field trap | Adapt | Real risk: Nightly and stable share one database, and JSON stored in SQLite (provider tasks, bundle metadata, ProseMirror documents) round-trips through serde structs. Audit whether an older build drops newer fields on write; add a round-trip test where it does. Done in `8147108`: native paths keep unknown fields; the editor rule is in ARCHITECTURE.md. | `session-ingest`, `db-app` |
 | 1.3 Evolvable gRPC services | Skip | No microservices. | — |
 | 1.4 Avro for message brokers | Skip | No broker. | — |
 | 2.1 Read-after-write with replicas | Skip | No replicas. | — |
