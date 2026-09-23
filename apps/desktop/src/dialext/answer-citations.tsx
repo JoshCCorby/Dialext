@@ -4,6 +4,8 @@ import type { DialextAnswerData } from "./question-chat";
 import {
   describeLanguage,
   type DialextPassage,
+  isDialextAnchor,
+  isRecord,
   revealDialextSource,
   shortOrigin,
 } from "./source-panel";
@@ -88,23 +90,58 @@ export function DialextAnswerCitations({ data }: { data: unknown }) {
   );
 }
 
+const OUTCOMES = [
+  "answer",
+  "insufficient",
+  "no-match",
+  "unavailable",
+  "invalid",
+] as const satisfies readonly DialextAnswerData["outcome"][];
+
+/// The part is read back from stored chat history, so it is checked field by field
+/// rather than trusted as the shape it was written with.
 function readAnswerData(value: unknown): DialextAnswerData | null {
-  if (!value || typeof value !== "object") return null;
-  const data = value as Partial<DialextAnswerData>;
-  if (typeof data.sessionId !== "string" || typeof data.outcome !== "string") {
-    return null;
-  }
+  if (!isRecord(value) || typeof value.sessionId !== "string") return null;
+  const outcome = OUTCOMES.find((candidate) => candidate === value.outcome);
+  if (!outcome) return null;
   return {
-    ...(data as DialextAnswerData),
-    citations: Array.isArray(data.citations)
-      ? data.citations.filter(
-          (citation) =>
-            citation &&
-            typeof citation.quote === "string" &&
-            citation.passage &&
-            typeof citation.passage.wordId === "string" &&
-            Array.isArray(citation.passage.anchors),
-        )
+    sessionId: value.sessionId,
+    outcome,
+    code: optionalString(value.code),
+    accountId: optionalString(value.accountId),
+    contentVersion: optionalString(value.contentVersion),
+    targetLanguage: optionalString(value.targetLanguage),
+    citations: Array.isArray(value.citations)
+      ? value.citations.flatMap(readCitation)
       : [],
   };
+}
+
+function readCitation(value: unknown): DialextAnswerData["citations"] {
+  if (!isRecord(value) || typeof value.quote !== "string") return [];
+  const passage = value.passage;
+  if (
+    !isRecord(passage) ||
+    typeof passage.wordId !== "string" ||
+    !Array.isArray(passage.anchors)
+  ) {
+    return [];
+  }
+  return [
+    {
+      quote: value.quote,
+      speaker: typeof value.speaker === "string" ? value.speaker : null,
+      passage: {
+        wordId: passage.wordId,
+        text: typeof passage.text === "string" ? passage.text : "",
+        anchors: passage.anchors.filter(isDialextAnchor),
+        spokenLanguage: optionalString(passage.spokenLanguage) ?? "unknown",
+        targetLanguage: optionalString(passage.targetLanguage) ?? "unknown",
+      },
+    },
+  ];
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
 }

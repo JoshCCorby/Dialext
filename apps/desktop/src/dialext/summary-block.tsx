@@ -13,6 +13,7 @@ import { cn } from "@anlg/utils";
 import {
   type DialextAnchor,
   type DialextPassage,
+  isDialextAnchor,
   shortOrigin,
   useDialextSource,
 } from "./source-panel";
@@ -162,14 +163,7 @@ function parseAnchors(value: string): DialextAnchor[] {
   try {
     const parsed: unknown = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (anchor): anchor is DialextAnchor =>
-        Boolean(anchor) &&
-        typeof anchor === "object" &&
-        typeof anchor.source_id === "string" &&
-        typeof anchor.start_ms === "number" &&
-        typeof anchor.end_ms === "number",
-    );
+    return parsed.filter(isDialextAnchor);
   } catch {
     return [];
   }

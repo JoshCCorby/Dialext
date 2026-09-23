@@ -95,4 +95,28 @@ describe("answer citations", () => {
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByText(/so no model was asked/)).toBeTruthy();
   });
+
+  it("ignores stored data with an unknown outcome", () => {
+    const { container } = renderWorkspace({ ...answer, outcome: "maybe" });
+    expect(container.querySelector("p")).toBeNull();
+  });
+
+  it("drops malformed stored citations instead of rendering them", () => {
+    renderWorkspace({
+      ...answer,
+      citations: [
+        ...answer.citations,
+        { quote: 3, passage: answer.citations[0].passage },
+        { quote: "no passage" },
+        {
+          quote: "bad anchors",
+          speaker: 7,
+          passage: { wordId: "w", anchors: [{ source_id: 1 }] },
+        },
+      ],
+    });
+    expect(screen.getByText("three tickets")).toBeTruthy();
+    expect(screen.queryByText("no passage")).toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(2);
+  });
 });
