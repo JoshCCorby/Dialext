@@ -54,9 +54,15 @@ describe("session content SQLite corrections", () => {
     expect(statements[0]).toMatchObject({ expectedRowsAffected: 1 });
     expect(statements[0].sql).toContain("body = ?");
     expect(statements[0].sql).toContain("body_format = ?");
+    expect(statements[0].sql).toContain(
+      "NOT EXISTS (SELECT 1 FROM dialext_recordings",
+    );
     expect(statements[1]).toMatchObject({ expectedRowsAffected: 1 });
     expect(statements[1].sql).toContain("words_json = ?");
     expect(statements[1].sql).toContain("memo = ?");
+    expect(statements[1].sql).toContain(
+      "NOT EXISTS (SELECT 1 FROM dialext_recordings",
+    );
   });
 
   it("guards a session title correction against a stale title", async () => {
@@ -79,10 +85,14 @@ describe("session content SQLite corrections", () => {
         expect.any(String),
         "session-1",
         "Scratchpad Design and Analog vs Chyle Direction",
+        "session-1",
       ],
     });
     expect(statements[0].sql).toContain("UPDATE sessions");
     expect(statements[0].sql).toContain("AND title = ?");
+    expect(statements[0].sql).toContain(
+      "NOT EXISTS (SELECT 1 FROM dialext_recordings",
+    );
   });
 
   it("saves generated content and deterministic tag rows atomically", async () => {

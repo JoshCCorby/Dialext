@@ -1275,28 +1275,25 @@ accepted.**
 - Licence-boundary tests (9) and boundary check: passed.
 - No live or paid provider call, no network publish, no push and no release build.
 
-#### Native verification: not run — acceptance outstanding
+#### Native verification: completed in the primary checkout on 23 September
 
-No native check was run for this slice. The dev launcher resolves its toolchain and vault from
-the checkout root, but this worktree has no `.dialext-tools` (and no global `cargo`), would
-need a cold Rust build, and would share the `app.dialext.prototype` application data with the
-primary checkout, where another agent is working. Doing that safely needs Joshua's go-ahead and
-window control. Real-window checklist, using only `node dialext/dev.mjs` from the checkout that
-owns the prototype vault and synthetic samples:
+Using the sole `node dialext/dev.mjs` instance and synthetic data:
 
-1. Folders: create, rename, set context, add/remove a material, delete. No Share button and no
-   "Shared with me" section.
-2. Templates: create, edit, duplicate and delete a template; Auto still opens. No Share button
-   and no "Shared with me" section.
-3. Settings → Imports: **Import a Dialext recording** and generation are present; detected apps
-   show only **Choose files**; no Connect, Sign in or Google Meet row.
-4. Calendar: only Apple Calendar is listed; permission prompt/recovery, reconnect and disconnect
-   still work; no Google/Outlook and no sign-in tooltip.
-5. Settings → Meetings: no Default sharing row.
-6. Settings → Appearance: theme and sidebar options are present; there is no App icon section.
-7. No sign-in, upgrade or trial prompt appears across launch, restart and the steps above.
-   Recording, permission, download, missing-provider and error notices still appear where
-   they apply.
+1. Folders: created and renamed a folder, saved context, added and removed a synthetic text
+   material through the macOS Open panel, then deleted the folder. No Share action or "Shared
+   with me" section appeared. The picker was accessible; no extra macOS grant prompt appeared.
+2. Templates: created and edited a template with a section, duplicated it, deleted both copies,
+   and opened Auto. No Share action or shared library appeared.
+3. Settings → Imports: **Import a Dialext recording** and deterministic generation were present.
+   ChatGPT Record showed **Choose files**; Granola showed **Connect & import** and **Choose files**
+   after the earlier Disconnect. Hosted rows, Google Meet and Documentation were absent.
+4. Calendar: only Apple Calendar appeared. Reconnect worked. Disconnect temporarily showed "No
+   calendars found"; Reconnect followed by **Refresh calendars** restored the list. No Google or
+   Outlook row and no sign-in tooltip appeared. The first-time macOS permission prompt/recovery
+   was not exercised because calendar permission was already granted; no OS permission was revoked.
+5. Settings → Meetings had no Default sharing row. Appearance retained theme and notes-list
+   folder/tag controls, with no App icon section. Launch and these checks raised no sign-in,
+   upgrade or trial prompt. Recording and error-notice paths were not deliberately triggered.
 
 #### Connectors and service seam (23 September): implemented, live Granola check completed
 
@@ -1336,9 +1333,21 @@ fails by discovering TypeScript tests without their runner and a generated Whisp
 its model file (313 failures); this did not affect the scoped CI test result. No full desktop
 suite was rerun for this launcher-only fix; the earlier connector suite result remains above.
 
+#### Chat correction integrity (23 September)
+
+`apply_session_correction` used `applySessionContentCorrections`, a TypeScript-built SQL
+transaction that updated `transcripts.words_json` and `memo` directly. It did not call native
+`edit_dialext_passage`, pin `content_version`, or append `dialext_account_edits`, so it could
+rewrite a Dialext account without checked-edit history. The tool now refuses every correction
+target for a session in `dialext_recordings` and points the user to Transcript passage correction.
+The SQL mutation also includes a `NOT EXISTS dialext_recordings` guard on title, summary and
+transcript updates, so adoption between the tool's preflight read and its transaction cannot
+write a Dialext session. Ordinary-session corrections remain available. Focused tests passed
+(24), desktop typecheck passed. The native checked-edit path remains the only supported Dialext
+passage correction path; chat routing through it is a later design choice.
+
 #### What remains in milestone 7
 
-- The remaining real-window acceptance for folders, templates, meetings and appearance above.
 - **App icon:** Joshua chose to hide the picker for now, so its Pro gate — the only reachable
   Pro interruption this audit found — is gone. Milestone 8 still has to choose Dialext's icons
   and decide whether picking one becomes a local capability or stays hidden.
