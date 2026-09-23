@@ -106,7 +106,7 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | 5.1 Type guards over `as` | Adapt | Merge into 2.1: replace `as` casts on parsed JSON in `src/dialext`. Done in `f11ca6a`. | `@anlg/desktop` (`src/dialext`) |
 | 5.2 Mapped types | Skip | Toolbox, not a task. | — |
 | 5.3 Derived DTOs | Skip | DTOs come from generated bindings (`plugins/db/js/bindings.gen.ts`); don't hand-derive. | — |
-| 5.4 Exhaustive `Record<K,V>` maps | Adapt | Use for Dialext label/status maps keyed by unions so a new status fails to compile. | `@anlg/desktop` (`src/dialext`) |
+| 5.4 Exhaustive `Record<K,V>` maps | Adapt | Use for Dialext label/status maps keyed by unions so a new status fails to compile. Done in `f61d2c0`. | `@anlg/desktop` (`src/dialext`) |
 | 6.1 Thrown errors → error unions | Skip | `AGENTS.md` routes async errors through TanStack `useMutation`/`useQuery`, which expect throws. | — |
 | 6.2 `Result<T, E>` monad | Skip | Same conflict; would fight the query/mutation layer. Rust already returns typed errors. | — |
 | 6.3 HTTP boundary mapping | Skip | No HTTP boundary; errors cross Tauri commands. | — |

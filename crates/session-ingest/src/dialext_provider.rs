@@ -781,7 +781,9 @@ async fn store_account(
         "account":{"segments":account}
     });
     let (original_path, original_sha256) = write_artifact(vault, &artifact(original)?)?;
-    let segments = account.as_array().unwrap();
+    let segments = account
+        .as_array()
+        .ok_or_else(|| invalid("Provider account is not a list of passages"))?;
     let words: Vec<Value> = segments
         .iter()
         .enumerate()

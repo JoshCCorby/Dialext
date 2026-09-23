@@ -55,7 +55,9 @@ pub(crate) fn write_artifact_as(
     let digest = sha256(bytes);
     let relative = format!("dialext/artifacts/v1/{digest}.{extension}");
     let path = vault.join(&relative);
-    let directory = path.parent().unwrap();
+    let directory = path
+        .parent()
+        .ok_or_else(|| invalid("Invalid Dialext artefact directory"))?;
     fs::create_dir_all(directory)?;
     if !directory.canonicalize()?.starts_with(vault.canonicalize()?) {
         return Err(invalid("Invalid Dialext artefact directory"));
@@ -285,7 +287,9 @@ pub async fn migrate_recording(
     {
         return Err(invalid("Selected transcript is unavailable"));
     }
-    let duration = bundle["recording"]["duration_ms"].as_i64().unwrap();
+    let duration = bundle["recording"]["duration_ms"]
+        .as_i64()
+        .ok_or_else(|| invalid("Invalid recording duration"))?;
     let mut sources = array(&bundle["evidence"], "sources")?.clone();
     sources.sort_by(|a, b| a["source_id"].as_str().cmp(&b["source_id"].as_str()));
     let mut evidence = Vec::new();
