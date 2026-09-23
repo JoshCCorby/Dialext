@@ -119,4 +119,22 @@ describe("answer citations", () => {
     expect(screen.queryByText("no passage")).toBeNull();
     expect(screen.getAllByRole("button")).toHaveLength(2);
   });
+
+  it("ignores a stored refusal that has lost its reading or reason", () => {
+    const { container, rerender } = renderWorkspace({
+      sessionId: "recording",
+      outcome: "invalid",
+      accountId: "account-en",
+      contentVersion: "v3",
+      targetLanguage: "en",
+      citations: [],
+    });
+    expect(container.querySelector("p")).toBeNull();
+    rerender(
+      <DialextAnswerCitations
+        data={{ sessionId: "recording", outcome: "no-match", citations: [] }}
+      />,
+    );
+    expect(container.querySelector("p")).toBeNull();
+  });
 });

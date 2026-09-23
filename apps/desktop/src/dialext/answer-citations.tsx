@@ -1,6 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 
-import type { DialextAnswerData } from "./question-chat";
+import type { DialextAnswerData, DialextAnswerPin } from "./question-chat";
 import {
   describeLanguage,
   type DialextPassage,
@@ -20,7 +20,10 @@ export function DialextAnswerCitations({ data }: { data: unknown }) {
   const openNew = useTabs((state) => state.openNew);
   if (!answer) return null;
 
-  const reading = describeLanguage(answer.targetLanguage ?? "");
+  const reading =
+    answer.outcome === "unavailable"
+      ? null
+      : describeLanguage(answer.targetLanguage);
   const open = (passage: DialextPassage, quote: string) => {
     const current = useTabs.getState().currentTab;
     if (current?.type !== "sessions" || current.id !== answer.sessionId) {
@@ -104,17 +107,28 @@ function readAnswerData(value: unknown): DialextAnswerData | null {
   if (!isRecord(value) || typeof value.sessionId !== "string") return null;
   const outcome = OUTCOMES.find((candidate) => candidate === value.outcome);
   if (!outcome) return null;
-  return {
+  const base = {
     sessionId: value.sessionId,
-    outcome,
-    code: optionalString(value.code),
-    accountId: optionalString(value.accountId),
-    contentVersion: optionalString(value.contentVersion),
-    targetLanguage: optionalString(value.targetLanguage),
     citations: Array.isArray(value.citations)
       ? value.citations.flatMap(readCitation)
       : [],
   };
+  if (outcome === "unavailable") return { ...base, outcome };
+  const pin = readPin(value);
+  if (!pin) return null;
+  if (outcome !== "invalid") return { ...base, ...pin, outcome };
+  return typeof value.code === "string"
+    ? { ...base, ...pin, outcome, code: value.code }
+    : null;
+}
+
+function readPin(value: Record<string, unknown>): DialextAnswerPin | null {
+  const { accountId, contentVersion, targetLanguage } = value;
+  return typeof accountId === "string" &&
+    typeof contentVersion === "string" &&
+    typeof targetLanguage === "string"
+    ? { accountId, contentVersion, targetLanguage }
+    : null;
 }
 
 function readCitation(value: unknown): DialextAnswerData["citations"] {
@@ -135,13 +149,11 @@ function readCitation(value: unknown): DialextAnswerData["citations"] {
         wordId: passage.wordId,
         text: typeof passage.text === "string" ? passage.text : "",
         anchors: passage.anchors.filter(isDialextAnchor),
-        spokenLanguage: optionalString(passage.spokenLanguage) ?? "unknown",
-        targetLanguage: optionalString(passage.targetLanguage) ?? "unknown",
+        spokenLanguage:
+          typeof passage.spokenLanguage === "string" ? passage.spokenLanguage : "unknown",
+        targetLanguage:
+          typeof passage.targetLanguage === "string" ? passage.targetLanguage : "unknown",
       },
     },
   ];
-}
-
-function optionalString(value: unknown): string | undefined {
-  return typeof value === "string" ? value : undefined;
 }

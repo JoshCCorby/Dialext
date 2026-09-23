@@ -91,7 +91,7 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | 1.2 Type-driven scaffolding | Skip | Working method; conflicts with "avoid creating types unless shared". | — |
 | 1.3 Autonomous refactor loop | Skip | No current type errors to drive it. | — |
 | 1.4 Self-correcting loop | Skip | Already required: typecheck must pass. | — |
-| 2.1 Ban `any`, add type guards | Keep | No `any` in `src/dialext` now; apply to the untrusted inputs — import bundle JSON and provider results on the TS side — and confirm they are narrowed from `unknown`. | `@anlg/desktop` (`src/dialext`) |
+| 2.1 Ban `any`, add type guards | Keep | No `any` in `src/dialext` now; apply to the untrusted inputs — import bundle JSON and provider results on the TS side — and confirm they are narrowed from `unknown`. Done in `f11ca6a` with 5.1. | `@anlg/desktop` (`src/dialext`) |
 | 2.2 Invalid states unrepresentable | Keep | Import/provider/generation UI state is the likely place for `data?`/`error?` shapes; convert to discriminated unions where found. | `@anlg/desktop` (`src/dialext`) |
 | 2.3 Exhaustiveness guarantee | Keep | Cheap and valuable for reading-language, provider-task and account-status switches. | `@anlg/desktop` (`src/dialext`) |
 | 2.4 Deep immutability (`as const`) | Adapt | Only for static Dialext dictionaries (language codes, labels); no blanket pass. | `@anlg/desktop` (`src/dialext`) |
@@ -103,7 +103,7 @@ Summary: 4 keep, 15 adapt, 60 skip.
 | 4.2 Class encapsulation | Skip | Functional React/Zustand; no domain classes. | — |
 | 4.3 Repository `implements` | Skip | Data access is Rust-side; TS consumes transport contracts. | — |
 | 4.4 Companion objects | Skip | Style preference with no concrete payoff. | — |
-| 5.1 Type guards over `as` | Adapt | Merge into 2.1: replace `as` casts on parsed JSON in `src/dialext`. | `@anlg/desktop` (`src/dialext`) |
+| 5.1 Type guards over `as` | Adapt | Merge into 2.1: replace `as` casts on parsed JSON in `src/dialext`. Done in `f11ca6a`. | `@anlg/desktop` (`src/dialext`) |
 | 5.2 Mapped types | Skip | Toolbox, not a task. | — |
 | 5.3 Derived DTOs | Skip | DTOs come from generated bindings (`plugins/db/js/bindings.gen.ts`); don't hand-derive. | — |
 | 5.4 Exhaustive `Record<K,V>` maps | Adapt | Use for Dialext label/status maps keyed by unions so a new status fails to compile. | `@anlg/desktop` (`src/dialext`) |

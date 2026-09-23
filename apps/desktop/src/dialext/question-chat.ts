@@ -15,16 +15,22 @@ export const DIALEXT_ANSWER_PART = "data-dialext-answer";
 /// them against the recording's evidence every time it is opened.
 export type DialextAnswerData = {
   sessionId: string;
-  outcome: "answer" | "insufficient" | "no-match" | "unavailable" | "invalid";
-  code?: string;
-  accountId?: string;
-  contentVersion?: string;
-  targetLanguage?: string;
   citations: Array<{
     quote: string;
     speaker: string | null;
     passage: DialextPassage;
   }>;
+} & (
+  | { outcome: "unavailable" }
+  | ({ outcome: "answer" | "insufficient" | "no-match" } & DialextAnswerPin)
+  | ({ outcome: "invalid"; code: string } & DialextAnswerPin)
+);
+
+/// The reading an answer was decided against. Only an unavailable recording has none.
+export type DialextAnswerPin = {
+  accountId: string;
+  contentVersion: string;
+  targetLanguage: string;
 };
 
 export type DialextAnswerReply = { text: string; data: DialextAnswerData };
