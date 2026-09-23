@@ -8,27 +8,49 @@ Read `AGENTS.md` first, then `dialext/HANDOFF.md` (verified status), `dialext/AR
 Check the branch and status and preserve unrelated work; another agent may be working in parallel.
 
 The working branch is `codex/dialext-personal-prototype`, and `main` is the integration branch.
-Commit locally and ask Joshua before pushing. A `pre-push` hook refuses direct pushes to `main`
+Commit locally; Joshua pushes. A `pre-push` hook refuses direct pushes to `main`
 and any push to Anarlog; changes reach `main` through a pull request. Do not reset anything in the
 old `/Users/joshuacorbett/Coding/Transcip` checkout.
 
 ## Where the milestones stand
 
-Baseline and milestones 1–6 are complete. Milestone 7 is in progress. Its connectors and
+Baseline and milestones 1–6 are complete. Milestone 7 remains open. Its connectors and
 service-seam work ([CONNECTORS_PLAN.md](CONNECTORS_PLAN.md)) is implemented. The live Granola
 check completed on 23 September: consent said Dialext; first and repeat sync each returned zero
 accessible meetings; Disconnect worked; the Dialext database rows were unchanged and integrity
-was ok. See [HANDOFF.md](HANDOFF.md) for the exact results and the empty-meeting limitation.
+was ok. That empty account did not test deduplication of actual imported meetings.
 
-Ask Joshua which to take next: milestone 7's remaining real-window checklist (folders,
-templates, meetings, appearance), the chat-correction integrity question (can Dialext accounts be
-rewritten without native checked-edit history?), TRIAGE DDIA 3.1 as a report, or the other
-report-only triage rows. Do not start one unasked. Before any native work, check for a running
-prototype (`pgrep -fl "MacOS/desktop$"`, port 1422); never run two instances. Quit it through the
-app menu before relaunching with `node dialext/dev.mjs`.
+The remaining available milestone 7 real-window checklist was exercised on 23 September:
+folders, templates, meetings and appearance, plus connected imports and calendar. See
+[HANDOFF.md](HANDOFF.md) for each pass, absent share/hosted surface, and the untested first-time
+calendar permission path. A chat correction could previously update Dialext transcript JSON
+without native edit history; commit `37116c3` blocks that tool on Dialext recordings and guards
+its SQL updates. The requested DDIA 3.1, TypeScript 0/1.1 and Rust 3.4/4.2 report-only findings
+are in [prompts/TRIAGE.md](prompts/TRIAGE.md). Rust 2.2, 5.6 and 1.9 stay conditional.
+
+Before any native work, check for a running prototype (`pgrep -fl "MacOS/desktop$"`, port 1422);
+never run two instances. Quit it through the app menu before relaunching with
+`node dialext/dev.mjs`.
 
 The file picker and Chrome run outside the granted Dialext window: request access for the panel's
 process when it is open, and ask Joshua for browser steps.
+
+## Next bounded decisions and task sources
+
+- [HANDOFF.md](HANDOFF.md) records the unresolved milestone 7 items: whether to expose local
+  folder/template sharing, how to replace the upstream template gallery and documentation
+  links, whether to remove/replace the inherited chat web-search tool, and whether to add a
+  native calendar guard for a stored legacy token. Do not call Anarlog services.
+- [ARCHITECTURE.md](ARCHITECTURE.md) and [product/product-vision.md](product/product-vision.md)
+  define the remaining personal recording, useful adaptive summary, source-linked output and
+  final acceptance work. The current provider is fixture-only. A live speech-provider sample
+  needs Joshua's explicit approval and credential/cost choice before calling it.
+- [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md) holds the later Dialext service and still-open
+  connector decisions. Local MCP/CLI are already account-free; hosted connections are disabled
+  without a configured Dialext service.
+- [prompts/TRIAGE.md](prompts/TRIAGE.md) holds the report-only audit and conditional Rust rows.
+  Packaging, old-library migration and a real nonempty Granola import need separate bounded
+  acceptance plans; never import from the untouched Transcip checkout by assumption.
 
 ## Boundaries that carry forward
 

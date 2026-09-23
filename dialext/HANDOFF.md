@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 23 September 2026. Native baseline and milestones 1–**5** are complete and verified in the isolated native app. **Milestone 6 — quiet interface — has now passed its real-window acceptance. Milestone 7 has started with a bounded personal-entitlement and hosted-service-isolation slice; it is not complete.** No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 23 September 2026. Native baseline and milestones 1–**5** are complete and verified in the isolated native app. **Milestone 6 — quiet interface — passed its real-window acceptance. Milestone 7's available real-window checklist and connector acceptance have been exercised, with the explicit gaps below; the milestone is not complete.** No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -1345,6 +1345,24 @@ transcript updates, so adoption between the tool's preflight read and its transa
 write a Dialext session. Ordinary-session corrections remain available. Focused tests passed
 (24), desktop typecheck passed. The native checked-edit path remains the only supported Dialext
 passage correction path; chat routing through it is a later design choice.
+
+#### Report-only triage (23 September)
+
+The dated findings and exact scope are in [prompts/TRIAGE.md](prompts/TRIAGE.md). DDIA 3.1
+found ordered, synced immutable artefact publication before SQLite references and a durable
+SQLite search queue acknowledged after the Tantivy batch commit. Normal interruption should
+replay unacknowledged work; this is a code-path assessment, not a power-loss test. Startup's
+count check cannot detect a same-count stale index after an independent store restore, so a
+bounded cross-store fault/recovery test remains a candidate. The closed live prototype returned
+`PRAGMA integrity_check = ok`, and all 18 existing search queue rows were acknowledged.
+
+Desktop TypeScript baseline passed. Diagnostic-only `noImplicitReturns` found eight inherited
+errors; `noUncheckedIndexedAccess` found 816 errors across 118 files, including 59 in Dialext
+tests and none in Dialext production. The shared config was not changed. Rust `cargo check`
+passed for `session-ingest` (`apply`), `db-app` and `tauri-plugin-db`; Clippy passed for the first
+two and failed on two inherited `plugins/db/src/commands.rs` lints (lines 817 and 917).
+`session-ingest` has public helper/speaker-migration candidates with no external caller found;
+visibility was left alone for this report. Rust triage 2.2, 5.6 and 1.9 remain conditional.
 
 #### What remains in milestone 7
 

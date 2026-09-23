@@ -1,8 +1,9 @@
 # Prompt backlog triage
 
 Graded 23 September 2026 against the tree at `776f456`. On 23 September Joshua approved
-suggested steps 1–3 below, to run ahead of M5 acceptance and the rest of M7; the other rows
-are not approved. Done rows carry their commit hash in the reason.
+suggested steps 1–3 below, to run ahead of M5 acceptance and the rest of M7. Joshua later
+requested report-only review of TS 0/1.1, DDIA 3.1 and Rust 3.4/4.2; no additional code rows
+are approved. Done rows carry their commit hash in the reason.
 
 Dialext as graded: a local-first Tauri 2 desktop app on one SQLite database. Its own Rust
 lives in `crates/session-ingest` (`dialext*.rs`), `crates/db-app` (migrations,
@@ -120,3 +121,69 @@ Summary: 4 keep, 15 adapt, 60 skip.
 3. DDIA 1.2 — the only row that could protect real data across Nightly/stable.
 4. Report-only: TS 0, 1.1; DDIA 3.1; Rust 3.4, 4.2.
 5. Only with a reason from the next milestone: Rust 2.2 (behind 4.7), 5.6, 1.9.
+
+## Report-only follow-up — 23 September 2026
+
+These are findings, not approval for a refactor or a new service. The real prototype was closed
+before the read-only database check. `PRAGMA integrity_check` returned `ok`; all 18 retained
+`search_index_dirty` rows had `generation = acknowledged_generation` (14 sessions, 4 humans).
+
+### DDIA 3.1 — SQLite, search and immutable files
+
+- `session-ingest::dialext::write_artifact_as` writes a new temporary file, syncs its bytes,
+  hard-links it under a digest name without replacing an existing file, removes the temporary
+  name and syncs the directory. Reads check the app-owned path, size and SHA-256. Adoption,
+  source-audio attachment and provider stages publish these files before their SQLite
+  transactions commit the corresponding rows. A crash before that commit can leave an orphan
+  file, but the reviewed order does not create a committed row pointing at an incomplete new
+  file. This depends on the filesystem honoring the sync calls.
+- Transcript and selected-account triggers queue a search generation in the same SQLite
+  transaction as the content change. The worker commits the Tantivy document batch before it
+  acknowledges that generation in SQLite. An interruption before acknowledgement replays it;
+  a later generation cannot be acknowledged by an older batch. Startup drains the queue and
+  rebuilds when the index document count differs from SQLite or the projection version changes.
+- **Remaining gap to verify:** startup checks count, not every document's content. An
+  independently stale or damaged Tantivy index with the same count could evade that check if
+  its SQLite queue was already acknowledged. There is no deterministic test here that cuts
+  power at each SQLite/Tantivy/vault boundary or restores one store independently. This is a
+  cross-store recovery risk, not an observed corrupt recording. A bounded follow-up would
+  fault-inject at publish/commit/acknowledge boundaries and read back SQLite references,
+  digests and indexed content after restart; repair only a reproduced gap. No Kafka/CDC layer
+  fits this single-user app.
+
+Relevant paths: `crates/session-ingest/src/dialext.rs`, `dialext_source.rs`,
+`dialext_provider.rs`; `crates/db-app/migrations/20260917120100_dialext_effective_transcripts.sql`
+and `20260714120300_search_index_transcripts_triggers.sql`;
+`apps/desktop/src-tauri/src/search_index.rs`; `plugins/tantivy/src/ext.rs`.
+
+### TypeScript 0 and 1.1 — baseline and strictness
+
+- `corepack pnpm -F @anlg/desktop typecheck` passed. `apps/desktop/tsconfig.json` already sets
+  `strict: true`, unused-local/parameter checks and switch fallthrough checking.
+- A diagnostic-only run with `--noImplicitReturns` produced eight TS7030 errors in seven
+  inherited desktop files: `audio-player/provider.tsx`, `chat/components/input/draft-cache.ts`
+  (two), `chat/transport/index.ts`, `session/components/title-input.tsx`,
+  `session/hooks/useAutoEnhance.ts`, `settings/ai/llm/subscriptions/twins.ts`, and
+  `stt/queries.ts`. None was in Dialext production code.
+- A diagnostic-only run with `--noUncheckedIndexedAccess` produced 816 errors across 118
+  files. Fifty-nine were under `src/dialext`, all in test files; no non-test Dialext file was
+  flagged. Enabling either option is a shared desktop migration decision, so the config was
+  left unchanged.
+
+### Rust 3.4 and 4.2 — public surface and warnings
+
+- `cargo check --locked` passed for `session-ingest` with `apply`, `db-app` and
+  `tauri-plugin-db`. Clippy with `--all-targets --no-deps -- -D warnings` passed for
+  `session-ingest` (`apply`) and `db-app`. `tauri-plugin-db` failed on two existing inherited
+  lints in `plugins/db/src/commands.rs`: `needless_borrow` at line 817 and
+  `too_many_arguments` (8/7) at line 917. No blanket `cargo fix` was run.
+- `plugins/db` calls the public Dialext entry points for migration, source audio, speaker
+  assignment, checked edits, proposals, outputs and provider tasks, so those types/functions
+  must remain reachable across crates. A source search found no external caller for
+  `dialext::sha256`, `read_artifact`, `read_artifact_bounded`, or the three public speaker
+  migration functions. They are candidates for `pub(crate)` when an API-tightening slice is
+  approved, after checking all workspace consumers; visibility was not changed for this
+  report-only row.
+
+Rust 2.2, 5.6 and 1.9 remain conditional on a concrete milestone need. In particular, the
+DDIA question alone does not authorize the broader 5.6 fault-injection suite.
