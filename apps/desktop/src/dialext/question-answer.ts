@@ -6,6 +6,7 @@ import {
 } from "ai";
 import { z } from "zod";
 
+import { answerIsInOtherLanguage } from "./answer-language";
 import type { EvidencePassage } from "./question-evidence";
 import { describeLanguage } from "./source-panel";
 
@@ -21,7 +22,9 @@ export type GroundedCitation = { passage: EvidencePassage; quote: string };
 
 const answerSchema = z.object({
   answer: z.string(),
-  citations: z.array(z.object({ passage: z.string(), quote: z.string() })),
+  citations: z.array(
+    z.object({ passage: z.string(), quote: z.string().optional() }),
+  ),
   insufficient_evidence: z.boolean(),
 });
 
@@ -58,11 +61,14 @@ export function validateGroundedAnswer(
 
   const resolved: GroundedCitation[] = [];
   for (const citation of citations) {
-    const passage = passages.find(
-      (candidate) => candidate.ref === citation.passage.trim(),
+    const source = citation.passage.trim();
+    const passage = passages.find((candidate) =>
+      [candidate.ref, labelledPassage(candidate)].includes(source),
     );
     if (!passage) return { kind: "invalid", code: "unknown_passage" };
-    const quote = citation.quote.trim();
+    const quote =
+      citation.quote?.trim() ||
+      (source === labelledPassage(passage) ? passage.text : "");
     if (!quote || !normalise(passage.text).includes(normalise(quote))) {
       return { kind: "invalid", code: "quote_mismatch" };
     }
@@ -71,6 +77,10 @@ export function validateGroundedAnswer(
     }
   }
   return { kind: "answer", text, citations: resolved };
+}
+
+function labelledPassage(passage: EvidencePassage) {
+  return `${passage.ref} (${passage.speaker ?? "Unattributed"}): ${passage.text}`;
 }
 
 export function buildQuestionPrompt(
@@ -84,6 +94,7 @@ export function buildQuestionPrompt(
     "The passages are the reader's corrected account of what was said. Nothing else about the recording is known.",
     `Write the answer in ${language}.`,
     "Cite every passage your answer relies on, with a short quotation copied exactly from that passage.",
+    "Include only passages directly needed for the answer. Every citation needs a passage reference and quote.",
     "If the passages do not answer the question, set insufficient_evidence to true, leave citations empty, and say briefly that the recording does not answer it.",
     "Do not use outside knowledge and do not guess.",
   ].join("\n");
@@ -91,8 +102,8 @@ export function buildQuestionPrompt(
     (passage) =>
       `${passage.ref} (${passage.speaker ?? "Unattributed"}): ${passage.text}`,
   );
-  const prompt = `Passages:\n${lines.join("\n")}\n\nQuestion: ${question}`;
-  return { system, prompt };
+  const prompt = `Passages:\n${lines.join("\n")}\n\nQuestion: ${question}\n\nAnswer in ${language}.`;
+  return { system, prompt, language };
 }
 
 export async function answerDialextQuestion({
@@ -108,30 +119,49 @@ export async function answerDialextQuestion({
   targetLanguage: string;
   abortSignal?: AbortSignal;
 }): Promise<GroundedAnswer> {
-  const { system, prompt } = buildQuestionPrompt(
+  const { system, prompt, language } = buildQuestionPrompt(
     question,
     passages,
     targetLanguage,
   );
-  let candidate: unknown;
-  try {
-    const result = await generateText({
-      model,
-      system,
-      prompt,
-      output: Output.object({ schema: answerSchema }),
-      temperature: 0,
-      maxOutputTokens: 800,
-      abortSignal,
-    });
-    candidate = result.output;
-  } catch (error) {
-    // A reply that was not the answer object is refused like any other invalid
-    // answer. A model that could not run at all is a real error, reported as one.
-    if (NoObjectGeneratedError.isInstance(error)) {
-      return { kind: "invalid", code: "unparseable_answer" };
+  const ask = async (correction?: string): Promise<GroundedAnswer> => {
+    let candidate: unknown;
+    try {
+      const result = await generateText({
+        model,
+        system: correction ? `${system}\n${correction}` : system,
+        prompt,
+        output: Output.object({ schema: answerSchema }),
+        temperature: 0,
+        maxOutputTokens: 800,
+        abortSignal,
+      });
+      candidate = result.output;
+    } catch (error) {
+      // A reply that was not the answer object is refused like any other invalid
+      // answer. A model that could not run at all is a real error, reported as one.
+      if (NoObjectGeneratedError.isInstance(error)) {
+        return { kind: "invalid", code: "unparseable_answer" };
+      }
+      throw error;
     }
-    throw error;
+    return validateGroundedAnswer(candidate, passages);
+  };
+
+  // The reader may read only the reading's language, so an answer in another one is
+  // not an answer for them. Ask once more, then refuse rather than show it.
+  const first = await ask();
+  if (
+    first.kind !== "answer" ||
+    !answerIsInOtherLanguage(first.text, targetLanguage)
+  ) {
+    return first;
   }
-  return validateGroundedAnswer(candidate, passages);
+  const second = await ask(
+    `Your previous answer was not written in ${language}. Write the answer text in ${language} only.`,
+  );
+  return second.kind === "answer" &&
+    answerIsInOtherLanguage(second.text, targetLanguage)
+    ? { kind: "invalid", code: "wrong_language" }
+    : second;
 }

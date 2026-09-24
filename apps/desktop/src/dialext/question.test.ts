@@ -41,11 +41,18 @@ const passages = [
   passage("P4", "Hmm.", "Speaker 2"),
 ];
 
-/// A model that answers with whatever it is given and records every call, so a test
-/// can prove a refusal was decided before any model was asked.
-function model(reply: unknown) {
+/// A model that answers with the given replies in turn, repeating the last, and
+/// records every call, so a test can prove a refusal was decided before any model
+/// was asked.
+function model(...replies: unknown[]) {
+  let call = 0;
   const doGenerate = vi.fn(async () => ({
-    content: [{ type: "text", text: JSON.stringify(reply) }],
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(replies[Math.min(call++, replies.length - 1)]),
+      },
+    ],
     finishReason: { unified: "stop", raw: "stop" },
     usage: {
       inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
@@ -123,6 +130,79 @@ describe("validating a grounded answer", () => {
       text: "Gary asked for three tickets.",
       citations: [{ passage: passages[0], quote: "three  TICKETS, please" }],
     });
+  });
+
+  it("accepts the exact labelled passage returned by the on-device model", () => {
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted three tickets.",
+          citations: [
+            {
+              passage: "P1 (Gary): I would like three tickets, please.",
+              quote: "three tickets",
+            },
+          ],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({
+      kind: "answer",
+      text: "Gary wanted three tickets.",
+      citations: [{ passage: passages[0], quote: "three tickets" }],
+    });
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted five tickets.",
+          citations: [
+            {
+              passage: "P1 (Gary): I would like five tickets, please.",
+              quote: "three tickets",
+            },
+          ],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({ kind: "invalid", code: "unknown_passage" });
+  });
+
+  it("uses exact labelled text when the on-device model omits a quote", () => {
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted three tickets.",
+          citations: [
+            {
+              passage: "P1 (Gary): I would like three tickets, please.",
+            },
+          ],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({
+      kind: "answer",
+      text: "Gary wanted three tickets.",
+      citations: [
+        {
+          passage: passages[0],
+          quote: "I would like three tickets, please.",
+        },
+      ],
+    });
+    expect(
+      validateGroundedAnswer(
+        {
+          answer: "Gary wanted three tickets.",
+          citations: [{ passage: "P1" }],
+          insufficient_evidence: false,
+        },
+        passages,
+      ),
+    ).toEqual({ kind: "invalid", code: "quote_mismatch" });
   });
 
   it.each([
@@ -236,6 +316,7 @@ describe("answering a question about a recording", () => {
     const prompt = JSON.stringify(doGenerate.mock.calls[0]);
     expect(prompt).toContain("P1 (Gary): I would like three tickets, please.");
     expect(prompt).toContain("Question: How many tickets did Gary want?");
+    expect(prompt).toContain("Answer in English.");
     expect(reply?.text).toBe("Gary asked for three tickets.");
     expect(reply?.data.outcome).toBe("answer");
     expect(reply?.data.citations).toEqual([
@@ -268,6 +349,65 @@ describe("answering a question about a recording", () => {
     expect(reply?.data).toMatchObject({
       outcome: "invalid",
       code: "quote_mismatch",
+    });
+  });
+
+  describe("for an Irish reading", () => {
+    beforeEach(() => {
+      mocks.evidence.mockResolvedValue({
+        kind: "passages",
+        accountId: "account-ga",
+        contentVersion: "v2",
+        targetLanguage: "ga",
+        passages: [passage("P1", "Ba mhaith liom dhá thicéad.", "Gary")],
+      });
+    });
+    const english = {
+      answer: "Two",
+      citations: [{ passage: "P1", quote: "dhá thicéad" }],
+      insufficient_evidence: false,
+    };
+    const irish = { ...english, answer: "Dhá thicéad" };
+
+    it("asks again once when the answer comes back in English", async () => {
+      const { model: m, doGenerate } = model(english, irish);
+      const reply = await answerRecordingQuestion({
+        sessionId: "recording",
+        question: "How many tickets did Gary want?",
+        model: m,
+      });
+      expect(doGenerate).toHaveBeenCalledTimes(2);
+      expect(JSON.stringify(doGenerate.mock.calls[1])).toContain(
+        "Your previous answer was not written in Irish.",
+      );
+      expect(reply?.text).toBe("Dhá thicéad");
+      expect(reply?.data.outcome).toBe("answer");
+    });
+
+    it("refuses in Irish rather than show an answer that stays in English", async () => {
+      const { model: m, doGenerate } = model(english);
+      const reply = await answerRecordingQuestion({
+        sessionId: "recording",
+        question: "How many tickets did Gary want?",
+        model: m,
+      });
+      expect(doGenerate).toHaveBeenCalledTimes(2);
+      expect(reply?.text).not.toContain("Two");
+      expect(reply?.text).toContain("Níorbh fhéidir freagra a thabhairt");
+      expect(reply?.data).toMatchObject({
+        outcome: "invalid",
+        code: "wrong_language",
+      });
+    });
+
+    it("asks only once when the answer is already in Irish", async () => {
+      const { model: m, doGenerate } = model(irish);
+      await answerRecordingQuestion({
+        sessionId: "recording",
+        question: "How many tickets did Gary want?",
+        model: m,
+      });
+      expect(doGenerate).toHaveBeenCalledTimes(1);
     });
   });
 

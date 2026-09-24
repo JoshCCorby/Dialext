@@ -36,6 +36,7 @@ describe("loading question evidence", () => {
         transcript_id: "recording:english",
         content_version: "v3",
         target_language: "en",
+        speaker_context: null,
       },
     ]);
     mocks.snapshot.mockResolvedValue({
@@ -70,6 +71,42 @@ describe("loading question evidence", () => {
         { ref: "P2", wordId: "p1", text: "Fine.", speaker: "Speaker 1" },
       ],
     });
+  });
+
+  it("labels speakers with the session's speaker context, as the transcript panel does", async () => {
+    await loadDialextQuestionEvidence("recording", "owner");
+    expect(mocks.segments).toHaveBeenCalledWith(
+      { transcripts: [{ id: "recording:english" }] },
+      "owner",
+      { intervals: [] },
+    );
+
+    const interval = {
+      start_ms: 0,
+      end_ms: 4000,
+      active_call: false,
+      calendar_call: false,
+      shared_microphone: true,
+      mic_isolated: null,
+      title: "",
+      self_names: [],
+      participants: [],
+    };
+    mocks.account.mockResolvedValue([
+      {
+        account_id: "account-en",
+        transcript_id: "recording:english",
+        content_version: "v3",
+        target_language: "en",
+        speaker_context: JSON.stringify({ intervals: [interval] }),
+      },
+    ]);
+    await loadDialextQuestionEvidence("recording", "owner");
+    expect(mocks.segments).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "owner",
+      { intervals: [expect.objectContaining(interval)] },
+    );
   });
 
   it("refuses when the effective transcript is not the selected reading", async () => {

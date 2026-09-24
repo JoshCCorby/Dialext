@@ -25,9 +25,14 @@ pub async fn is_provider_enabled<R: tauri::Runtime>(
         _ => access_token(&app)?,
     };
     let apple = is_apple_authorized(&app).await?;
-    anlg_calendar::is_provider_enabled(&config.api_base_url, token.as_deref(), apple, provider)
-        .await
-        .map_err(Into::into)
+    anlg_calendar::is_provider_enabled(
+        config.api_base_url.as_deref(),
+        token.as_deref(),
+        apple,
+        provider,
+    )
+    .await
+    .map_err(Into::into)
 }
 
 #[tauri::command]
@@ -38,7 +43,7 @@ pub async fn list_connection_ids<R: tauri::Runtime>(
     let config = app.state::<crate::PluginConfig>();
     let token = access_token(&app)?;
     let apple = is_apple_authorized(&app).await?;
-    anlg_calendar::list_connection_ids(&config.api_base_url, token.as_deref(), apple)
+    anlg_calendar::list_connection_ids(config.api_base_url.as_deref(), token.as_deref(), apple)
         .await
         .map_err(Into::into)
 }
@@ -55,9 +60,14 @@ pub async fn list_calendars<R: tauri::Runtime>(
         CalendarProviderType::Apple => String::new(),
         _ => require_access_token(&app)?,
     };
-    anlg_calendar::list_calendars(&config.api_base_url, &token, provider, &connection_id)
-        .await
-        .map_err(Into::into)
+    anlg_calendar::list_calendars(
+        config.api_base_url.as_deref(),
+        &token,
+        provider,
+        &connection_id,
+    )
+    .await
+    .map_err(Into::into)
 }
 
 #[tauri::command]
@@ -74,7 +84,7 @@ pub async fn list_events<R: tauri::Runtime>(
         _ => require_access_token(&app)?,
     };
     anlg_calendar::list_events(
-        &config.api_base_url,
+        config.api_base_url.as_deref(),
         &token,
         provider,
         &connection_id,

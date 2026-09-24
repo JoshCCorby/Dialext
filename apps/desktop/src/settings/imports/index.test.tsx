@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -25,16 +25,12 @@ import { SettingsImports } from ".";
 describe("SettingsImports", () => {
   afterEach(cleanup);
 
-  it("puts documentation beside the page title", () => {
+  it("shows the Dialext imports and no link to Anarlog's documentation", () => {
     render(<SettingsImports />);
     expect(screen.getByText("Dialext recording import")).toBeTruthy();
     expect(screen.getByText("Dialext provider generation")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Documentation" }));
-
-    expect(mocks.openUrl).toHaveBeenCalledWith(
-      "https://docs.anarlog.so/imports",
-      null,
-    );
+    expect(screen.getByText("Import list")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Documentation" })).toBeNull();
+    expect(mocks.openUrl).not.toHaveBeenCalled();
   });
 });

@@ -443,13 +443,7 @@ export function readPassage(word: {
   }
   const dialext = metadata.dialext;
   if (!isRecord(dialext) || !Array.isArray(dialext.anchors)) return null;
-  const anchors = dialext.anchors.filter(
-    (anchor): anchor is DialextAnchor =>
-      isRecord(anchor) &&
-      typeof anchor.source_id === "string" &&
-      typeof anchor.start_ms === "number" &&
-      typeof anchor.end_ms === "number",
-  );
+  const anchors = dialext.anchors.filter(isDialextAnchor);
   if (anchors.length === 0) return null;
   return {
     wordId: word.id,
@@ -466,6 +460,15 @@ export function readPassage(word: {
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isDialextAnchor(value: unknown): value is DialextAnchor {
+  return (
+    isRecord(value) &&
+    typeof value.source_id === "string" &&
+    typeof value.start_ms === "number" &&
+    typeof value.end_ms === "number"
+  );
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

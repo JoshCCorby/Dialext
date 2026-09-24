@@ -4,7 +4,10 @@ use crate::types::{
 };
 use rmcp::{
     Peer, RoleClient, ServiceExt,
-    model::{CallToolRequestParams, CallToolResult, JsonObject, Tool},
+    model::{
+        CallToolRequestParams, CallToolResult, ClientCapabilities, ClientInfo, Implementation,
+        JsonObject, Tool,
+    },
     transport::{
         auth::{AuthorizationManager, OAuthClientConfig, OAuthState, OAuthTokenResponse},
         streamable_http_client::{
@@ -27,6 +30,15 @@ const TOOL_TIMEOUT: Duration = Duration::from_secs(45);
 const MAX_OAUTH_REQUEST_BYTES: usize = 16 * 1024;
 const MAX_LIST_PAGES: usize = 100;
 const MEETING_BATCH_SIZE: usize = 25;
+// The name a provider shows on its consent screen and sees in the MCP handshake.
+const CLIENT_NAME: &str = "Dialext";
+
+fn client_info() -> ClientInfo {
+    ClientInfo::new(
+        ClientCapabilities::default(),
+        Implementation::new(CLIENT_NAME, env!("CARGO_PKG_VERSION")),
+    )
+}
 
 #[derive(Clone, Copy)]
 struct McpProvider {
@@ -175,7 +187,7 @@ pub async fn begin_connection(
     let scopes = manager.select_scopes(None, &[]);
     let scope_refs = scopes.iter().map(String::as_str).collect::<Vec<_>>();
     let client = manager
-        .register_client("Anarlog", &redirect_uri, &scope_refs)
+        .register_client(CLIENT_NAME, &redirect_uri, &scope_refs)
         .await
         .map_err(|error| auth_error(provider, error))?;
     let authorization_url = manager
@@ -354,7 +366,7 @@ pub async fn sync(
     let transport = StreamableHttpClientTransport::from_config(
         StreamableHttpClientTransportConfig::with_uri(provider.endpoint).auth_header(access_token),
     );
-    let service = ()
+    let service = client_info()
         .serve(transport)
         .await
         .map_err(|error| format!("could not connect to {}: {error}", provider.name))?;
@@ -454,21 +466,12 @@ async fn receive_authorization_callback(
         .await
         .map_err(|error| format!("{provider_name} sign-in callback failed: {error}"))?;
     let result = read_authorization_callback(&mut stream, provider_name).await;
-    let (status, title, message) = match &result {
-        Ok(_) => (
-            "200 OK",
-            format!("{provider_name} connected"),
-            "Your meeting history is being brought into Anarlog. You can close this window.",
-        ),
-        Err(_) => (
-            "400 Bad Request",
-            format!("{provider_name} connection failed"),
-            "Return to Anarlog and try connecting again.",
-        ),
+    let body = callback_page(provider_name, result.is_ok());
+    let status = if result.is_ok() {
+        "200 OK"
+    } else {
+        "400 Bad Request"
     };
-    let body = format!(
-        "<!doctype html><meta charset=\"utf-8\"><title>{title}</title><body style=\"font:16px system-ui;padding:48px;max-width:560px\"><h1>{title}</h1><p>{message}</p></body>"
-    );
     let response = format!(
         "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
         body.len()
@@ -476,6 +479,25 @@ async fn receive_authorization_callback(
     let _ = stream.write_all(response.as_bytes()).await;
     let _ = stream.shutdown().await;
     result
+}
+
+fn callback_page(provider_name: &str, connected: bool) -> String {
+    let (title, message) = if connected {
+        (
+            format!("{provider_name} connected"),
+            format!(
+                "Your meeting history is being brought into {CLIENT_NAME}. You can close this window."
+            ),
+        )
+    } else {
+        (
+            format!("{provider_name} connection failed"),
+            format!("Return to {CLIENT_NAME} and try connecting again."),
+        )
+    };
+    format!(
+        "<!doctype html><meta charset=\"utf-8\"><title>{title}</title><body style=\"font:16px system-ui;padding:48px;max-width:560px\"><h1>{title}</h1><p>{message}</p></body>"
+    )
 }
 
 async fn read_authorization_callback(
@@ -1195,6 +1217,17 @@ fn safe_file_component(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn providers_see_dialext_not_anarlog() {
+        let info = super::client_info();
+        assert_eq!(info.client_info.name, "Dialext");
+        for connected in [true, false] {
+            let page = super::callback_page("Granola", connected);
+            assert!(page.contains("Dialext"), "{page}");
+            assert!(!page.contains("Anarlog"), "{page}");
+        }
+    }
+
     use super::*;
 
     fn tool(schema: Value) -> Tool {

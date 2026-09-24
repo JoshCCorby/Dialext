@@ -162,8 +162,7 @@ impl Db {
             apply_internal_connect_policy(SqliteConnectOptions::from_str("sqlite::memory:")?);
         let (options, cloudsync_path) = anlg_cloudsync::apply(options)?;
         let (change_notifier, pool_options) = anlg_db_change::ChangeNotifier::disabled();
-        let pool = apply_internal_pool_policy(pool_options)
-            .max_connections(1)
+        let pool = apply_memory_pool_policy(apply_internal_pool_policy(pool_options))
             .connect_with(options)
             .await
             .map_err(anlg_cloudsync::Error::from)?;
@@ -280,8 +279,7 @@ impl Db {
             apply_internal_connect_policy(SqliteConnectOptions::from_str("sqlite::memory:")?)
                 .pragma("foreign_keys", "ON");
         let (change_notifier, pool_options) = anlg_db_change::ChangeNotifier::new();
-        let pool = apply_internal_pool_policy(pool_options)
-            .max_connections(1)
+        let pool = apply_memory_pool_policy(apply_internal_pool_policy(pool_options))
             .connect_with(options)
             .await?;
 
@@ -353,7 +351,7 @@ async fn connect_with_options(
     let mut pool_options = apply_internal_pool_policy(pool_options);
     match options.storage {
         DbStorage::Memory => {
-            pool_options = pool_options.max_connections(1);
+            pool_options = apply_memory_pool_policy(pool_options);
         }
         DbStorage::Local(_) => {
             if let Some(max) = options.max_connections {
@@ -408,6 +406,18 @@ fn apply_internal_pool_policy(pool_options: SqlitePoolOptions) -> SqlitePoolOpti
             Ok(true)
         })
     })
+}
+
+// A `sqlite::memory:` database lives only as long as its single connection, so the
+// pool must never replace it. Idle checks, idle timeouts and lifetimes would close
+// it, and a ping before acquire is an await point where a cancelled acquire
+// (e.g. a losing `tokio::select!` branch) drops the popped connection.
+fn apply_memory_pool_policy(pool_options: SqlitePoolOptions) -> SqlitePoolOptions {
+    pool_options
+        .max_connections(1)
+        .test_before_acquire(false)
+        .idle_timeout(None)
+        .max_lifetime(None)
 }
 
 async fn ensure_cloudsync_wal(pool: &SqlitePool) -> Result<(), anlg_cloudsync::Error> {

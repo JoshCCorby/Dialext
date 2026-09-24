@@ -110,6 +110,31 @@ async fn connect_local_plain_creates_parent_dirs() {
 }
 
 #[tokio::test]
+async fn memory_database_survives_a_cancelled_acquire() {
+    let db = Db::connect_memory_plain().await.unwrap();
+    sqlx::query("CREATE TABLE kept (id INTEGER)")
+        .execute(db.pool())
+        .await
+        .unwrap();
+
+    for _ in 0..200 {
+        tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+        // Poll once, as a losing `tokio::select!` branch would, then drop mid-acquire.
+        let mut query = std::pin::pin!(sqlx::query("SELECT 1").fetch_one(db.pool()));
+        std::future::poll_fn(|cx| {
+            let _ = query.as_mut().poll(cx);
+            std::task::Poll::Ready(())
+        })
+        .await;
+    }
+
+    sqlx::query("SELECT count(*) FROM kept")
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn connect_local_read_write_does_not_create_missing_database() {
     let tmp = tempfile::tempdir().unwrap();
     let db_path = tmp.path().join("missing.db");

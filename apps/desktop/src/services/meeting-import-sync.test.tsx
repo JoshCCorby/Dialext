@@ -59,7 +59,10 @@ vi.mock("@tanstack/react-query", () => ({
       : queries.map(() => ({})),
 }));
 
-import { MeetingImportSync } from "./meeting-import-sync";
+import {
+  LocalMeetingImportSync,
+  MeetingImportSync,
+} from "./meeting-import-sync";
 
 describe("MeetingImportSync", () => {
   beforeEach(() => {
@@ -137,5 +140,21 @@ describe("MeetingImportSync", () => {
       { Authorization: "Bearer test" },
       true,
     );
+  });
+
+  it("keeps connected local sources syncing without an account", () => {
+    render(<LocalMeetingImportSync />);
+
+    const providerIds = mocks.connectedImportSyncQueryOptions.mock.calls.map(
+      ([provider]) => provider.id,
+    );
+    expect(providerIds).toEqual(expect.arrayContaining(["granola", "plaud"]));
+    expect(providerIds).not.toContain("zoom");
+    expect(
+      mocks.connectedImportSyncQueryOptions.mock.calls.every(
+        ([, enabled]) => enabled === true,
+      ),
+    ).toBe(true);
+    expect(mocks.nangoImportSyncQueryOptions).not.toHaveBeenCalled();
   });
 });

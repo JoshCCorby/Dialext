@@ -7,6 +7,7 @@ import { applySessionIngest, attachDialextSourceAudio } from "@anlg/plugin-db";
 import { Button } from "@anlg/ui/components/ui/button";
 
 import { prepareDialextImport, type ReadingLanguage } from "./recording-import";
+import { isRecord } from "./source-panel";
 
 import { liveQueryClient } from "~/db";
 import { useSettingsReady, useStoredSettingValue } from "~/settings/queries";
@@ -49,13 +50,9 @@ export function ImportDialextRecording() {
   const { value: preferredLanguage } = useStoredSettingValue(
     "dialext_reading_language",
   );
-  const form = useForm({
-    defaultValues: {
-      language: (preferredLanguage === "ga"
-        ? "irish"
-        : "english") as ReadingLanguage,
-    },
-  });
+  const defaultLanguage: ReadingLanguage =
+    preferredLanguage === "ga" ? "irish" : "english";
+  const form = useForm({ defaultValues: { language: defaultLanguage } });
   const mutation = useMutation({
     mutationFn: async (files: File[]) => {
       const file = files.find((candidate) => candidate.name.endsWith(".json"));
@@ -68,7 +65,9 @@ export function ImportDialextRecording() {
         );
       }
       const content = await file.text();
-      const recordingId: unknown = JSON.parse(content)?.recording?.id;
+      const bundle: unknown = JSON.parse(content);
+      const recording = isRecord(bundle) ? bundle.recording : undefined;
+      const recordingId = isRecord(recording) ? recording.id : undefined;
       const existing =
         typeof recordingId === "string" &&
         /^[a-zA-Z0-9_-]{1,100}$/.test(recordingId)
@@ -127,7 +126,9 @@ export function ImportDialextRecording() {
               value={field.state.value}
               disabled={!settingsReady || mutation.isPending}
               onChange={(event) =>
-                field.handleChange(event.target.value as ReadingLanguage)
+                field.handleChange(
+                  event.target.value === "irish" ? "irish" : "english",
+                )
               }
               className="bg-background rounded-md border px-2 py-1"
             >

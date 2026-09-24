@@ -61,7 +61,10 @@ struct AsrSpec<'a> {
     duration_ms: i64,
 }
 
+// The helper is ours and versioned, so an unexpected field means a protocol mismatch
+// rather than a newer bundle to preserve.
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct HelperResponse {
     protocol_version: i64,
     stage: String,
@@ -435,16 +438,37 @@ async fn invoke_helper(
     }
     if !status.success() {
         let diagnostic = String::from_utf8_lossy(&stderr);
+        let diagnostic = diagnostic.trim();
+        if diagnostic.is_empty() {
+            return Err(invalid(&format!(
+                "Provider helper exited with {status} and no diagnostic"
+            )));
+        }
         return Err(invalid(&format!(
             "Provider helper failed: {}",
-            diagnostic.trim().chars().take(500).collect::<String>()
+            diagnostic.chars().take(500).collect::<String>()
         )));
     }
-    let response: HelperResponse = serde_json::from_slice(&stdout)?;
-    if response.protocol_version != PROTOCOL_VERSION || response.stage != stage {
-        return Err(invalid(
-            "Provider helper returned an unsupported protocol message",
-        ));
+    parse_helper_response(&stdout, stage)
+}
+
+fn parse_helper_response(stdout: &[u8], stage: &str) -> Result<Value, Error> {
+    let response: HelperResponse = serde_json::from_slice(stdout).map_err(|error| {
+        invalid(&format!(
+            "Provider helper returned an unreadable protocol message: {error}"
+        ))
+    })?;
+    if response.protocol_version != PROTOCOL_VERSION {
+        return Err(invalid(&format!(
+            "Provider helper speaks protocol version {}; this app expects {PROTOCOL_VERSION}",
+            response.protocol_version
+        )));
+    }
+    if response.stage != stage {
+        return Err(invalid(&format!(
+            "Provider helper answered stage {:?} when {stage:?} was requested",
+            response.stage
+        )));
     }
     Ok(response.result)
 }
@@ -781,7 +805,9 @@ async fn store_account(
         "account":{"segments":account}
     });
     let (original_path, original_sha256) = write_artifact(vault, &artifact(original)?)?;
-    let segments = account.as_array().unwrap();
+    let segments = account
+        .as_array()
+        .ok_or_else(|| invalid("Provider account is not a list of passages"))?;
     let words: Vec<Value> = segments
         .iter()
         .enumerate()
@@ -1024,6 +1050,42 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dialext/engine/provider-helper.mjs")
     }
 
+    #[test]
+    fn helper_response_names_what_is_wrong() {
+        assert_eq!(
+            parse_helper_response(
+                br#"{"protocol_version":1,"stage":"asr","result":{"a":1}}"#,
+                "asr"
+            )
+            .unwrap(),
+            json!({"a":1})
+        );
+        for (stdout, expected) in [
+            (
+                &br#"{"protocol_version":1,"stage":"asr","result":{},"extra":true}"#[..],
+                "unknown field `extra`",
+            ),
+            (
+                br#"{"protocol_version":1,"stage":"asr"}"#,
+                "missing field `result`",
+            ),
+            (
+                br#"{"protocol_version":2,"stage":"asr","result":{}}"#,
+                "protocol version 2; this app expects 1",
+            ),
+            (
+                br#"{"protocol_version":1,"stage":"reconstruct","result":{}}"#,
+                r#"stage "reconstruct" when "asr" was requested"#,
+            ),
+            (b"not json", "unreadable protocol message"),
+        ] {
+            let error = parse_helper_response(stdout, "asr")
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(expected), "{error}");
+        }
+    }
+
     fn slow_helper(directory: &Path) -> std::path::PathBuf {
         let path = directory.join("slow-provider.mjs");
         std::fs::write(
@@ -1110,6 +1172,51 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(languages, ["en", "ga"]);
+    }
+
+    #[tokio::test]
+    async fn a_verbose_or_silent_failing_helper_fails_the_task_with_a_reason() {
+        let db = database().await;
+        let vault = tempfile::tempdir().unwrap();
+        let helper_directory = tempfile::tempdir().unwrap();
+        for (script, expected) in [
+            // Past both read limits: the reader closes the pipe and the helper must not hang.
+            (
+                "process.stdin.resume(); process.stdin.on('end', () => { \
+                 process.stderr.write('x'.repeat(512 * 1024) + 'tail'); process.exitCode = 1; });",
+                "Provider helper failed: xxx",
+            ),
+            (
+                "process.stdin.resume(); process.stdin.on('end', () => { \
+                 process.stdout.write(' '.repeat(3 * 1024 * 1024)); });",
+                "Provider protocol output exceeds 2 MiB",
+            ),
+            (
+                "process.stdin.resume(); process.stdin.on('end', () => { process.exitCode = 3; });",
+                "Provider helper exited with exit status: 3 and no diagnostic",
+            ),
+        ] {
+            let helper_path = helper_directory.path().join("failing-provider.mjs");
+            std::fs::write(&helper_path, script).unwrap();
+            let started = create_recording_task(db.pool(), vault.path(), "Fail", "en", &wav(1_000))
+                .await
+                .unwrap();
+            let error = tokio::time::timeout(
+                std::time::Duration::from_secs(10),
+                run_task(db.pool(), vault.path(), &helper_path, &started.task_id),
+            )
+            .await
+            .expect("helper output must be drained so the helper can exit")
+            .unwrap_err()
+            .to_string();
+            assert!(
+                error.starts_with(expected),
+                "{}",
+                &error[..error.len().min(200)]
+            );
+            assert!(error.len() < 1_000, "diagnostic is bounded");
+            assert_eq!(status(db.pool(), &started.task_id).await.0, "failed");
+        }
     }
 
     #[tokio::test]

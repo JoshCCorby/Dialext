@@ -31,7 +31,10 @@ vi.mock("~/stt/render-transcript", () => ({
   renderTranscriptSegments: mocks.renderTranscriptSegments,
 }));
 
-import { hydrateSessionContext } from "./session-context-hydrator";
+import {
+  hydrateSessionContext,
+  renderSessionSegments,
+} from "./session-context-hydrator";
 
 describe("session chat context hydration", () => {
   beforeEach(() => {
@@ -140,6 +143,7 @@ describe("session chat context hydration", () => {
         ]),
       }),
       ["human-1"],
+      undefined,
     );
   });
 
@@ -150,5 +154,19 @@ describe("session chat context hydration", () => {
       hydrateSessionContext("session-missing", "user-1"),
     ).resolves.toBeNull();
     expect(mocks.loadHumansByIds).not.toHaveBeenCalled();
+  });
+
+  it("renders with a speaker context when one is given, as the transcript panel does", async () => {
+    const snapshot = await mocks.loadSessionContentSnapshot();
+    const speakerContext = { intervals: [] };
+
+    await renderSessionSegments(snapshot, "user-1", speakerContext);
+
+    expect(mocks.buildRenderTranscriptRequestFromRows).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ selfHumanId: "user-1" }),
+      ["human-1"],
+      speakerContext,
+    );
   });
 });

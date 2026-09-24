@@ -55,7 +55,9 @@ pub(crate) fn write_artifact_as(
     let digest = sha256(bytes);
     let relative = format!("dialext/artifacts/v1/{digest}.{extension}");
     let path = vault.join(&relative);
-    let directory = path.parent().unwrap();
+    let directory = path
+        .parent()
+        .ok_or_else(|| invalid("Invalid Dialext artefact directory"))?;
     fs::create_dir_all(directory)?;
     if !directory.canonicalize()?.starts_with(vault.canonicalize()?) {
         return Err(invalid("Invalid Dialext artefact directory"));
@@ -141,7 +143,10 @@ fn interval(value: &Value, duration: i64) -> Result<(i64, i64), Error> {
 }
 fn validate_bundle(bundle: &Value) -> Result<(), Error> {
     if bundle["format"] != "dialext-recording" || bundle["version"] != 1 {
-        return Err(invalid("Unsupported Dialext bundle"));
+        return Err(invalid(&format!(
+            "Unsupported Dialext bundle: expected format \"dialext-recording\" version 1, received format {} version {}",
+            bundle["format"], bundle["version"]
+        )));
     }
     let duration = bundle["recording"]["duration_ms"]
         .as_i64()
@@ -285,7 +290,9 @@ pub async fn migrate_recording(
     {
         return Err(invalid("Selected transcript is unavailable"));
     }
-    let duration = bundle["recording"]["duration_ms"].as_i64().unwrap();
+    let duration = bundle["recording"]["duration_ms"]
+        .as_i64()
+        .ok_or_else(|| invalid("Invalid recording duration"))?;
     let mut sources = array(&bundle["evidence"], "sources")?.clone();
     sources.sort_by(|a, b| a["source_id"].as_str().cmp(&b["source_id"].as_str()));
     let mut evidence = Vec::new();
@@ -537,6 +544,21 @@ mod tests {
             };
             assert!(validate_bundle(&bundle).is_err());
         }
+    }
+    #[test]
+    fn native_bundle_validation_tolerates_unknown_fields_and_names_bad_versions() {
+        let mut bundle: Value = serde_json::from_str(include_str!(
+            "../../../dialext/fixtures/language-practice.json"
+        ))
+        .unwrap();
+        bundle["future_field"] = json!({"kept": true});
+        assert!(validate_bundle(&bundle).is_ok());
+        bundle["version"] = json!(2);
+        let error = validate_bundle(&bundle).unwrap_err().to_string();
+        assert!(
+            error.contains("received format \"dialext-recording\" version 2"),
+            "{error}"
+        );
     }
     #[tokio::test]
     async fn selected_projection_changes_atomically_and_preserves_all_account_work() {

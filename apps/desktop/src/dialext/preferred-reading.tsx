@@ -4,6 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@anlg/ui/components/ui/button";
 import { ButtonGroup } from "@anlg/ui/components/ui/button-group";
 
+import { READING_CODES, READING_NAMES } from "./reading-languages";
+
 import {
   setSettingValues,
   useSettingsReady,
@@ -31,7 +33,7 @@ export function PreferredReadingLanguage() {
       >
         {(labelProps) => (
           <ButtonGroup {...labelProps}>
-            {(["en", "ga"] as const).map((language) => {
+            {READING_CODES.map((language) => {
               const selected = (value === "ga" ? "ga" : "en") === language;
               return (
                 <Button
@@ -44,7 +46,7 @@ export function PreferredReadingLanguage() {
                   }}
                   className="h-9 px-3"
                 >
-                  {language === "en" ? "English" : "Gaeilge"}
+                  {READING_NAMES[language]}
                 </Button>
               );
             })}

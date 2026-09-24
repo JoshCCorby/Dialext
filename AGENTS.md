@@ -47,9 +47,25 @@ release build, which maps to the stable app's data directory.
   from the checkout that owns the vault and the synthetic samples, and never run
   two instances against it at once.
 - `ONBOARDING` defaults to `false`; set it to `true` to see the first-run flow.
+- `pnpm` is not on the shell PATH; run it as `corepack pnpm …`. For `cargo`, `rustfmt`
+  and dprint's Rust formatting, first export `CARGO_HOME` and `RUSTUP_HOME` to
+  `.dialext-tools/cargo` and `.dialext-tools/rustup` and prepend
+  `.dialext-tools/cargo/bin` to `PATH`, as `dialext/dev.mjs` does; without them
+  dprint reports "Cannot start formatter process" for `.rs` files.
+- dprint's JS/TS formatter runs a bare `pnpm`, so it fails with "Cannot start formatter
+  process" unless `pnpm` is on PATH; put a two-line shim (`exec corepack pnpm "$@"`) in a
+  scratch directory on PATH before `dprint check`.
+- The macOS Open panel is a separate process; a window-control grant for Dialext does not
+  cover it. With the panel open, request access for its process (Joshua agreed to grant it,
+  23 September 2026); if that is refused, ask him to choose the fixture files.
 - Branch tracking is misleading. Compare against
   `origin/codex/dialext-personal-prototype`, never `origin/main`, to see unpushed
   work. Commit locally; Joshua pushes. Never push to the Anarlog remote.
+
+Nothing in the personal build may call Anarlog's servers. Hosted connectors and calendar go
+through a Dialext service seam that is unset by default, so a Dialext server can fill it later
+for Joshua and friends; local MCP/CLI importers need no sign-in, and other services must see
+"Dialext" (Joshua, 23 September 2026; see `dialext/CONNECTORS_PLAN.md`).
 
 Verify each slice with its focused regressions, affected package type/lint checks
 and a real desktop workflow. Run the full desktop suite at milestone boundaries.

@@ -42,9 +42,10 @@ type DesktopFlowPath =
 export const buildWebAppUrl = async (
   path: DesktopFlowPath,
   params?: Record<string, string>,
+  baseUrl: string = env.VITE_APP_URL,
 ): Promise<string> => {
   const scheme = await getScheme();
-  const url = new URL(path, env.VITE_APP_URL);
+  const url = new URL(path, baseUrl);
   url.searchParams.set("flow", "desktop");
   url.searchParams.set("scheme", scheme);
   if (params) {

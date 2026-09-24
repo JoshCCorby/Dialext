@@ -3,6 +3,7 @@ import { readPassage, type DialextPassage } from "./source-panel";
 import { renderSessionSegments } from "~/chat/context/session-context-hydrator";
 import { liveQueryClient } from "~/db";
 import { loadSessionContentSnapshot } from "~/session/content-queries";
+import { parseSpeakerContext } from "~/stt/speaker-context";
 
 export type EvidencePassage = DialextPassage & {
   /// A short reference the model cites instead of re-typing a passage id.
@@ -33,9 +34,11 @@ export async function loadDialextQuestionEvidence(
     transcript_id: string;
     content_version: string;
     target_language: string;
+    speaker_context: string | null;
   }>(
     `SELECT dialext_accounts.id AS account_id, transcripts.id AS transcript_id,
-        transcripts.content_version, dialext_accounts.target_language
+        transcripts.content_version, dialext_accounts.target_language,
+        json_extract(sessions.metadata_json, '$.speaker_context') AS speaker_context
      FROM dialext_recordings
      JOIN sessions ON sessions.id = dialext_recordings.id AND sessions.deleted_at IS NULL
      JOIN dialext_accounts ON dialext_accounts.id = dialext_recordings.active_account_id
@@ -59,7 +62,13 @@ export async function loadDialextQuestionEvidence(
     return { kind: "unavailable" };
   }
 
-  const segments = await renderSessionSegments(snapshot, selfHumanId);
+  // Label speakers as the transcript panel does, so a citation names the speaker the
+  // reader sees there rather than a raw contact id.
+  const segments = await renderSessionSegments(
+    snapshot,
+    selfHumanId,
+    parseSpeakerContext(account.speaker_context),
+  );
   const passages: EvidencePassage[] = [];
   for (const segment of segments) {
     for (const word of segment.words) {

@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
   microsoftTeamsImportMeetings: vi.fn(),
   notionImportMeetings: vi.fn(),
   webexImportMeetings: vi.fn(),
+  createClient: vi.fn(() => ({})),
+  env: {} as Record<string, string | undefined>,
 }));
 
 vi.mock("@anlg/plugin-importer", () => ({
@@ -63,12 +65,10 @@ vi.mock("@anlg/api-client", () => ({
 }));
 
 vi.mock("@anlg/api-client/client", () => ({
-  createClient: () => ({}),
+  createClient: mocks.createClient,
 }));
 
-vi.mock("~/env", () => ({
-  env: { VITE_API_URL: "https://api.test" },
-}));
+vi.mock("~/env", () => ({ env: mocks.env }));
 
 import {
   cancelConnectedImport,
@@ -273,6 +273,20 @@ describe("nango meeting imports", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.openIntegrationUrl.mockResolvedValue(undefined);
+    mocks.env.VITE_DIALEXT_SERVICE_URL = "https://dialext.test";
+  });
+
+  it("makes no request when no Dialext service is configured", async () => {
+    delete mocks.env.VITE_DIALEXT_SERVICE_URL;
+    mocks.getImportedMeetingIds.mockResolvedValue([]);
+
+    await expect(
+      new QueryClient().fetchQuery(
+        nangoImportSyncQueryOptions(provider, "zoom-1", headers, true),
+      ),
+    ).rejects.toThrow("No Dialext service is configured");
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.zoomImportMeetings).not.toHaveBeenCalled();
   });
 
   it("opens Zoom OAuth and waits for the Nango connection", async () => {
@@ -332,6 +346,10 @@ describe("nango meeting imports", () => {
       nangoImportSyncQueryOptions(provider, "zoom-1", headers, true),
     );
 
+    expect(mocks.createClient).toHaveBeenCalledWith({
+      baseUrl: "https://dialext.test",
+      headers,
+    });
     expect(mocks.zoomImportMeetings).toHaveBeenCalledWith({
       client: {},
       body: {

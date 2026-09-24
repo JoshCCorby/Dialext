@@ -14,6 +14,7 @@ import {
   providerTaskLabel,
   useLatestDialextProviderTask,
 } from "./provider-task";
+import { READING_CODES, READING_NAMES } from "./reading-languages";
 import { UndoCorrection } from "./undo-correction";
 
 import { flushDatabaseWrites } from "~/db/write-queue";
@@ -63,7 +64,7 @@ export function ReadingSelector({
       <div className="flex items-center gap-3">
         <Trans>Reading language</Trans>
         <ButtonGroup aria-label={t`Reading language`}>
-          {(["en", "ga"] as const).map((language) => {
+          {READING_CODES.map((language) => {
             const account =
               rows.find(
                 (row) =>
@@ -96,7 +97,7 @@ export function ReadingSelector({
                 }}
                 className="h-7 px-3 text-sm"
               >
-                {language === "en" ? "English" : "Gaeilge"}
+                {READING_NAMES[language]}
                 {!account?.usable
                   ? generatingThis
                     ? t` (generating…)`

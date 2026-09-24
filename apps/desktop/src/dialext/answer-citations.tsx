@@ -1,9 +1,11 @@
 import { Trans } from "@lingui/react/macro";
 
-import type { DialextAnswerData } from "./question-chat";
+import type { DialextAnswerData, DialextAnswerPin } from "./question-chat";
 import {
   describeLanguage,
   type DialextPassage,
+  isDialextAnchor,
+  isRecord,
   revealDialextSource,
   shortOrigin,
 } from "./source-panel";
@@ -18,7 +20,10 @@ export function DialextAnswerCitations({ data }: { data: unknown }) {
   const openNew = useTabs((state) => state.openNew);
   if (!answer) return null;
 
-  const reading = describeLanguage(answer.targetLanguage ?? "");
+  const reading =
+    answer.outcome === "unavailable"
+      ? null
+      : describeLanguage(answer.targetLanguage);
   const open = (passage: DialextPassage, quote: string) => {
     const current = useTabs.getState().currentTab;
     if (current?.type !== "sessions" || current.id !== answer.sessionId) {
@@ -30,26 +35,7 @@ export function DialextAnswerCitations({ data }: { data: unknown }) {
   if (answer.outcome !== "answer") {
     return (
       <p className="text-muted-foreground mt-1 text-xs">
-        {answer.outcome === "no-match" && (
-          <Trans>
-            Nothing in the selected reading mentions this, so no model was
-            asked.
-          </Trans>
-        )}
-        {answer.outcome === "insufficient" && (
-          <Trans>The model found no passage that answers this.</Trans>
-        )}
-        {answer.outcome === "invalid" && (
-          <Trans>
-            The model's answer did not check out against the reading, so it is
-            not shown.
-          </Trans>
-        )}
-        {answer.outcome === "unavailable" && (
-          <Trans>
-            Select an available reading to ask about this recording.
-          </Trans>
-        )}
+        <RefusalReason outcome={answer.outcome} />
       </p>
     );
   }
@@ -88,23 +74,99 @@ export function DialextAnswerCitations({ data }: { data: unknown }) {
   );
 }
 
-function readAnswerData(value: unknown): DialextAnswerData | null {
-  if (!value || typeof value !== "object") return null;
-  const data = value as Partial<DialextAnswerData>;
-  if (typeof data.sessionId !== "string" || typeof data.outcome !== "string") {
-    return null;
+function RefusalReason({
+  outcome,
+}: {
+  outcome: Exclude<DialextAnswerData["outcome"], "answer">;
+}) {
+  switch (outcome) {
+    case "no-match":
+      return (
+        <Trans>
+          Nothing in the selected reading mentions this, so no model was asked.
+        </Trans>
+      );
+    case "insufficient":
+      return <Trans>The model found no passage that answers this.</Trans>;
+    case "invalid":
+      return (
+        <Trans>
+          The model's answer did not check out against the reading, so it is
+          not shown.
+        </Trans>
+      );
+    case "unavailable":
+      return (
+        <Trans>Select an available reading to ask about this recording.</Trans>
+      );
+    default: {
+      const unhandled: never = outcome;
+      return unhandled;
+    }
   }
-  return {
-    ...(data as DialextAnswerData),
-    citations: Array.isArray(data.citations)
-      ? data.citations.filter(
-          (citation) =>
-            citation &&
-            typeof citation.quote === "string" &&
-            citation.passage &&
-            typeof citation.passage.wordId === "string" &&
-            Array.isArray(citation.passage.anchors),
-        )
+}
+
+const OUTCOMES = [
+  "answer",
+  "insufficient",
+  "no-match",
+  "unavailable",
+  "invalid",
+] as const satisfies readonly DialextAnswerData["outcome"][];
+
+/// The part is read back from stored chat history, so it is checked field by field
+/// rather than trusted as the shape it was written with.
+function readAnswerData(value: unknown): DialextAnswerData | null {
+  if (!isRecord(value) || typeof value.sessionId !== "string") return null;
+  const outcome = OUTCOMES.find((candidate) => candidate === value.outcome);
+  if (!outcome) return null;
+  const base = {
+    sessionId: value.sessionId,
+    citations: Array.isArray(value.citations)
+      ? value.citations.flatMap(readCitation)
       : [],
   };
+  if (outcome === "unavailable") return { ...base, outcome };
+  const pin = readPin(value);
+  if (!pin) return null;
+  if (outcome !== "invalid") return { ...base, ...pin, outcome };
+  return typeof value.code === "string"
+    ? { ...base, ...pin, outcome, code: value.code }
+    : null;
+}
+
+function readPin(value: Record<string, unknown>): DialextAnswerPin | null {
+  const { accountId, contentVersion, targetLanguage } = value;
+  return typeof accountId === "string" &&
+    typeof contentVersion === "string" &&
+    typeof targetLanguage === "string"
+    ? { accountId, contentVersion, targetLanguage }
+    : null;
+}
+
+function readCitation(value: unknown): DialextAnswerData["citations"] {
+  if (!isRecord(value) || typeof value.quote !== "string") return [];
+  const passage = value.passage;
+  if (
+    !isRecord(passage) ||
+    typeof passage.wordId !== "string" ||
+    !Array.isArray(passage.anchors)
+  ) {
+    return [];
+  }
+  return [
+    {
+      quote: value.quote,
+      speaker: typeof value.speaker === "string" ? value.speaker : null,
+      passage: {
+        wordId: passage.wordId,
+        text: typeof passage.text === "string" ? passage.text : "",
+        anchors: passage.anchors.filter(isDialextAnchor),
+        spokenLanguage:
+          typeof passage.spokenLanguage === "string" ? passage.spokenLanguage : "unknown",
+        targetLanguage:
+          typeof passage.targetLanguage === "string" ? passage.targetLanguage : "unknown",
+      },
+    },
+  ];
 }

@@ -4,6 +4,8 @@ use anlg_calendar_interface::CalendarProviderType;
 pub enum Error {
     #[error("not authenticated")]
     NotAuthenticated,
+    #[error("no Dialext service is configured for {provider:?} calendars")]
+    ServiceUnavailable { provider: CalendarProviderType },
     #[error("provider {provider:?} is not available on this platform")]
     ProviderUnavailable { provider: CalendarProviderType },
     #[error("operation '{operation}' is not supported for provider {provider:?}")]

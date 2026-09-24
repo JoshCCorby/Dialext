@@ -1,7 +1,10 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
-import { events as windowsEvents } from "@anlg/plugin-windows";
+import {
+  events as windowsEvents,
+  getCurrentWebviewWindowLabel,
+} from "@anlg/plugin-windows";
 
 import {
   openNewNoteAndListen,
@@ -11,6 +14,7 @@ import {
 
 import { PersonalBillingProvider } from "~/auth/personal-billing";
 import { PersonalAuthProvider } from "~/auth/personal-context";
+import { LocalMeetingImportSync } from "~/services/meeting-import-sync";
 import { getOrCreateSessionForEventId } from "~/session/queries";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 import { UndoDeleteToast } from "~/sidebar/toast/undo-delete-toast";
@@ -29,9 +33,11 @@ export default function MainAppLayout() {
 }
 
 function MainAppContent() {
+  const isMainWindow = getCurrentWebviewWindowLabel() === "main";
   return (
     <>
       <Outlet />
+      {isMainWindow ? <LocalMeetingImportSync /> : null}
       <UndoDeleteToast />
     </>
   );

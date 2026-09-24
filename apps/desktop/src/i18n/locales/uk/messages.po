@@ -930,6 +930,7 @@ msgstr ""
 #: src/calendar/components/apple/permission.tsx
 #: src/dialext/provider-generation.tsx
 #: src/dialext/reading-selector.tsx
+#: src/imports/local-connector.tsx
 #: src/imports/screen.tsx
 #: src/resource-sharing/library.tsx
 #: src/session-sharing/comments.tsx
@@ -1147,6 +1148,7 @@ msgstr ""
 msgid "Choose extra fields to show on each note."
 msgstr ""
 
+#: src/imports/local-connector.tsx
 #: src/imports/screen.tsx
 msgid "Choose files"
 msgstr ""
@@ -1463,6 +1465,7 @@ msgstr ""
 msgid "Connect {0} Calendar"
 msgstr ""
 
+#: src/imports/local-connector.tsx
 #: src/imports/screen.tsx
 msgid "Connect & import"
 msgstr ""
@@ -1491,6 +1494,11 @@ msgstr ""
 #. placeholder {0}: provider.name
 #: src/imports/screen.tsx
 msgid "Connect once to bring over your {0} history and keep new meetings coming in while you switch."
+msgstr ""
+
+#. placeholder {0}: provider.name
+#: src/imports/local-connector.tsx
+msgid "Connect once to bring over your {0} history and keep new meetings coming in."
 msgstr ""
 
 #: src/onboarding/calendar.tsx
@@ -1525,6 +1533,10 @@ msgstr ""
 
 #: src/settings/ai/shared/index.tsx
 msgid "Connected with your existing subscription."
+msgstr ""
+
+#: src/imports/local-connector.tsx
+msgid "Connected. New meetings come in automatically while Dialext is open."
 msgstr ""
 
 #: src/settings/sync/index.tsx
@@ -2079,6 +2091,7 @@ msgstr ""
 
 #: src/calendar/components/oauth/provider-content.tsx
 #: src/calendar/components/sidebar.tsx
+#: src/imports/local-connector.tsx
 #: src/imports/screen.tsx
 #: src/settings/sync/index.tsx
 #: src/settings/todo/provider-content.tsx
@@ -2939,7 +2952,10 @@ msgid "Last delivery {0}"
 msgstr ""
 
 #. placeholder {0}: lastRun.imported
+#. placeholder {0}: result.imported
 #. placeholder {1}: lastRun.matched
+#. placeholder {1}: result.matched
+#: src/imports/local-connector.tsx
 #: src/imports/screen.tsx
 msgid "Last import: {0} added, {1} unchanged"
 msgstr ""
@@ -5393,6 +5409,7 @@ msgstr ""
 msgid "Sync needs attention"
 msgstr ""
 
+#: src/imports/local-connector.tsx
 #: src/imports/screen.tsx
 #: src/settings/sync/index.tsx
 msgid "Sync now"

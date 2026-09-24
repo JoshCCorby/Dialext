@@ -1,9 +1,11 @@
+import type { ReadingCode } from "./reading-languages";
+
 import { useLiveQuery } from "~/db";
 
 export type DialextProviderTask = {
   id: string;
   session_id: string;
-  target_language: "en" | "ga";
+  target_language: ReadingCode;
   status:
     | "queued"
     | "running"
@@ -43,20 +45,33 @@ export function useLatestDialextProviderTask(sessionId: string) {
   return query.data?.[0] ?? null;
 }
 
-export function providerTaskLabel(task: DialextProviderTask) {
-  if (task.status === "succeeded") return "Reading ready.";
-  if (task.status === "cancelled") return "Generation cancelled.";
-  if (task.status === "interrupted") {
-    return "Generation stopped when the app closed. Successful stages were kept.";
+export function providerTaskLabel(task: DialextProviderTask): string {
+  switch (task.status) {
+    case "succeeded":
+      return "Reading ready.";
+    case "cancelled":
+      return "Generation cancelled.";
+    case "interrupted":
+      return "Generation stopped when the app closed. Successful stages were kept.";
+    case "failed":
+      return task.error || "Generation failed.";
+    case "cancel_requested":
+      return "Cancelling…";
+    case "queued":
+    case "running":
+      return STAGE_LABELS[task.current_stage];
+    default: {
+      const unhandled: never = task.status;
+      return unhandled;
+    }
   }
-  if (task.status === "failed") return task.error || "Generation failed.";
-  if (task.status === "cancel_requested") return "Cancelling…";
-  return {
-    queued: "Waiting to start…",
-    asr_ga: "Reading the Irish speech source…",
-    asr_en: "Reading the English speech source…",
-    reconstruct: "Building the requested reading…",
-    store: "Saving the checked reading…",
-    done: "Reading ready.",
-  }[task.current_stage];
 }
+
+const STAGE_LABELS: Record<DialextProviderTask["current_stage"], string> = {
+  queued: "Waiting to start…",
+  asr_ga: "Reading the Irish speech source…",
+  asr_en: "Reading the English speech source…",
+  reconstruct: "Building the requested reading…",
+  store: "Saving the checked reading…",
+  done: "Reading ready.",
+};

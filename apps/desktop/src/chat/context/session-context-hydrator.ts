@@ -1,4 +1,5 @@
 import type { SessionContext, Transcript } from "@anlg/plugin-template";
+import type { SpeakerContext } from "@anlg/plugin-transcription";
 
 import { loadHumansByIds } from "~/contacts/queries";
 import {
@@ -32,12 +33,14 @@ function extractEventName(event: unknown): string | null {
   return null;
 }
 
-/// The effective transcript rendered into speaker-labelled segments, exactly as chat
-/// context, export and the transcript panel label them. For a Dialext recording the
-/// snapshot holds only the selected reading, so the labels are that reading's.
+/// The effective transcript rendered into speaker-labelled segments. For a Dialext
+/// recording the snapshot holds only the selected reading, so the labels are that
+/// reading's. The transcript panel always renders with the session's speaker context,
+/// even an empty one; pass it to get the panel's labels rather than chat context's.
 export async function renderSessionSegments(
   snapshot: SessionContentSnapshot,
   selfHumanId?: string,
+  speakerContext?: SpeakerContext,
 ): Promise<RenderedTranscriptSegmentWithWordMetadata[]> {
   if (snapshot.transcripts.length === 0) {
     return [];
@@ -65,6 +68,7 @@ export async function renderSessionSegments(
         .map((human) => ({ human_id: human.id, name: human.name })),
     },
     participantHumanIds,
+    speakerContext,
   );
   return request ? renderTranscriptSegments(request) : [];
 }

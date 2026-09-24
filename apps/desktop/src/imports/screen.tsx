@@ -47,6 +47,7 @@ import {
 } from "./connected-import";
 import { detectImportSources } from "./detection";
 import { providerIconOpticalClass, providerIconSrc } from "./icons";
+import { LocalConnectorRow } from "./local-connector";
 import type {
   DetectedMeetingImportProvider,
   MeetingImportProvider,
@@ -274,6 +275,18 @@ function LocalMeetingImportScreen({
                 const importing =
                   fileImportMutation.isPending &&
                   fileImportMutation.variables.id === provider.id;
+                if (isLocalConnectedImport(provider)) {
+                  return (
+                    <LocalConnectorRow
+                      key={provider.id}
+                      provider={provider}
+                      icon={<ProviderIcon provider={provider} />}
+                      importingFiles={importing}
+                      fileImportPending={fileImportMutation.isPending}
+                      onChooseFiles={() => fileImportMutation.mutate(provider)}
+                    />
+                  );
+                }
                 const lastRun = history.find(
                   (run) => run.providerId === provider.id,
                 );
