@@ -40,6 +40,7 @@ import {
 
 import { trackAnalyticsEvent } from "~/analytics";
 import { useAuth } from "~/auth";
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { loadManagedSharedNoteForSession } from "~/shared-notes/cache";
 
 const MAX_COMMENT_BODY_BYTES = 16_384;
@@ -85,15 +86,25 @@ export function useOwnedSessionComments(sessionId: string) {
   const userId = session?.user.id ?? null;
   const shareQuery = useQuery({
     queryKey: ["session-managed-share", userId ?? "", sessionId],
-    queryFn: () => loadManagedSharedNoteForSession(userId!, sessionId),
-    enabled: userId !== null,
+    queryFn: () => {
+      if (!ANARLOG_ACCOUNT_SERVICES_ENABLED || !userId) {
+        throw new ShareManagementError();
+      }
+      return loadManagedSharedNoteForSession(userId, sessionId);
+    },
+    enabled: ANARLOG_ACCOUNT_SERVICES_ENABLED && userId !== null,
   });
 
   return useSessionComments({
-    canCompose: shareQuery.data !== null && shareQuery.data !== undefined,
+    canCompose:
+      ANARLOG_ACCOUNT_SERVICES_ENABLED &&
+      shareQuery.data !== null &&
+      shareQuery.data !== undefined,
     currentRevision: shareQuery.data?.contentRevision ?? -1,
     manageAccess: true,
-    shareId: shareQuery.data?.shareId ?? null,
+    shareId: ANARLOG_ACCOUNT_SERVICES_ENABLED
+      ? (shareQuery.data?.shareId ?? null)
+      : null,
   });
 }
 
@@ -156,15 +167,23 @@ function useSessionComments({
       : null;
   const supabase = auth.supabase;
   const enabled =
+    ANARLOG_ACCOUNT_SERVICES_ENABLED &&
     shareId !== null &&
     session !== null &&
     supabase !== null &&
     supabase !== undefined;
 
+  // The share ID is the cache identity; session credentials and the client must stay out of it.
+  // eslint-disable-next-line @tanstack/query/exhaustive-deps
   const commentsQuery = useQuery({
     queryKey: sessionShareCommentsQueryKey(shareId ?? ""),
     queryFn: ({ signal }) => {
-      if (!supabase || !session || !shareId) {
+      if (
+        !ANARLOG_ACCOUNT_SERVICES_ENABLED ||
+        !supabase ||
+        !session ||
+        !shareId
+      ) {
         throw new ShareManagementError();
       }
       return listSessionShareComments(
@@ -174,7 +193,9 @@ function useSessionComments({
     },
     enabled,
   });
-  const comments = commentsQuery.data?.comments ?? EMPTY_COMMENTS;
+  const comments = enabled
+    ? (commentsQuery.data?.comments ?? EMPTY_COMMENTS)
+    : EMPTY_COMMENTS;
 
   const createMutation = useMutation({
     mutationFn: ({
@@ -184,7 +205,12 @@ function useSessionComments({
       anchor: SessionShareCommentAnchor;
       body: string;
     }) => {
-      if (!supabase || !session || !shareId) {
+      if (
+        !ANARLOG_ACCOUNT_SERVICES_ENABLED ||
+        !supabase ||
+        !session ||
+        !shareId
+      ) {
         throw new ShareManagementError();
       }
       return createSessionShareComment(
@@ -214,7 +240,7 @@ function useSessionComments({
 
   const deleteMutation = useMutation({
     mutationFn: (commentId: string) => {
-      if (!supabase || !session) {
+      if (!ANARLOG_ACCOUNT_SERVICES_ENABLED || !supabase || !session) {
         throw new ShareManagementError();
       }
       return deleteSessionShareComment({ supabase, session }, commentId);

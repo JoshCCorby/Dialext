@@ -35,6 +35,7 @@ import type {
 } from "./types";
 import { buildWebSearchTool } from "./web-search";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import type { SearchFilters } from "~/search/contexts/engine/types";
 
 export type { ToolDependencies };
@@ -71,7 +72,10 @@ function withToolLogging<T extends { execute?: (...args: any[]) => any }>(
   } as T;
 }
 
-export const buildChatTools = (deps: ToolDependencies) => ({
+export const buildChatTools = (
+  deps: ToolDependencies,
+  accountServicesEnabled = ANARLOG_ACCOUNT_SERVICES_ENABLED,
+) => ({
   list_meetings: withToolLogging("list_meetings", buildListMeetingsTool()),
   get_meeting: withToolLogging("get_meeting", buildGetMeetingTool()),
   get_meeting_transcript: withToolLogging(
@@ -106,7 +110,9 @@ export const buildChatTools = (deps: ToolDependencies) => ({
     "search_calendar_events",
     buildSearchCalendarEventsTool(deps),
   ),
-  web_search: withToolLogging("web_search", buildWebSearchTool(deps)),
+  ...(accountServicesEnabled
+    ? { web_search: withToolLogging("web_search", buildWebSearchTool(deps)) }
+    : {}),
   edit_memo: withToolLogging("edit_memo", buildEditMemoTool(deps)),
   edit_summary: withToolLogging("edit_summary", buildEditSummaryTool(deps)),
   apply_session_correction: withToolLogging(

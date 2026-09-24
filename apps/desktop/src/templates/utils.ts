@@ -9,6 +9,7 @@ import {
   type UserTemplate,
 } from "./queries";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { useWebResources } from "~/shared/ui/resource-list";
 import { type Tab, useTabs } from "~/store/zustand/tabs";
 
@@ -20,23 +21,32 @@ export function resolveTemplateTabSelection({
   selectedWebIndex,
   userTemplates,
   webTemplates,
+  accountServicesEnabled = ANARLOG_ACCOUNT_SERVICES_ENABLED,
 }: {
   isWebMode: boolean | null | undefined;
   selectedMineId: string | null | undefined;
   selectedWebIndex: number | null | undefined;
   userTemplates: UserTemplate[];
   webTemplates: WebTemplate[];
+  accountServicesEnabled?: boolean;
 }) {
   const hasUserTemplates = userTemplates.length > 0;
   const hasWebTemplates = webTemplates.length > 0;
 
-  let effectiveIsWebMode = isWebMode ?? (hasWebTemplates && !hasUserTemplates);
+  let effectiveIsWebMode =
+    isWebMode ??
+    (accountServicesEnabled && hasWebTemplates && !hasUserTemplates);
 
   if (effectiveIsWebMode && !hasWebTemplates) {
     effectiveIsWebMode = false;
   }
 
-  if (!effectiveIsWebMode && !hasUserTemplates && hasWebTemplates) {
+  if (
+    accountServicesEnabled &&
+    !effectiveIsWebMode &&
+    !hasUserTemplates &&
+    hasWebTemplates
+  ) {
     effectiveIsWebMode = true;
   }
 
@@ -85,7 +95,11 @@ export function getTemplateCreatorLabel({
   creatorName?: string | null;
   format?: "full" | "short";
 }) {
-  const name = isUserTemplate ? creatorName?.trim() || "user" : "Anarlog";
+  const name = isUserTemplate
+    ? creatorName?.trim() || "user"
+    : ANARLOG_ACCOUNT_SERVICES_ENABLED
+      ? "Anarlog"
+      : "Dialext";
   return format === "short" ? `by ${name}` : `Created by ${name}`;
 }
 

@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 23 September 2026. Native baseline and milestones 1–**5** are complete and verified in the isolated native app. **Milestone 6 — quiet interface — passed its real-window acceptance. Milestone 7's available real-window checklist and connector acceptance have been exercised, with the explicit gaps below; the milestone is not complete.** No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 24 September 2026. Native baseline and milestones 1–**6** are complete and verified in the isolated native app. **Milestone 7's personal-shell service isolation is complete**, with native limitations recorded below. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -41,7 +41,7 @@ The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. 
 ## What is not implemented
 
 - A live Azure/other speech provider, provider credentials, quality claims or packaged helper runtime. Only the deterministic development fixture provider is offered. One approved short live sample remains a separate assessment.
-- Completion of milestone 7. Folder/template resource sharing still needs a bounded personal-shell pass, and connected imports and calendar follow [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md); their legacy implementation remains in the tree but must not become the route to a blanket paid entitlement.
+- A Dialext hosted service and account system. The account-backed implementations remain in the tree behind the personal-shell capability and the unset Dialext service seam.
 - A real summary. The Dialext outputs are deterministic, fixture-grade copies of the selected reading's passages, for checking corrections and proposals end to end.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 - Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
@@ -104,7 +104,7 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–6 have passed; milestone 7 has one verified slice and remaining work recorded below. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–7 have passed; the next bounded milestone is branding. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -1094,7 +1094,7 @@ Real-window result, using only `node dialext/dev.mjs`: the isolated debug protot
 no black diagnostics bar and no purple render outlines. Settings → Developers → Show developer
 diagnostics restored the bar; switching it off removed the bar again. No release build was used.
 
-## Milestone 7 — independent entitlements (two bounded slices; not yet accepted)
+## Milestone 7 — independent entitlements (accepted 24 September 2026)
 
 ### First bounded slice
 
@@ -1186,9 +1186,8 @@ code-split warning. They did not block this slice and were not treated as releas
 
 Implemented on 22 September 2026 on branch `codex/m7-hosted-surface-isolation`, in a separate
 worktree, as one commit on top of `d3e7182` (`wip: checkpoint Dialext milestone 7 entitlement
-slice`), which holds the first slice above and its regenerated catalogs. **Automated checks
-pass; real-window acceptance of this slice is outstanding (see below). Milestone 7 is not
-accepted.**
+slice`), which holds the first slice above and its regenerated catalogs. At that point automated
+checks passed but real-window acceptance was outstanding; its later result is recorded below.
 
 #### Policy
 
@@ -1364,25 +1363,55 @@ two and failed on two inherited `plugins/db/src/commands.rs` lints (lines 817 an
 `session-ingest` has public helper/speaker-migration candidates with no external caller found;
 visibility was left alone for this report. Rust triage 2.2, 5.6 and 1.9 remain conditional.
 
-#### What remains in milestone 7
+#### Milestone 7 closure — 24 September 2026
 
-- **App icon:** Joshua chose to hide the picker for now, so its Pro gate — the only reachable
-  Pro interruption this audit found — is gone. Milestone 8 still has to choose Dialext's icons
-  and decide whether picking one becomes a local capability or stays hidden.
-- The chat `web_search` tool targets Anarlog's hosted research endpoint. Without auth headers
-  it makes no request; its refusal to the model now reads "Web search is not available in this
-  build." instead of asking for a sign-in that cannot happen. The tool itself is still
-  registered: removing or replacing it changes model tools, so that needs a decision.
-- The template gallery (Templates tab and note template picker) still fetches public suggested
-  templates from `https://anarlog.so/api/templates` without an account. Milestone 3's "Lecture"
-  template came from it; replacing it with bundled local templates is separate template work.
-- Native calendar discovery (`plugins/calendar`, `list_connection_ids`) still asks the Anarlog
-  API for Google/Outlook connections if a legacy Anarlog access token is stored by the auth
-  plugin. The personal shell cannot create one; a native guard would be a separate Rust
-  change.
-- The note editor's owned-share comment query stays mounted but disabled without a session;
-  it sits inside the core editor and was not changed.
-- Upstream documentation links (Imports, calendar docs) belong to milestone 8.
+- Templates tab and note picker use the same bundled Meeting, Lecture, Interview and One-to-one
+  formats plus the existing Auto. They are instructions for future output, not example summaries.
+  `useWebResources` returns them before constructing a fetch in personal mode and uses a separate
+  query key from the retained account-backed gallery. Saved templates and references remain
+  untouched. A mounted-hook regression proves both consumers get the same data with no fetch.
+- Native calendar already takes `DIALEXT_SERVICE_URL: Option<String>`, unset in the prototype.
+  The calendar crate returns Apple locally before building a client when it is `None`; the plugin
+  regression polls discovery to completion with a stale Anarlog token and proves it cannot wait
+  for an account request. Google/Outlook code remains for a configured Dialext service.
+- Chat's personal tool registry omits `web_search`, and its system guidance omits all web-search
+  instructions. The account-backed registry and guidance still include them. Local meeting and
+  transcript tools are unchanged. Focused tests cover both configurations.
+- The owned-share query in the core note editor now has a capability check at `enabled` and in
+  the query function before `loadManagedSharedNoteForSession`. The comments query and mutations
+  have the same check; cached old share data cannot enable them. A mounted-hook test supplies a
+  stale non-anonymous session, Supabase client and cached share and observes zero hosted calls.
+- Native window: the Templates tab and recorded-note picker showed all four bundled formats
+  alongside existing saved templates without sign-in. A synthetic user template was created,
+  edited, duplicated and deleted with its copy. Apple Calendar listed Birthdays, Home, Work and
+  Irish Holidays and refreshed; Google/Outlook and account prompts were absent. An ordinary
+  synthetic note was opened, edited and restored. The app process had only its local relay
+  listener at the network snapshot; no Anarlog socket was visible. The development log had
+  inherited UI/performance warnings but no observed Anarlog request. This socket snapshot is
+  not a full capture of transient WebView requests. The no-request conclusion rests on the
+  explicit guards and focused tests as well as native observation.
+- Native recording chat was opened on a Dialext sample but no question was submitted: a matching
+  question would invoke a live model, outside the synthetic/no-provider boundary. The existing
+  `question.test.ts` remains in the passing desktop suite, including its no-match refusal before
+  any model call. The model-facing tool list is verified by focused tests, not a native model call.
+- Audit classification: gallery, native calendar, research tool and editor share/comment paths
+  are explicitly guarded in personal mode. Account auth/billing, cloud sync, hosted STT/LLM,
+  sharing/delivery, automations and Nango implementations remain behind the earlier milestone 7
+  shell gates or the unset Dialext service seam. `docs.anarlog.so`, Help/Discord links,
+  disclosure text and updater/package URLs are user-visible or release-only milestone 8/packaging
+  work; their strings are not evidence of an active account request. No migration, account row,
+  evidence artefact or stored template was removed.
 
-Do not delete the retained storage, migrations or implementations, and do not replace the
-capability split with `isPro: true`.
+Validation: focused desktop 7 files / 23 tests; full desktop 488 files / 4,563 tests; shared UI
+build and desktop typecheck passed. Calendar plugin 3 tests, calendar crate 19 tests, both cargo
+checks and library Clippy `-D warnings` passed. All-target calendar Clippy fails on the inherited
+`items_after_test_module` lint in `crates/calendar/src/lib.rs:242`. Changed-file dprint and
+ESLint passed, desktop Oxlint had 206 inherited warnings and zero errors. Lingui clean extraction,
+strict compilation and `i18n:check` were stable, with no catalog change. Licence-boundary tests
+(9) and check, both release-version checks and the exact CI Node list (82 tests) passed. A bare
+root `node --test` is not the CI list and failed on generated Whisper tests/missing model files
+(313 failures), as previously recorded. Offline zizmor reported the same 358 inherited findings;
+no workflow was changed. No push, hosted call or paid provider test was made.
+
+Milestone 8 still owns Dialext branding, icons and visible Anarlog links. Do not delete retained
+storage, migrations or implementations or replace the capability split with `isPro: true`.

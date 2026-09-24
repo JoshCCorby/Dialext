@@ -9,6 +9,10 @@ import {
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("~/auth/account-services", () => ({
+  ANARLOG_ACCOUNT_SERVICES_ENABLED: true,
+}));
+
 const mocks = vi.hoisted(() => ({
   captureCommentAnchor: vi.fn(() => ({
     quoteExact: "selected text",

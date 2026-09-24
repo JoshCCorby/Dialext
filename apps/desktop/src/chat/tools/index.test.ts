@@ -36,11 +36,16 @@ describe("chat tool registration", () => {
     expect(tools).toHaveProperty("edit_memo");
     expect(tools).toHaveProperty("edit_summary");
     expect(tools).toHaveProperty("move_meeting_contents");
+    expect(tools).not.toHaveProperty("web_search");
     expect(tools).not.toHaveProperty("search_sessions");
     expect(tools).not.toHaveProperty("grep_notes");
     expect(tools).not.toHaveProperty("read_note");
     expect(tools).not.toHaveProperty("read_current_note");
     expect(tools).not.toHaveProperty("list_related_notes");
+  });
+
+  it("retains web search for an account-backed configuration", () => {
+    expect(buildChatTools(dependencies(), true)).toHaveProperty("web_search");
   });
 
   it("does not log meeting tool inputs or outputs", async () => {

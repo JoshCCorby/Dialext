@@ -7,6 +7,7 @@ import { CustomChatTransport } from "./index";
 import type { ResolvedChatContext } from "./index";
 
 import { useLanguageModel } from "~/ai/hooks";
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import type { ContextRef } from "~/chat/context/entities";
 import { renderFolderContext } from "~/chat/context/folder-context";
 import { hydrateSessionContext } from "~/chat/context/session-context-hydrator";
@@ -35,24 +36,28 @@ Context and local meeting tool guidance:
 - Use typed meeting tools instead of constructing shell commands, crawling files, or accessing SQLite directly.
 - Do not assume meeting contents from chat history when a typed tool can read the current source of truth.
 
-Web search guidance:
+`.trim();
+
+const WEB_SEARCH_TOOL_GUIDANCE = `Web search guidance:
 - Use web_search for public websites, URLs, companies, products, people, news, or current facts that may be outside local notes.
 - Include source URLs in the final answer when web_search results are used.
-- Do not use web_search for questions that only need local notes, contacts, or calendar events.
-`.trim();
+- Do not use web_search for questions that only need local notes, contacts, or calendar events.`;
 
 export function appendMeetingContextToolGuidance(
   prompt: string | undefined,
+  accountServicesEnabled = ANARLOG_ACCOUNT_SERVICES_ENABLED,
 ): string | undefined {
   if (prompt === undefined) {
     return undefined;
   }
 
   if (!prompt.trim()) {
-    return MEETING_CONTEXT_TOOL_GUIDANCE;
+    return accountServicesEnabled
+      ? `${MEETING_CONTEXT_TOOL_GUIDANCE}\n\n${WEB_SEARCH_TOOL_GUIDANCE}`
+      : MEETING_CONTEXT_TOOL_GUIDANCE;
   }
 
-  return `${prompt.trim()}\n\n${MEETING_CONTEXT_TOOL_GUIDANCE}`;
+  return `${prompt.trim()}\n\n${MEETING_CONTEXT_TOOL_GUIDANCE}${accountServicesEnabled ? `\n\n${WEB_SEARCH_TOOL_GUIDANCE}` : ""}`;
 }
 
 async function renderHumanContext(humanId: string): Promise<string | null> {

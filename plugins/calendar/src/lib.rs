@@ -69,6 +69,27 @@ mod test {
     }
 
     #[test]
+    fn stale_account_token_cannot_start_calendar_discovery_in_personal_mode() {
+        use std::future::Future;
+
+        let service = get_api_base_url();
+        let mut future = std::pin::pin!(anlg_calendar::list_connection_ids(
+            service.as_deref(),
+            Some("legacy-anarlog-token"),
+            false,
+        ));
+        let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+        let result = future.as_mut().poll(&mut context);
+        let std::task::Poll::Ready(Ok(ids)) = result else {
+            panic!("personal calendar discovery attempted account-service work");
+        };
+        assert!(ids.iter().all(|entry| matches!(
+            entry.provider,
+            anlg_calendar_interface::CalendarProviderType::Apple
+        )));
+    }
+
+    #[test]
     fn export_types() {
         const OUTPUT_FILE: &str = "./js/bindings.gen.ts";
 

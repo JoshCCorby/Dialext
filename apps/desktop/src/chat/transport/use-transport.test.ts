@@ -37,5 +37,12 @@ describe("chat transport prompt guidance", () => {
     expect(prompt).not.toContain("search_sessions");
     expect(prompt).not.toContain("read_note");
     expect(prompt).not.toContain("read_current_note");
+    expect(prompt).not.toContain("web_search");
+  });
+
+  it("adds web search guidance for an account-backed configuration", () => {
+    expect(appendMeetingContextToolGuidance("Base prompt", true)).toContain(
+      "Use web_search",
+    );
   });
 });

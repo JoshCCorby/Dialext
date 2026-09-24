@@ -14,13 +14,13 @@ old `/Users/joshuacorbett/Coding/Transcip` checkout.
 
 ## Where the milestones stand
 
-Baseline and milestones 1–6 are complete. Milestone 7 remains open. Its connectors and
+Baseline and milestones 1–7 are complete. Milestone 7's connectors and
 service-seam work ([CONNECTORS_PLAN.md](CONNECTORS_PLAN.md)) is implemented. The live Granola
 check completed on 23 September: consent said Dialext; first and repeat sync each returned zero
 accessible meetings; Disconnect worked; the Dialext database rows were unchanged and integrity
 was ok. That empty account did not test deduplication of actual imported meetings.
 
-The remaining available milestone 7 real-window checklist was exercised on 23 September:
+The remaining available milestone 7 real-window checklist was exercised on 23–24 September:
 folders, templates, meetings and appearance, plus connected imports and calendar. See
 [HANDOFF.md](HANDOFF.md) for each pass, absent share/hosted surface, and the untested first-time
 calendar permission path. A chat correction could previously update Dialext transcript JSON
@@ -37,10 +37,14 @@ process when it is open, and ask Joshua for browser steps.
 
 ## Next bounded decisions and task sources
 
-- [HANDOFF.md](HANDOFF.md) records the unresolved milestone 7 items: whether to expose local
-  folder/template sharing, how to replace the upstream template gallery and documentation
-  links, whether to remove/replace the inherited chat web-search tool, and whether to add a
-  native calendar guard for a stored legacy token. Do not call Anarlog services.
+- [HANDOFF.md](HANDOFF.md) records milestone 7's closure: the template gallery is bundled,
+  native calendar discovery stays local with a stale account token, hosted web search is absent
+  from the personal tool list and prompt, and the note editor's owned-share query has a direct
+  guard. The local template and calendar UI and ordinary note edit were exercised in the real
+  window. A live model question was deliberately not submitted; see the exact limitation there.
+  Do not call Anarlog services.
+- Milestone 8 is Dialext branding: visible Anarlog strings, links, app icons, export identity and
+  menus. Keep internal `@anlg`/`anlg_` identifiers and MIT attribution.
 - [ARCHITECTURE.md](ARCHITECTURE.md) and [product/product-vision.md](product/product-vision.md)
   define the remaining personal recording, useful adaptive summary, source-linked output and
   final acceptance work. The current provider is fixture-only. A live speech-provider sample
