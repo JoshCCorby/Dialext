@@ -4,15 +4,13 @@
 
 Dialext turns a recording of a mixed-language conversation into one clear account in your own language: who said what, a summary, and the original audio behind every line. You don't need to speak both languages to follow it.
 
-Irish–English is the first language pair.
-
 ## Why Dialext
 
-Conversations switch language all the time: a meeting that moves between Irish and English, a family call, an interview. Transcription tools expect one language, so a mixed recording comes back garbled or half in a language the reader can't follow. Anyone who isn't fluent in both misses what was said.
+Conversations switch language all the time: a meeting that moves between two languages, a family call, an interview. Transcription tools expect one language, so a mixed recording comes back garbled or half in a language the reader can't follow. Anyone who isn't fluent in both misses what was said.
 
 ## What it does
 
-- **One account, in your language.** Read the whole conversation in English or in Irish, including the parts spoken in the other language. Switch views in one click.
+- **One account, in your language.** Read the whole conversation in each language separately, including the parts spoken in the other language. Switch views in one click.
 - **Every line traceable.** Each passage is linked to the exact stretch of audio it came from, so you can listen to the original.
 - **Real names, not "Speaker 2".** Name a speaker once and the name carries through the transcript, search and exports.
 - **Corrections you control.** Fixes keep a full history with undo. Dialext suggests matching summary changes and applies only the ones you accept.
