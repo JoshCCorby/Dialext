@@ -30,6 +30,7 @@ const SELF_BUNDLE_IDS: &[&str] = &[
     "com.hyprnote.stable",
     "com.hyprnote.staging",
     "com.hyprnote.nightly",
+    "app.dialext.prototype",
 ];
 
 const SELF_APP_NAMES: &[&str] = &[
@@ -42,6 +43,7 @@ const SELF_APP_NAMES: &[&str] = &[
     "char",
     "char staging",
     "char nightly",
+    "dialext prototype",
 ];
 
 const SELF_APP_PATH_SEGMENTS: &[&str] = &[
@@ -54,6 +56,7 @@ const SELF_APP_PATH_SEGMENTS: &[&str] = &[
     "/char.app/",
     "/char staging.app/",
     "/char nightly.app/",
+    "/dialext prototype.app/",
 ];
 
 fn is_self_app(app: &InstalledApp) -> bool {
@@ -131,6 +134,19 @@ mod tests {
         assert!(is_self_app(&app(
             "/Applications/Hyprnote Nightly.app/Contents/MacOS/Hyprnote Nightly",
             "Unknown",
+        )));
+    }
+
+    #[test]
+    fn test_is_self_app_matches_dialext_prototype() {
+        assert!(is_self_app(&app(
+            "app.dialext.prototype",
+            "Dialext Prototype"
+        )));
+        assert!(is_self_app(&app("pid:45", "Dialext Prototype")));
+        assert!(is_self_app(&app(
+            "/Users/me/Dialext/.dialext-data/Dialext Prototype.app/Contents/MacOS/desktop",
+            "desktop",
         )));
     }
 

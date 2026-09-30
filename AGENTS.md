@@ -52,6 +52,8 @@ release build, which maps to the stable app's data directory.
   `.dialext-tools/cargo` and `.dialext-tools/rustup` and prepend
   `.dialext-tools/cargo/bin` to `PATH`, as `dialext/dev.mjs` does; without them
   dprint reports "Cannot start formatter process" for `.rs` files.
+- The `detect` crate's modules are feature-gated, so `cargo test --locked -p detect` alone skips
+  the self-app and mic-listing tests; run `-p detect --features list,mic`.
 - dprint's JS/TS formatter runs a bare `pnpm`, so it fails with "Cannot start formatter
   process" unless `pnpm` is on PATH; put a two-line shim (`exec corepack pnpm "$@"`) in a
   scratch directory on PATH before `dprint check`.
