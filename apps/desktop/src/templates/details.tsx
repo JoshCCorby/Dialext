@@ -21,6 +21,7 @@ import { TemplateForm } from "./template-form";
 import { TemplateIconGlyph } from "./template-icon";
 import { getTemplateCreatorLabel } from "./utils";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import {
   ResourceDetailEmpty,
   ResourcePreviewHeader,
@@ -57,7 +58,13 @@ export function TemplateDetailsColumn({
   if (isWebMode) {
     if (!selectedWebTemplate) {
       return (
-        <ResourceDetailEmpty message={t`No community templates available`} />
+        <ResourceDetailEmpty
+          message={
+            ANARLOG_ACCOUNT_SERVICES_ENABLED
+              ? t`No community templates available`
+              : t`No templates yet`
+          }
+        />
       );
     }
     return (

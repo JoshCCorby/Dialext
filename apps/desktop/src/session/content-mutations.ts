@@ -56,8 +56,15 @@ export function applySessionContentCorrections({
           UPDATE sessions
           SET title = ?, updated_at = ?
           WHERE id = ? AND title = ? AND deleted_at IS NULL
+            AND NOT EXISTS (SELECT 1 FROM dialext_recordings WHERE id = ?)
         `,
-        params: [title.nextTitle, now, sessionId, title.currentTitle],
+        params: [
+          title.nextTitle,
+          now,
+          sessionId,
+          title.currentTitle,
+          sessionId,
+        ],
         expectedRowsAffected: 1,
       });
     }
@@ -76,6 +83,7 @@ export function applySessionContentCorrections({
             AND body = ?
             AND body_format = ?
             AND deleted_at IS NULL
+            AND NOT EXISTS (SELECT 1 FROM dialext_recordings WHERE id = ?)
         `,
         params: [
           summary.nextContent,
@@ -84,6 +92,7 @@ export function applySessionContentCorrections({
           sessionId,
           summary.currentContent,
           summary.currentContentFormat,
+          sessionId,
         ],
         expectedRowsAffected: 1,
       });
@@ -99,6 +108,7 @@ export function applySessionContentCorrections({
             AND words_json = ?
             AND memo = ?
             AND deleted_at IS NULL
+            AND NOT EXISTS (SELECT 1 FROM dialext_recordings WHERE id = ?)
         `,
         params: [
           transcript.nextWordsJson,
@@ -108,6 +118,7 @@ export function applySessionContentCorrections({
           sessionId,
           transcript.currentWordsJson,
           transcript.currentMemo,
+          sessionId,
         ],
         expectedRowsAffected: 1,
       });

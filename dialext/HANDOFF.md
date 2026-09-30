@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 23 September 2026. Native baseline and milestones 1–**5** are complete and verified in the isolated native app. **Milestone 6 — quiet interface — has now passed its real-window acceptance. Milestone 7 has started with a bounded personal-entitlement and hosted-service-isolation slice; it is not complete.** No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 24 September 2026. Native baseline and milestones 1–**6** are complete and verified in the isolated native app. **Milestone 7's personal-shell service isolation is complete**, with native limitations recorded below. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -41,7 +41,7 @@ The sample `dialext/fixtures/language-practice.json` is entirely hand-authored. 
 ## What is not implemented
 
 - A live Azure/other speech provider, provider credentials, quality claims or packaged helper runtime. Only the deterministic development fixture provider is offered. One approved short live sample remains a separate assessment.
-- Completion of milestone 7. Folder/template resource sharing still needs a bounded personal-shell pass, and connected imports and calendar follow [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md); their legacy implementation remains in the tree but must not become the route to a blanket paid entitlement.
+- A Dialext hosted service and account system. The account-backed implementations remain in the tree behind the personal-shell capability and the unset Dialext service seam.
 - A real summary. The Dialext outputs are deterministic, fixture-grade copies of the selected reading's passages, for checking corrections and proposals end to end.
 - Packaging/distribution, full rebranding, migration of the old recording library, or quality evaluation.
 - Customer-initiated deletion of Dialext source audio. It is app-owned evidence outside
@@ -104,7 +104,7 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–6 have passed; milestone 7 has one verified slice and remaining work recorded below. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–7 have passed; the next bounded milestone is branding. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -1094,7 +1094,7 @@ Real-window result, using only `node dialext/dev.mjs`: the isolated debug protot
 no black diagnostics bar and no purple render outlines. Settings → Developers → Show developer
 diagnostics restored the bar; switching it off removed the bar again. No release build was used.
 
-## Milestone 7 — independent entitlements (two bounded slices; not yet accepted)
+## Milestone 7 — independent entitlements (accepted 24 September 2026)
 
 ### First bounded slice
 
@@ -1186,9 +1186,8 @@ code-split warning. They did not block this slice and were not treated as releas
 
 Implemented on 22 September 2026 on branch `codex/m7-hosted-surface-isolation`, in a separate
 worktree, as one commit on top of `d3e7182` (`wip: checkpoint Dialext milestone 7 entitlement
-slice`), which holds the first slice above and its regenerated catalogs. **Automated checks
-pass; real-window acceptance of this slice is outstanding (see below). Milestone 7 is not
-accepted.**
+slice`), which holds the first slice above and its regenerated catalogs. At that point automated
+checks passed but real-window acceptance was outstanding; its later result is recorded below.
 
 #### Policy
 
@@ -1275,30 +1274,27 @@ accepted.**
 - Licence-boundary tests (9) and boundary check: passed.
 - No live or paid provider call, no network publish, no push and no release build.
 
-#### Native verification: not run — acceptance outstanding
+#### Native verification: completed in the primary checkout on 23 September
 
-No native check was run for this slice. The dev launcher resolves its toolchain and vault from
-the checkout root, but this worktree has no `.dialext-tools` (and no global `cargo`), would
-need a cold Rust build, and would share the `app.dialext.prototype` application data with the
-primary checkout, where another agent is working. Doing that safely needs Joshua's go-ahead and
-window control. Real-window checklist, using only `node dialext/dev.mjs` from the checkout that
-owns the prototype vault and synthetic samples:
+Using the sole `node dialext/dev.mjs` instance and synthetic data:
 
-1. Folders: create, rename, set context, add/remove a material, delete. No Share button and no
-   "Shared with me" section.
-2. Templates: create, edit, duplicate and delete a template; Auto still opens. No Share button
-   and no "Shared with me" section.
-3. Settings → Imports: **Import a Dialext recording** and generation are present; detected apps
-   show only **Choose files**; no Connect, Sign in or Google Meet row.
-4. Calendar: only Apple Calendar is listed; permission prompt/recovery, reconnect and disconnect
-   still work; no Google/Outlook and no sign-in tooltip.
-5. Settings → Meetings: no Default sharing row.
-6. Settings → Appearance: theme and sidebar options are present; there is no App icon section.
-7. No sign-in, upgrade or trial prompt appears across launch, restart and the steps above.
-   Recording, permission, download, missing-provider and error notices still appear where
-   they apply.
+1. Folders: created and renamed a folder, saved context, added and removed a synthetic text
+   material through the macOS Open panel, then deleted the folder. No Share action or "Shared
+   with me" section appeared. The picker was accessible; no extra macOS grant prompt appeared.
+2. Templates: created and edited a template with a section, duplicated it, deleted both copies,
+   and opened Auto. No Share action or shared library appeared.
+3. Settings → Imports: **Import a Dialext recording** and deterministic generation were present.
+   ChatGPT Record showed **Choose files**; Granola showed **Connect & import** and **Choose files**
+   after the earlier Disconnect. Hosted rows, Google Meet and Documentation were absent.
+4. Calendar: only Apple Calendar appeared. Reconnect worked. Disconnect temporarily showed "No
+   calendars found"; Reconnect followed by **Refresh calendars** restored the list. No Google or
+   Outlook row and no sign-in tooltip appeared. The first-time macOS permission prompt/recovery
+   was not exercised because calendar permission was already granted; no OS permission was revoked.
+5. Settings → Meetings had no Default sharing row. Appearance retained theme and notes-list
+   folder/tag controls, with no App icon section. Launch and these checks raised no sign-in,
+   upgrade or trial prompt. Recording and error-notice paths were not deliberately triggered.
 
-#### Connectors and service seam (23 September): implemented, live acceptance in progress
+#### Connectors and service seam (23 September): implemented, live Granola check completed
 
 Commits `bed4df2` (providers see Dialext), `051bf80` (hosted connections go only through
 `dialextService()` / `DIALEXT_SERVICE_URL`, unset by default) and `d9a2c89` (local MCP/CLI
@@ -1309,40 +1305,113 @@ dprint/ESLint, Lingui extract/compile stable, licence boundary. Inherited, not i
 with tests on `calendar` fails "items after a test module"; ESLint reports two
 `exhaustive-deps` errors in `imports/connected-import.ts` at lines unchanged by this work.
 
-Real window so far: Imports shows Granola with **Connect & import** and **Choose files**, no
+Real window: Imports shows Granola with **Connect & import** and **Choose files**, no
 Documentation link; Calendar lists Apple Calendar only; no Anarlog or `localhost:3001` request in
 the app logs and the native process holds only its relay socket (webview traffic was not
-observed). Pressing Connect opened Granola's sign-in in Chrome; the session ended there, before
-sign-in. **Outstanding:** confirm the consent screen says Dialext, the first sync, a repeat sync
-with no duplicates, and Disconnect. Joshua approved using his own Granola account; its meetings
-import into the prototype database as ordinary notes. Backup before this check:
-`.dialext-data/connectors-0923/app.pre-connectors.db`.
+observed). Joshua completed Granola sign-in in Chrome and confirmed the consent screen names
+**Dialext**. The first sync completed with **0 added, 0 unchanged** and the app said Granola returned
+no accessible meetings for this account and workspace. A repeat **Sync now** again showed **0 added,
+0 unchanged**; no duplicate sessions were created. This does not exercise deduplication of an
+actual imported meeting. **Disconnect** returned the row to **Connect & import**. Comparing the
+live database with `.dialext-data/connectors-0923/app.pre-connectors.db` after the repeat sync:
+all 14 `sessions`, all 15 `transcripts`, and every `dialext_*` table were unchanged. No Dialext
+account was created or changed; no evidence or transcript row changed. Final SQLite
+`PRAGMA integrity_check` was **ok**.
 
-#### What remains in milestone 7
+The first connection attempt exposed an invalid macOS prototype app signature when credentials
+were saved: the launcher signed the executable before writing `Info.plist`, and linked bundle
+resources outside the app. `apps/desktop/scripts/dev-runner.mjs` now copies those resources inside
+the prototype bundle and signs the completed app. `codesign --verify --deep --strict` passed on
+the relaunched app, and Granola connected through that app. The backup above remains the
+pre-connection comparison point.
 
-- **Connectors and service seam:** [CONNECTORS_PLAN.md](CONNECTORS_PLAN.md) (plan only, 23
-  September). It opens the local MCP/CLI importers without sign-in, makes other services see
-  Dialext, and routes hosted imports and Google/Outlook calendar through a Dialext service seam
-  that is unset by default, so nothing calls Anarlog. It supersedes this section's "detected
-  apps show only Choose files" for MCP/CLI providers.
-- The real-window acceptance above.
-- **App icon:** Joshua chose to hide the picker for now, so its Pro gate — the only reachable
-  Pro interruption this audit found — is gone. Milestone 8 still has to choose Dialext's icons
-  and decide whether picking one becomes a local capability or stays hidden.
-- The chat `web_search` tool targets Anarlog's hosted research endpoint. Without auth headers
-  it makes no request; its refusal to the model now reads "Web search is not available in this
-  build." instead of asking for a sign-in that cannot happen. The tool itself is still
-  registered: removing or replacing it changes model tools, so that needs a decision.
-- The template gallery (Templates tab and note template picker) still fetches public suggested
-  templates from `https://anarlog.so/api/templates` without an account. Milestone 3's "Lecture"
-  template came from it; replacing it with bundled local templates is separate template work.
-- Native calendar discovery (`plugins/calendar`, `list_connection_ids`) still asks the Anarlog
-  API for Google/Outlook connections if a legacy Anarlog access token is stored by the auth
-  plugin. The personal shell cannot create one; a native guard would be a separate Rust
-  change.
-- The note editor's owned-share comment query stays mounted but disabled without a session;
-  it sits inside the core editor and was not changed.
-- Upstream documentation links (Imports, calendar docs) belong to milestone 8.
+Validation for this acceptance/fix: `node --check` and changed-file dprint/ESLint passed for
+the launcher; desktop typecheck passed; both licence-boundary Python checks passed; the exact
+`ci.yaml` Node test list passed (82 tests). A bare root `node --test` is not the CI command and
+fails by discovering TypeScript tests without their runner and a generated Whisper test without
+its model file (313 failures); this did not affect the scoped CI test result. No full desktop
+suite was rerun for this launcher-only fix; the earlier connector suite result remains above.
 
-Do not delete the retained storage, migrations or implementations, and do not replace the
-capability split with `isPro: true`.
+#### Chat correction integrity (23 September)
+
+`apply_session_correction` used `applySessionContentCorrections`, a TypeScript-built SQL
+transaction that updated `transcripts.words_json` and `memo` directly. It did not call native
+`edit_dialext_passage`, pin `content_version`, or append `dialext_account_edits`, so it could
+rewrite a Dialext account without checked-edit history. The tool now refuses every correction
+target for a session in `dialext_recordings` and points the user to Transcript passage correction.
+The SQL mutation also includes a `NOT EXISTS dialext_recordings` guard on title, summary and
+transcript updates, so adoption between the tool's preflight read and its transaction cannot
+write a Dialext session. Ordinary-session corrections remain available. Focused tests passed
+(24), desktop typecheck passed. The native checked-edit path remains the only supported Dialext
+passage correction path; chat routing through it is a later design choice.
+
+#### Report-only triage (23 September)
+
+The dated findings and exact scope are in [prompts/TRIAGE.md](prompts/TRIAGE.md). DDIA 3.1
+found ordered, synced immutable artefact publication before SQLite references and a durable
+SQLite search queue acknowledged after the Tantivy batch commit. Normal interruption should
+replay unacknowledged work; this is a code-path assessment, not a power-loss test. Startup's
+count check cannot detect a same-count stale index after an independent store restore, so a
+bounded cross-store fault/recovery test remains a candidate. The closed live prototype returned
+`PRAGMA integrity_check = ok`, and all 18 existing search queue rows were acknowledged.
+
+Desktop TypeScript baseline passed. Diagnostic-only `noImplicitReturns` found eight inherited
+errors; `noUncheckedIndexedAccess` found 816 errors across 118 files, including 59 in Dialext
+tests and none in Dialext production. The shared config was not changed. Rust `cargo check`
+passed for `session-ingest` (`apply`), `db-app` and `tauri-plugin-db`; Clippy passed for the first
+two and failed on two inherited `plugins/db/src/commands.rs` lints (lines 817 and 917).
+`session-ingest` has public helper/speaker-migration candidates with no external caller found;
+visibility was left alone for this report. Rust triage 2.2, 5.6 and 1.9 remain conditional.
+
+#### Milestone 7 closure — 24 September 2026
+
+- Templates tab and note picker use the same bundled Meeting, Lecture, Interview and One-to-one
+  formats plus the existing Auto. They are instructions for future output, not example summaries.
+  `useWebResources` returns them before constructing a fetch in personal mode and uses a separate
+  query key from the retained account-backed gallery. Saved templates and references remain
+  untouched. A mounted-hook regression proves both consumers get the same data with no fetch.
+- Native calendar already takes `DIALEXT_SERVICE_URL: Option<String>`, unset in the prototype.
+  The calendar crate returns Apple locally before building a client when it is `None`; the plugin
+  regression polls discovery to completion with a stale Anarlog token and proves it cannot wait
+  for an account request. Google/Outlook code remains for a configured Dialext service.
+- Chat's personal tool registry omits `web_search`, and its system guidance omits all web-search
+  instructions. The account-backed registry and guidance still include them. Local meeting and
+  transcript tools are unchanged. Focused tests cover both configurations.
+- The owned-share query in the core note editor now has a capability check at `enabled` and in
+  the query function before `loadManagedSharedNoteForSession`. The comments query and mutations
+  have the same check; cached old share data cannot enable them. A mounted-hook test supplies a
+  stale non-anonymous session, Supabase client and cached share and observes zero hosted calls.
+- Native window: the Templates tab and recorded-note picker showed all four bundled formats
+  alongside existing saved templates without sign-in. A synthetic user template was created,
+  edited, duplicated and deleted with its copy. Apple Calendar listed Birthdays, Home, Work and
+  Irish Holidays and refreshed; Google/Outlook and account prompts were absent. An ordinary
+  synthetic note was opened, edited and restored. The app process had only its local relay
+  listener at the network snapshot; no Anarlog socket was visible. The development log had
+  inherited UI/performance warnings but no observed Anarlog request. This socket snapshot is
+  not a full capture of transient WebView requests. The no-request conclusion rests on the
+  explicit guards and focused tests as well as native observation.
+- Native recording chat was opened on a Dialext sample but no question was submitted: a matching
+  question would invoke a live model, outside the synthetic/no-provider boundary. The existing
+  `question.test.ts` remains in the passing desktop suite, including its no-match refusal before
+  any model call. The model-facing tool list is verified by focused tests, not a native model call.
+- Audit classification: gallery, native calendar, research tool and editor share/comment paths
+  are explicitly guarded in personal mode. Account auth/billing, cloud sync, hosted STT/LLM,
+  sharing/delivery, automations and Nango implementations remain behind the earlier milestone 7
+  shell gates or the unset Dialext service seam. `docs.anarlog.so`, Help/Discord links,
+  disclosure text and updater/package URLs are user-visible or release-only milestone 8/packaging
+  work; their strings are not evidence of an active account request. No migration, account row,
+  evidence artefact or stored template was removed.
+
+Validation: focused desktop 7 files / 23 tests; full desktop 488 files / 4,563 tests; shared UI
+build and desktop typecheck passed. Calendar plugin 3 tests, calendar crate 19 tests, both cargo
+checks and library Clippy `-D warnings` passed. All-target calendar Clippy fails on the inherited
+`items_after_test_module` lint in `crates/calendar/src/lib.rs:242`. Changed-file dprint and
+ESLint passed, desktop Oxlint had 206 inherited warnings and zero errors. Lingui clean extraction,
+strict compilation and `i18n:check` were stable, with no catalog change. Licence-boundary tests
+(9) and check, both release-version checks and the exact CI Node list (82 tests) passed. A bare
+root `node --test` is not the CI list and failed on generated Whisper tests/missing model files
+(313 failures), as previously recorded. Offline zizmor reported the same 358 inherited findings;
+no workflow was changed. No push, hosted call or paid provider test was made.
+
+Milestone 8 still owns Dialext branding, icons and visible Anarlog links. Do not delete retained
+storage, migrations or implementations or replace the capability split with `isPro: true`.

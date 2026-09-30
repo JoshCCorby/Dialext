@@ -1,7 +1,9 @@
 # Plan: local connectors, Dialext identity and a service seam
 
-Status (23 September 2026): **phases B, C and A are implemented and committed** (`bed4df2`,
-`051bf80`, `d9a2c89`); the live Granola acceptance is in progress (see `HANDOFF.md`). Two
+Status (24 September 2026): **phases B, C and A are implemented and committed** (`bed4df2`,
+`051bf80`, `d9a2c89`); live Granola acceptance completed with zero accessible meetings (see
+`HANDOFF.md`). Milestone 7's template, research-tool, native-calendar and editor-query pass is
+also complete. Two
 departures from the text below: the local connector row is a new component
 (`imports/local-connector.tsx`) used by the personal screen only, because the Anarlog screen is
 unreachable behind its flag; and the client version sent to providers is the importer crate's
@@ -189,9 +191,10 @@ These are recorded so they are not lost. Each needs its own decision.
 
 - **Updater:** the endpoint `desktop.anarlog.so` in `tauri.conf.*.json`. It applies to release
   builds only; the debug prototype does not use it. It belongs to packaging.
-- **Template gallery:** the fetch from `anarlog.so/api/templates` is already listed in
-  milestone 7's remaining work.
-- **Chat `web_search` tool:** already listed in milestone 7's remaining work.
+- **Template gallery:** the personal shell now returns bundled templates before the retained
+  account-backed fetch can run.
+- **Chat `web_search` tool:** the personal tool registry and guidance omit it; the account-backed
+  implementation remains available.
 - **Documentation links:** `docs.anarlog.so` in `apps/desktop/src-tauri/src/agents-content.md`
   and settings pages. This belongs to milestone 8 branding.
 
@@ -208,7 +211,7 @@ Each phase:
   importer and calendar crate tests with Clippy `-D warnings`;
 - runs the Lingui extract/compile when copy changes.
 
-The full desktop suite runs at the end, as milestone 7 closes.
+The full desktop suite passed at milestone 7 closure (488 files, 4,563 tests); see `HANDOFF.md`.
 
 Real-window acceptance, with `node dialext/dev.mjs`:
 - **Imports:** local connectors show Connect with no sign-in. Hosted rows are absent. The

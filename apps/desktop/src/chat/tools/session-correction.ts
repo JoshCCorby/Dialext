@@ -11,6 +11,7 @@ import {
   type TranscriptContentCorrection,
 } from "~/session/content-mutations";
 import {
+  isDialextRecording,
   loadSessionContentSnapshot,
   type SessionContentSnapshot,
 } from "~/session/content-queries";
@@ -529,6 +530,15 @@ export const buildApplySessionCorrectionTool = (
         return {
           status: "error",
           message: "The target session could not be loaded.",
+          sessionId,
+        };
+      }
+
+      if (await isDialextRecording(sessionId)) {
+        return {
+          status: "error",
+          message:
+            "This Dialext reading uses checked corrections. Open its Transcript and correct the passage there; this chat tool cannot change it.",
           sessionId,
         };
       }

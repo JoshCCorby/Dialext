@@ -3,11 +3,13 @@
 import { spawn, spawnSync } from "node:child_process";
 import {
   constants,
+  cpSync,
   copyFileSync,
   mkdirSync,
   readFileSync,
-  symlinkSync,
   existsSync,
+  rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -52,6 +54,9 @@ function prototypeBundle(binary) {
   const executable = resolve(contents, "MacOS/desktop");
   mkdirSync(dirname(executable), { recursive: true });
   copyFileSync(binary, executable, constants.COPYFILE_FICLONE);
+  const resources = resolve(contents, "Resources");
+  rmSync(resources, { force: true, recursive: true });
+  mkdirSync(resources, { recursive: true });
   for (const name of [
     "check-permissions",
     "icons",
@@ -61,11 +66,21 @@ function prototypeBundle(binary) {
   ]) {
     const source = resolve(dirname(resolve(binary)), name);
     const destination = resolve(dirname(executable), name);
-    if (existsSync(source) && !existsSync(destination))
-      symlinkSync(source, destination);
+    rmSync(destination, { force: true, recursive: true });
+    if (existsSync(source)) {
+      if (name === "check-permissions") {
+        copyFileSync(source, destination);
+        signBinary(destination);
+      } else {
+        cpSync(source, resolve(resources, name), { recursive: true });
+        symlinkSync(`../Resources/${name}`, destination);
+      }
+    }
   }
-  const resources = resolve(contents, "Resources");
-  if (!existsSync(resources)) symlinkSync(dirname(resolve(binary)), resources);
+  copyFileSync(
+    resolve(dirname(resolve(binary)), "mlx.metallib"),
+    resolve(resources, "mlx.metallib"),
+  );
   const plist = readFileSync(
     resolve(root, "apps/desktop/src-tauri/Info.plist"),
     "utf8",
@@ -79,6 +94,7 @@ function prototypeBundle(binary) {
     <key>CFBundleVersion</key><string>1</string>`,
   );
   writeFileSync(resolve(contents, "Info.plist"), plist);
+  signBinary(resolve(contents, ".."));
   return executable;
 }
 

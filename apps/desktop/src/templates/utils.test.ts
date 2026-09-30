@@ -45,7 +45,7 @@ describe("resolveTemplateTabSelection", () => {
     });
   });
 
-  it("defaults to community mode only when community templates exist without local templates", () => {
+  it("defaults to Auto in the personal shell even when bundled templates exist", () => {
     expect(
       resolveTemplateTabSelection({
         isWebMode: null,
@@ -55,11 +55,24 @@ describe("resolveTemplateTabSelection", () => {
         webTemplates: [webTemplate],
       }),
     ).toEqual({
-      isWebMode: true,
-      selectedMineId: null,
-      selectedWebIndex: 0,
-      selectedWebTemplate: webTemplate,
+      isWebMode: false,
+      selectedMineId: AUTO_TEMPLATE_ID,
+      selectedWebIndex: null,
+      selectedWebTemplate: null,
     });
+  });
+
+  it("keeps the account-backed gallery default", () => {
+    expect(
+      resolveTemplateTabSelection({
+        accountServicesEnabled: true,
+        isWebMode: null,
+        selectedMineId: null,
+        selectedWebIndex: null,
+        userTemplates: [],
+        webTemplates: [webTemplate],
+      }).selectedWebTemplate,
+    ).toBe(webTemplate);
   });
 
   it("selects the first local template when mine mode has no explicit selection", () => {

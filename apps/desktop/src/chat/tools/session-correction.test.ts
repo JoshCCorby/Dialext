@@ -4,6 +4,7 @@ import { json2md, md2json, parseJsonContent } from "@anlg/editor/markdown";
 
 const mocks = vi.hoisted(() => ({
   applySessionContentCorrections: vi.fn(),
+  isDialextRecording: vi.fn(),
   loadSessionContentSnapshot: vi.fn(),
   updateSettingValue: vi.fn(),
 }));
@@ -13,6 +14,7 @@ vi.mock("~/session/content-mutations", () => ({
 }));
 
 vi.mock("~/session/content-queries", () => ({
+  isDialextRecording: mocks.isDialextRecording,
   loadSessionContentSnapshot: mocks.loadSessionContentSnapshot,
 }));
 
@@ -98,6 +100,7 @@ describe("session correction chat tool", () => {
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.applySessionContentCorrections.mockResolvedValue(undefined);
+    mocks.isDialextRecording.mockResolvedValue(false);
     mocks.updateSettingValue.mockImplementation(async (_key, update) =>
       update("[]"),
     );
@@ -469,6 +472,28 @@ describe("session correction chat tool", () => {
         nextTitle: "Scratchpad Design and Anarlog vs Chyle Direction",
       },
     });
+  });
+
+  it("blocks chat corrections to Dialext readings before any write", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue(
+      snapshot({ notes: [summary("Discussed X roadmap.")] }),
+    );
+    mocks.isDialextRecording.mockResolvedValue(true);
+
+    const result = await (buildTool() as any).execute({
+      target: "summary_and_transcript",
+      oldText: "X roadmap",
+      newText: "Y roadmap",
+      dictionaryTerms: ["Y roadmap"],
+    });
+
+    expect(result).toMatchObject({
+      status: "error",
+      sessionId: "session-1",
+      message: expect.stringContaining("checked corrections"),
+    });
+    expect(mocks.applySessionContentCorrections).not.toHaveBeenCalled();
+    expect(mocks.updateSettingValue).not.toHaveBeenCalled();
   });
 
   it("reports partial success when a requested target does not match", async () => {

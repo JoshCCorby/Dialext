@@ -1,42 +1,49 @@
 # Dialext
 
-A personal multilingual recording workspace, built on Anarlog's community desktop application. Start with [the handover brief](dialext/HANDOFF.md), [implementation architecture](dialext/ARCHITECTURE.md) and [product brief](dialext/product/product-vision.md).
+**Understand any conversation, in the language you read.**
 
-Irish–English is the first pair. The aim is one readable language account, useful summaries, remembered speaker names, source-audio review and easy text exports. This is a development prototype, not a completed transcription product.
+Dialext turns a recording of a mixed-language conversation into one clear account in your own language: who said what, a summary, and the original audio behind every line. You don't need to speak both languages to follow it.
 
-## Run the development app
+Irish–English is the first language pair.
 
-Requirements: Node 22, pnpm 11.1.1, Rust 1.94.0, and on macOS a completed Xcode installation with its Metal Toolchain.
+## Why Dialext
+
+Conversations switch language all the time: a meeting that moves between Irish and English, a family call, an interview. Transcription tools expect one language, so a mixed recording comes back garbled or half in a language the reader can't follow. Anyone who isn't fluent in both misses what was said.
+
+## What it does
+
+- **One account, in your language.** Read the whole conversation in English or in Irish, including the parts spoken in the other language. Switch views in one click.
+- **Every line traceable.** Each passage is linked to the exact stretch of audio it came from, so you can listen to the original.
+- **Real names, not "Speaker 2".** Name a speaker once and the name carries through the transcript, search and exports.
+- **Corrections you control.** Fixes keep a full history with undo. Dialext suggests matching summary changes and applies only the ones you accept.
+- **Sourced summaries and answers.** Every summary point can show the passage and audio behind it. Ask a question about a recording months later and the answer points to where it came from.
+- **Private by default.** A desktop app with a local library and no sign-in. Recordings go to a hosted service only if you choose one. Search everything; export to text or Markdown.
+
+## How it works
+
+1. **Bring in a recording.**
+2. **Two readings.** The audio is transcribed separately as Irish and as English. Both are kept as an unedited record.
+3. **One account.** Dialext combines the two readings into a single account in your chosen language, with every passage anchored to its audio.
+4. **Use it.** Read, correct, summarise, ask questions and export.
+
+## Where it stands
+
+Dialext is an early working prototype for macOS. The workflow above runs end to end in the desktop app on sample conversations.
+
+In development:
+
+- live speech recognition for real recordings
+- AI summaries that adapt to the kind of recording
+- quality testing on real Irish–English conversations
+- installers, and further language pairs
+
+## Get started
+
+Dialext isn't packaged yet. To run the development build on a Mac with Node 22, Rust and Xcode installed:
 
 ```sh
 npx --yes pnpm@11.1.1 install --frozen-lockfile
 node dialext/dev.mjs
 ```
 
-On Xcode 27, the launcher selects SwiftPM’s native build mode to match the upstream Swift linker’s library paths. It builds shared UI first, then starts the native app in debug mode under `app.dialext.prototype`. Notes/settings use that separate application-support directory; audio uses `.dialext-data/vault/`. The locally installed Rust toolchain, when present, lives in `.dialext-tools/`. These directories are ignored by Git. The launcher does not load the old Dialext credentials or database.
-
-The launcher skips the upstream tutorial for the prepared-sample experiment; use `ONBOARDING=true node dialext/dev.mjs` to include it. Native compilation and process launch have passed on this Mac. The interactive import/edit/export check is still pending; see the handover for the exact automation blocker and acceptance steps.
-
-## First integration slice
-
-Settings → Imports → Import a Dialext recording accepts a prepared JSON bundle. [The synthetic sample](dialext/fixtures/language-practice.json) contains English and Irish accounts. Choose the reading language before importing. Only that account enters the editable transcript; the original evidence and supplied alternate account are retained separately. The native import is finalized and idempotent, so reimporting cannot overwrite edits.
-
-This import slice does not run speech recognition or generate translations. In-workspace language switching, translation marks, attached source-audio playback, correction-driven summary proposals and live provider integration still need to be connected and verified. The sample has no associated real recording.
-
-Focused checks:
-
-```sh
-node --test dialext/engine/reconstruction-validate.test.mjs
-npx --yes pnpm@11.1.1 -F @anlg/desktop exec vitest run src/dialext src/settings/imports/index.test.tsx
-npx --yes pnpm@11.1.1 -F @anlg/desktop typecheck
-cargo test --locked -p session-ingest --features apply
-```
-
-## Source and references
-
-- Anarlog community baseline: [`fastrepl/anarlog@cbd2468f8f22e173390aa7953f0889e91694591e`](https://github.com/fastrepl/anarlog/tree/cbd2468f8f22e173390aa7953f0889e91694591e), MIT except nearer notices. Original [README](dialext/UPSTREAM-README.md), [licence](LICENSE), [licensing boundary](LICENSING.md) and third-party notices are preserved. Commercial `enterprise/` implementation code is excluded from the published snapshot; its boundary licence notice is retained.
-- `dialext/engine/reconstruction-validate.mjs` and its tests were copied from Joshua's original Dialext project on 15 September 2026. The implementation is unchanged. It checks exact source anchors, speaker consistency and temporal bounds; it cannot prove that generated text is accurate.
-- `dialext/design/` preserves Joshua's Claude Design mockup and supplied assets as a reference, separate from the runtime interface.
-- `dialext/product/` preserves the agreed brief and dated architecture assessments. Historical assessments describe the project at the time they were written.
-
-The original `Transcip` checkout remains intact as a reference. Its provider credentials, audio library and databases have not been migrated. New development belongs here. GitHub Actions are disabled on the private fork until its own workflows are deliberately configured.
+Then open **Settings → Imports** and import the sample conversation, `dialext/fixtures/language-practice.json`.

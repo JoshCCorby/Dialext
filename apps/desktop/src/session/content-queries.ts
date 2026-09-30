@@ -203,6 +203,14 @@ export async function loadSessionContentSnapshot(
   return row ? mapSessionContentRow(row) : null;
 }
 
+export async function isDialextRecording(sessionId: string): Promise<boolean> {
+  const rows = await liveQueryClient.execute<{ id: string }>(
+    "SELECT id FROM dialext_recordings WHERE id = ? LIMIT 1",
+    [sessionId],
+  );
+  return rows.length > 0;
+}
+
 export async function loadActiveSessionIds(): Promise<string[]> {
   const rows = await liveQueryClient.execute<{ id: string }>(
     `
