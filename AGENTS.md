@@ -80,6 +80,12 @@ tab are hidden, not repointed. Icons get a plain placeholder lettermark until mi
 `anarlog` CLI binary and agent skill keep their names; renaming them is later, separate work.
 Code comments that describe Anarlog as the origin stay as they are.
 
+Milestone 9 look (Joshua, 30 September 2026): adopt the Dialext design system in
+`dialext/design/_ds` — paper/peat/Deep Atlantic palette, Instrument Sans for the interface, Source
+Serif 4 for page titles, IBM Plex Mono for code — through the shared token file, with fonts from
+`@fontsource` packages bundled at build time. Flat colours only; grain and textures are a later,
+separate step.
+
 Verify each slice with its focused regressions, affected package type/lint checks
 and a real desktop workflow. Run the full desktop suite at milestone boundaries.
 The release/platform matrix below is reference material, not a requirement to
