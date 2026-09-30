@@ -276,7 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       sonnerToast.error(
-        t`The notes on this device are linked to another Anarlog account. Sign in with the account previously used here, or start fresh on this device.`,
+        t`The notes on this device are linked to another Dialext account. Sign in with the account previously used here, or start fresh on this device.`,
         {
           id: ACCOUNT_MISMATCH_TOAST_ID,
           duration: Number.POSITIVE_INFINITY,

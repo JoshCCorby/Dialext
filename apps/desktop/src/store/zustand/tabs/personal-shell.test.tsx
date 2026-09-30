@@ -35,7 +35,7 @@ describe("personal shell tab destinations", () => {
 
   afterEach(cleanup);
 
-  test("ships without Anarlog account services", () => {
+  test("ships without Dialext account services", () => {
     expect(ANARLOG_ACCOUNT_SERVICES_ENABLED).toBe(false);
   });
 

@@ -7,7 +7,7 @@ import { SettingSwitchRow } from "~/settings/setting-row";
 export const privacyMessages = {
   title: msg`Privacy`,
   posthogTitle: msg`Share usage data`,
-  posthogDescription: msg`Help improve Anarlog with anonymous usage data.`,
+  posthogDescription: msg`Help improve Dialext with anonymous usage data.`,
 };
 
 interface SettingItem {
@@ -41,9 +41,9 @@ export function AppSettingsView({
           {!appStoreBuild && (
             <>
               <SettingSwitchRow
-                title={<Trans>Start Anarlog at login</Trans>}
+                title={<Trans>Start Dialext at login</Trans>}
                 description={
-                  <Trans>Have Anarlog ready when you sign in.</Trans>
+                  <Trans>Have Dialext ready when you sign in.</Trans>
                 }
                 checked={autostart.value}
                 onChange={autostart.onChange}
@@ -52,7 +52,7 @@ export function AppSettingsView({
                 title={<Trans>Automatically install updates</Trans>}
                 description={
                   <Trans>
-                    Stay current with updates installed the next time Anarlog
+                    Stay current with updates installed the next time Dialext
                     opens.
                   </Trans>
                 }
@@ -65,7 +65,7 @@ export function AppSettingsView({
             <SettingSwitchRow
               title={<Trans>Show app in Dock</Trans>}
               description={
-                <Trans>Show Anarlog in the Dock and app switcher.</Trans>
+                <Trans>Show Dialext in the Dock and app switcher.</Trans>
               }
               checked={showAppInDock.value}
               onChange={showAppInDock.onChange}
@@ -75,7 +75,7 @@ export function AppSettingsView({
             title={<Trans>Show tray icon</Trans>}
             description={
               isMacos ? (
-                <Trans>Open Anarlog from the menu bar.</Trans>
+                <Trans>Open Dialext from the menu bar.</Trans>
               ) : undefined
             }
             checked={showTrayIcon.value}

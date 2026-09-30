@@ -11,6 +11,7 @@ import {
 } from "@anlg/plugin-updater2";
 import { getCurrentWebviewWindowLabel } from "@anlg/plugin-windows";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { getCalendarEventStartedAt } from "~/calendar/queries";
 import { liveQueryClient } from "~/db";
 import { createSession, getOrCreateSessionForEventId } from "~/session/queries";
@@ -492,6 +493,10 @@ function useUpdaterEvents() {
 
     void updaterEvents.updatedEvent
       .listen(({ payload: { previous, current } }) => {
+        // The changelog is Anarlog's release history, fetched from its GitHub.
+        if (!ANARLOG_ACCOUNT_SERVICES_ENABLED) {
+          return;
+        }
         openNewRef.current({
           type: "changelog",
           state: { previous, current },

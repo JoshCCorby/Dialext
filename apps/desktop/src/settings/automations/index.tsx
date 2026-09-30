@@ -373,7 +373,7 @@ function CustomWorkflowDetails({
               }
               title={
                 hostedActionsUnavailable
-                  ? t`Anarlog-hosted automation actions are unavailable in this personal build.`
+                  ? t`Hosted automation actions are unavailable in this personal build.`
                   : billing.localFeatures.localAutomations &&
                       !isWorkflowReady(workflow)
                     ? t`Add and configure at least one action first.`

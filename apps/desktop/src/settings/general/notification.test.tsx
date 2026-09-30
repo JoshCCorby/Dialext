@@ -133,7 +133,7 @@ describe("NotificationSettingsView", () => {
     expect(screen.getByText("Bounce app icon")).toBeTruthy();
     expect(
       screen.getByText(
-        "Get your attention when Anarlog finishes work in the background.",
+        "Get your attention when Dialext finishes work in the background.",
       ),
     ).toBeTruthy();
     expect(

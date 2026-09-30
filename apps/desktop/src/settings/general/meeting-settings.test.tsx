@@ -66,7 +66,7 @@ describe("MeetingSettingsView", () => {
     expect(screen.getByText("Show floating bar")).toBeTruthy();
   });
 
-  it("omits hosted default sharing without Anarlog account services", () => {
+  it("omits hosted default sharing without Dialext account services", () => {
     mocks.accountServicesEnabled = false;
     renderMeetingSettings();
 

@@ -26,6 +26,7 @@ const onThemeChanged = vi.hoisted(() =>
     vi.fn(),
   ),
 );
+const iconAccess = vi.hoisted(() => ({ anarlogIconsEnabled: true }));
 const matchMedia = vi.hoisted(() => vi.fn());
 const systemTheme = vi.hoisted(() => ({
   matches: false,
@@ -56,6 +57,12 @@ vi.mock("./use-settings-theme-ready", () => ({
   useSettingsThemeReady: () => themeState.settingsReady,
 }));
 
+vi.mock("~/settings/appearance/app-icon-access", () => ({
+  get ANARLOG_APP_ICONS_ENABLED() {
+    return iconAccess.anarlogIconsEnabled;
+  },
+}));
+
 vi.mock("~/shared/config", () => ({
   useConfigValue: (key: string) => {
     if (key === "app_icon") {
@@ -77,6 +84,7 @@ describe("AppThemeProvider", () => {
     themeState.settingsReady = false;
     themeState.theme = "system";
     themeState.appIcon = "default";
+    iconAccess.anarlogIconsEnabled = true;
     applyDocumentTheme.mockClear();
     writeStoredThemePreference.mockClear();
     setDockIcon.mockClear();
@@ -130,6 +138,24 @@ describe("AppThemeProvider", () => {
     expect(writeStoredThemePreference).toHaveBeenCalledWith("light");
     await waitFor(() => expect(setDockIcon).toHaveBeenCalledWith("stable"));
     expect(setNativeTheme).toHaveBeenCalledWith("light");
+  });
+
+  it("shows the Dialext Dock icon while Anarlog icons are disabled", async () => {
+    iconAccess.anarlogIconsEnabled = false;
+    themeState.settingsReady = true;
+    themeState.theme = "dark";
+    themeState.appIcon = "anagram";
+
+    render(
+      <AppThemeProvider>
+        <div>child</div>
+      </AppThemeProvider>,
+    );
+
+    await waitFor(() => expect(setDockIcon).toHaveBeenCalledWith("dialext"));
+    expect(setDockIcon).not.toHaveBeenCalledWith(
+      expect.stringMatching(/stable|anagram/),
+    );
   });
 
   it("uses the native appearance for the system theme", async () => {

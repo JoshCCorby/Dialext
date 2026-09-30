@@ -189,7 +189,7 @@ describe("sidebar toast registry", () => {
 
     expect(toast).toMatchObject({
       id: "desktop-update:1.0.34:available",
-      description: "Anarlog 1.0.34 is available",
+      description: "Dialext 1.0.34 is available",
       lifecycle: { type: "persistent", dismissal: "day" },
       primaryAction: { label: "Download" },
     });
@@ -252,7 +252,7 @@ describe("sidebar toast registry", () => {
 
     expect(toast).toMatchObject({
       id: "desktop-update:1.0.34:downloading",
-      description: "Downloading Anarlog 1.0.34 (58%)",
+      description: "Downloading Dialext 1.0.34 (58%)",
       lifecycle: { type: "persistent", dismissal: "session" },
       loading: true,
     });
@@ -274,7 +274,7 @@ describe("sidebar toast registry", () => {
 
     expect(toast).toMatchObject({
       id: "desktop-update:1.0.34:ready",
-      description: "Anarlog 1.0.34 is ready to install",
+      description: "Dialext 1.0.34 is ready to install",
       lifecycle: { type: "persistent", dismissal: "session" },
       primaryAction: { label: "Restart" },
     });
@@ -299,7 +299,7 @@ describe("sidebar toast registry", () => {
 
     expect(toast).toMatchObject({
       id: "desktop-update:1.0.34:ready",
-      description: "Anarlog 1.0.34 is ready to install",
+      description: "Dialext 1.0.34 is ready to install",
       primaryAction: { label: "Restart" },
     });
 

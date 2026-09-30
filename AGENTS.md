@@ -58,6 +58,12 @@ release build, which maps to the stable app's data directory.
 - The macOS Open panel is a separate process; a window-control grant for Dialext does not
   cover it. With the panel open, request access for its process (Joshua agreed to grant it,
   23 September 2026); if that is refused, ask him to choose the fixture files.
+- `cargo test` on a plugin regenerates its `js/bindings.gen.ts` as a side effect; check
+  `git status` afterwards and revert drift you did not intend.
+- The "created by a newer version of Dialext" text is produced by `crates/db-migrate` and matched
+  by substring in `db.rs`, `db-migrate` and `shared/long-load-gate.tsx`; change all of them together.
+- Background (`app_*`) clicks in the prototype window often do not reach the web view; use
+  full-screen control to navigate Settings.
 - Branch tracking is misleading. Compare against
   `origin/codex/dialext-personal-prototype`, never `origin/main`, to see unpushed
   work. Commit locally; Joshua pushes. Never push to the Anarlog remote.
@@ -66,6 +72,13 @@ Nothing in the personal build may call Anarlog's servers. Hosted connectors and 
 through a Dialext service seam that is unset by default, so a Dialext server can fill it later
 for Joshua and friends; local MCP/CLI importers need no sign-in, and other services must see
 "Dialext" (Joshua, 23 September 2026; see `dialext/CONNECTORS_PLAN.md`).
+
+Milestone 8 branding decisions (Joshua, 30 September 2026): user-visible "Anarlog" becomes
+"Dialext", including text shown only by hidden hosted features; wording that names Anarlog's own
+service as a third party becomes neutral ("hosted"). Anarlog Discord/docs links and the Changelog
+tab are hidden, not repointed. Icons get a plain placeholder lettermark until milestone 9. The
+`anarlog` CLI binary and agent skill keep their names; renaming them is later, separate work.
+Code comments that describe Anarlog as the origin stay as they are.
 
 Verify each slice with its focused regressions, affected package type/lint checks
 and a real desktop workflow. Run the full desktop suite at milestone boundaries.

@@ -25,7 +25,7 @@ import { SettingsImports } from ".";
 describe("SettingsImports", () => {
   afterEach(cleanup);
 
-  it("shows the Dialext imports and no link to Anarlog's documentation", () => {
+  it("shows the Dialext imports and no link to Dialext's documentation", () => {
     render(<SettingsImports />);
     expect(screen.getByText("Dialext recording import")).toBeTruthy();
     expect(screen.getByText("Dialext provider generation")).toBeTruthy();

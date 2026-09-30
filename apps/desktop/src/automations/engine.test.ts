@@ -186,7 +186,7 @@ describe("runMeetingCompletedAutomations (markdown export)", () => {
 });
 
 describe("personal automation execution policy", () => {
-  it("skips saved Anarlog-hosted starters and workflows without deleting them", async () => {
+  it("skips saved Hosted starters and workflows without deleting them", async () => {
     storedSettings({
       automation_slack_recap_enabled: true,
       automation_slack_recap_channel: JSON.stringify({

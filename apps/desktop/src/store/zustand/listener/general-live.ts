@@ -212,7 +212,7 @@ const notifyTranscriptionStalled = () => {
     id: "live-transcription-stalled",
     duration: Infinity,
     description:
-      "Anarlog keeps recording while live transcription reconnects. Any missing text will be rebuilt from the recording after you stop listening.",
+      "Dialext keeps recording while live transcription reconnects. Any missing text will be rebuilt from the recording after you stop listening.",
   });
 };
 

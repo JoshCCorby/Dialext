@@ -15,16 +15,16 @@ type ModelIconSpec = {
 };
 
 const MODEL_ICON_ASSET_BASE = "/assets/model-icons";
-const ANARLOG_ICON_SRC = "/assets/anarlog-icon.png";
+const DIALEXT_ICON_SRC = "/assets/dialext-icon.png";
 
 export function getLocalModelIcon(model: string): ModelIconSpec | null {
   const value = model.toLowerCase();
 
   if (value === "cloud") {
     return {
-      label: "A",
-      title: "Anarlog Pro",
-      imageSrc: ANARLOG_ICON_SRC,
+      label: "H",
+      title: "Hosted model",
+      imageSrc: DIALEXT_ICON_SRC,
     };
   }
 

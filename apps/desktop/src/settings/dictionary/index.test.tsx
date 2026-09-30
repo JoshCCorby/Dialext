@@ -86,7 +86,7 @@ describe("DictionarySettings", () => {
     fireEvent.click(screen.getByRole("textbox"));
 
     expect(mocks.toastWarning).toHaveBeenCalledWith(
-      "This requires Anarlog Pro",
+      "This requires Dialext Pro",
       {
         action: {
           label: "Upgrade",

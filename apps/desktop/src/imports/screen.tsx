@@ -656,7 +656,7 @@ function ConnectedMeetingImportScreen({
                           {connected ? (
                             <Trans>
                               Connected · New meetings are imported
-                              automatically while Anarlog is running.
+                              automatically while Dialext is running.
                             </Trans>
                           ) : (
                             <Trans>

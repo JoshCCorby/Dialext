@@ -31,7 +31,7 @@ import { SettingsAppearance } from ".";
 describe("SettingsAppearance in the personal shell", () => {
   afterEach(cleanup);
 
-  it("keeps theme and sidebar settings but hides the Anarlog app icon picker", () => {
+  it("keeps theme and sidebar settings but hides the Dialext app icon picker", () => {
     render(<SettingsAppearance />);
 
     expect(screen.getByText("Theme")).toBeTruthy();

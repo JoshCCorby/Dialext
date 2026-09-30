@@ -296,7 +296,7 @@ describe("SettingsNav", () => {
     expect(
       screen
         .getByRole("button", { name: /Automations/ })
-        .querySelector("[aria-label='Requires Anarlog Pro']"),
+        .querySelector("[aria-label='Requires Dialext Pro']"),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Automations/ }));
 

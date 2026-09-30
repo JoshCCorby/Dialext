@@ -24,6 +24,7 @@ import { OnboardingSection } from "./shared";
 
 import { trackAnalyticsEvent } from "~/analytics";
 import { useAuth } from "~/auth";
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { StandaloneWindowShell } from "~/shared/window-shell";
 import { type Tab, useTabs } from "~/store/zustand/tabs";
 
@@ -215,7 +216,7 @@ function OnboardingScreenContent({
         ])}
       >
         <h1 className="font-hand text-foreground text-4xl leading-none font-semibold tracking-normal">
-          <Trans>Welcome to Anarlog</Trans>
+          <Trans>Welcome to Dialext</Trans>
         </h1>
       </div>
 
@@ -227,13 +228,13 @@ function OnboardingScreenContent({
             description={
               currentPlatform === "macos" ? (
                 <Trans>
-                  Anarlog needs microphone and system audio to transcribe your
+                  Dialext needs microphone and system audio to transcribe your
                   meetings, plus Accessibility to read meeting controls, visible
                   chat.
                 </Trans>
               ) : (
                 <Trans>
-                  Anarlog needs access to your microphone and system audio to
+                  Dialext needs access to your microphone and system audio to
                   record and transcribe your meetings
                 </Trans>
               )
@@ -284,7 +285,7 @@ function OnboardingScreenContent({
             title={<Trans>Connect calendar</Trans>}
             description={
               <Trans>
-                Anarlog will sync your calendar to get meeting reminders
+                Dialext will sync your calendar to get meeting reminders
               </Trans>
             }
             completedTitle={<Trans>Calendar connected</Trans>}
@@ -332,7 +333,10 @@ function OnboardingScreenContent({
 
           <OnboardingSection
             title={<Trans>Ready to go</Trans>}
-            description={<FinalDescription />}
+            description={
+              // Anarlog's community links, not Dialext's.
+              ANARLOG_ACCOUNT_SERVICES_ENABLED ? <FinalDescription /> : undefined
+            }
             status={getStepStatus("final", currentStep)}
             skippable={false}
             onBack={goBack}

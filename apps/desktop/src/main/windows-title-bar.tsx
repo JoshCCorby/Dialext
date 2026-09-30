@@ -19,6 +19,7 @@ import {
   SidebarNoteActions,
 } from "./sidebar-timeline-chrome";
 
+import { ANARLOG_ACCOUNT_SERVICES_ENABLED } from "~/auth/account-services";
 import { useShell } from "~/contexts/shell";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 import { usesTitleBarSidebarActions } from "~/shared/hooks/useWindowControlsGutter";
@@ -199,30 +200,33 @@ export function WindowsTitleBar({
               <DropdownMenuShortcut>F11</DropdownMenuShortcut>
             </DropdownMenuItem>
           </TitleBarMenu>
-          <TitleBarMenu label={t`Help`} onPointerDown={rememberEditTarget}>
-            <DropdownMenuItem
-              onSelect={() =>
-                void openerCommands.openUrl("https://docs.anarlog.so", null)
-              }
-            >
-              {t`Documentation`}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={() =>
-                void openerCommands.openUrl("https://anarlog.so/discord", null)
-              }
-            >
-              {t`Report a Bug`}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() =>
-                void openerCommands.openUrl("https://anarlog.so/discord", null)
-              }
-            >
-              {t`Suggest a Feature`}
-            </DropdownMenuItem>
-          </TitleBarMenu>
+          {/* Anarlog's documentation and Discord, not Dialext's. */}
+          {ANARLOG_ACCOUNT_SERVICES_ENABLED && (
+            <TitleBarMenu label={t`Help`} onPointerDown={rememberEditTarget}>
+              <DropdownMenuItem
+                onSelect={() =>
+                  void openerCommands.openUrl("https://docs.anarlog.so", null)
+                }
+              >
+                {t`Documentation`}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() =>
+                  void openerCommands.openUrl("https://anarlog.so/discord", null)
+                }
+              >
+                {t`Report a Bug`}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() =>
+                  void openerCommands.openUrl("https://anarlog.so/discord", null)
+                }
+              >
+                {t`Suggest a Feature`}
+              </DropdownMenuItem>
+            </TitleBarMenu>
+          )}
         </nav>
         <div data-tauri-drag-region className="min-w-4 flex-1" />
       </div>
