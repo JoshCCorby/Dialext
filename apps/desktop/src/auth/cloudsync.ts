@@ -1166,7 +1166,7 @@ async function activateCloudsync(
         return "ok";
       }
       console.warn(
-        "[cloudsync] Anarlog Pro is required; sync remains disabled",
+        "[cloudsync] Dialext Pro is required; sync remains disabled",
       );
       return "ok";
     }

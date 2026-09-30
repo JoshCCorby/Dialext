@@ -56,10 +56,10 @@ describe("detectCloudStorageService", () => {
 
   it("detects Windows sync folders", () => {
     expect(
-      detectCloudStorageService("C:\\Users\\john\\OneDrive - Acme\\Anarlog"),
+      detectCloudStorageService("C:\\Users\\john\\OneDrive - Acme\\Dialext"),
     ).toBe("OneDrive");
     expect(
-      detectCloudStorageService("C:\\Users\\john\\iCloudDrive\\Anarlog"),
+      detectCloudStorageService("C:\\Users\\john\\iCloudDrive\\Dialext"),
     ).toBe("iCloud Drive");
   });
 

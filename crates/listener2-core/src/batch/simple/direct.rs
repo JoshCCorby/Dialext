@@ -157,7 +157,7 @@ pub(super) async fn prepare_anarlog_batch_upload(
         );
         crate::BatchFailure::DirectRequestFailed {
             provider: AdapterKind::Anarlog.to_string(),
-            message: "Anarlog couldn't prepare this large recording for transcription.".to_string(),
+            message: "Dialext couldn't prepare this large recording for transcription.".to_string(),
         }
     })?;
     let encoded_path = temp_dir.path().join("audio.mp3");
@@ -172,7 +172,7 @@ pub(super) async fn prepare_anarlog_batch_upload(
             );
             crate::BatchFailure::DirectRequestFailed {
                 provider: AdapterKind::Anarlog.to_string(),
-                message: "Anarlog couldn't prepare this large recording for transcription."
+                message: "Dialext couldn't prepare this large recording for transcription."
                     .to_string(),
             }
         })?
@@ -183,7 +183,7 @@ pub(super) async fn prepare_anarlog_batch_upload(
             );
             crate::BatchFailure::DirectRequestFailed {
                 provider: AdapterKind::Anarlog.to_string(),
-                message: "Anarlog couldn't prepare this large recording for transcription."
+                message: "Dialext couldn't prepare this large recording for transcription."
                     .to_string(),
             }
         })?;

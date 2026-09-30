@@ -17,6 +17,7 @@ import {
 import type { ThemePreference } from "./resolve";
 import { useSettingsThemeReady } from "./use-settings-theme-ready";
 
+import { ANARLOG_APP_ICONS_ENABLED } from "~/settings/appearance/app-icon-access";
 import { useConfigValue } from "~/shared/config";
 import { useMountEffect } from "~/shared/hooks/useMountEffect";
 
@@ -193,8 +194,11 @@ async function applyDockIcon(
   );
 
   try {
+    // Every icon the resolver can choose is Anarlog artwork.
     const result = await iconCommands.setDockIcon(
-      resolveDockIconName(appIcon, theme, systemIsDark, appIdentifier),
+      ANARLOG_APP_ICONS_ENABLED
+        ? resolveDockIconName(appIcon, theme, systemIsDark, appIdentifier)
+        : "dialext",
     );
     if (result.status === "error") {
       console.error("[theme] failed to update Dock icon", result.error);

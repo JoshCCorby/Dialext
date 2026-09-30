@@ -92,7 +92,7 @@ describe("hosted import and calendar sources", () => {
   });
 
   it.each(Object.entries(sources))(
-    "%s names no Anarlog endpoint",
+    "%s names no Dialext endpoint",
     (_path, source) => {
       for (const endpoint of [
         "VITE_API_URL",

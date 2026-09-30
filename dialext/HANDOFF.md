@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 24 September 2026. Native baseline and milestones 1–**6** are complete and verified in the isolated native app. **Milestone 7's personal-shell service isolation is complete**, with native limitations recorded below. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 30 September 2026. Native baseline and milestones 1–**7** are complete and verified in the isolated native app. **Milestone 8 (Dialext branding) is implemented and verified, awaiting Joshua's acceptance**; see the end of this file. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -104,7 +104,7 @@ The launcher supplies the Swift wrapper and Xcode selection for the full native 
 
 ## Working method and scope for the next session
 
-Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–7 have passed; the next bounded milestone is branding. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
+Follow the ordered milestones in `ARCHITECTURE.md`. Baseline and milestones 1–7 have passed and milestone 8 (branding) awaits acceptance; the next bounded milestone is 9, personal look. Preserve the provider bridge's stage/result evidence and every existing edit, contact and immutable artefact.
 
 Reuse existing application components. Do not create a second database, display-only language filter, generic frontend mock, fake progress bar, unrestricted summary rewrite, or voice-identification service. If a source contract is missing, make that missing contract explicit instead of quietly assuming the renderer and backend agree.
 
@@ -1413,5 +1413,62 @@ root `node --test` is not the CI list and failed on generated Whisper tests/miss
 (313 failures), as previously recorded. Offline zizmor reported the same 358 inherited findings;
 no workflow was changed. No push, hosted call or paid provider test was made.
 
-Milestone 8 still owns Dialext branding, icons and visible Anarlog links. Do not delete retained
+Milestone 8 (below) replaced visible Anarlog branding, icons and links. Do not delete retained
 storage, migrations or implementations or replace the capability split with `isPro: true`.
+
+## Milestone 8 — Dialext branding (implemented 30 September 2026; awaiting Joshua's acceptance)
+
+Decisions are recorded in `AGENTS.md`: hidden hosted text also says Dialext, and wording about
+Anarlog's own service becomes neutral ("Hosted"). Anarlog links and the Changelog tab are hidden,
+a placeholder lettermark stands in until milestone 9, and the `anarlog` CLI/skill keep their names.
+
+- **Text.** Every user-visible "Anarlog" in the desktop renderer, the English catalog and the
+  native desktop is now Dialext. The native side covers startup/lock alerts, window titles,
+  `Info.plist` contacts prompt, deep-link callback page, auto-stop and default notification labels
+  (Rust and Swift), batch-transcription errors, CLI install messages, Plaud and local-API messages
+  and the page `<title>`. Catalogs were re-extracted; each locale's one translated message was
+  carried over, so the Irish "Start Dialext at login" translation survived. Settings shows
+  "Command-line tool" and "Agent skill added to …" instead of naming the CLI.
+- **Contract kept in step.** The "created by a newer version of …" text is both produced (Rust
+  `db-migrate`) and matched (Rust `db.rs`, `db-migrate`, front-end `long-load-gate`); all now say
+  Dialext together. Keep them identical if the wording changes again.
+- **Meeting disclosure.** Now "I'm using Dialext to record and transcribe this meeting." with no
+  URL; its recorded version is `dialext-disclosure-v1`.
+- **Links.** Windows Help menu, onboarding socials, macOS Help items (menu kept, now empty) and
+  the local-model "Setup guide" links to Anarlog docs are gone; the Changelog tab no longer opens
+  after an update in the personal shell. All gates use `ANARLOG_ACCOUNT_SERVICES_ENABLED`.
+- **Icons.** `dialext/design/icon/make-placeholder-icons.swift` regenerates a Deep Atlantic/paper
+  "D" for the app bundle (`apps/desktop/src-tauri/icons/dialext`, wired in
+  `dialext/tauri.prototype.json`), the in-app `dialext-icon.png`, `DialextMark` in the loading
+  view, and the tray icons (their state blocks unchanged). The Dock icon is set at runtime by the
+  theme provider; with `ANARLOG_APP_ICONS_ENABLED` off it now asks for `dialext`.
+
+Kept on purpose: comments naming Anarlog as the origin; model-facing chat tool descriptions,
+which must match the shared MCP definitions of the `anarlog` CLI; HTTP header names; the account-
+mode template gallery author; release-only configs (`tauri.conf.stable/nightly/staging/flatpak`,
+updater URLs, deep-link schemes, bundle ids); the updater's app-rename migration; API/server
+crates; `apps/web` and `apps/mobile`; `packages/changelog`; STT keyword fixtures in tests.
+
+Limitations: release builds resolve the Dock icon from bundled resources and have no `dialext`
+resource yet (packaging work). The onboarding welcome demo still loads `anarlog.so/onboarding-demo`
+when `ONBOARDING=true`; onboarding is off by default and this was not changed. The `detect`
+crate's self-app list does not include `app.dialext.prototype`, so the prototype may count itself
+as a microphone-using meeting app; this is behaviour, not branding, and was left alone.
+
+Validation: full desktop suite 488 files / 4,565 tests; desktop typecheck; changed-file dprint and
+ESLint; desktop Oxlint 206 inherited warnings, 0 errors; Lingui extract/compile stable. Rust tests
+passed for `desktop` (57), `db-migrate`, `tauri-plugin-db` (162), `meeting-import`,
+`tauri-plugin-local-api`, `notification-interface`, `tauri-plugin-deeplink2`,
+`tauri-plugin-anlg-tray` and `tauri-plugin-windows`. `listener2-core` passed 102/103: the failure
+is `apple_speech_language_support_reflects_installed_framework`, which asserts this Mac's Apple
+Speech framework supports Korean. It does not touch the changed messages, and a clean HEAD was not
+re-run. Clippy `-D warnings` on `notification-interface`, `listener2-core` and `deeplink2` is
+blocked by inherited lints in `tauri-plugin-windows` (45 at clean HEAD) and `plugins/tray/src/ext.rs`
+lines 426–469, not the edited lines. `swift format lint` reports one inherited warning (line 204).
+Licence-boundary tests and check, both release-version checks and the CI Node list (82) passed.
+
+Real window (primary checkout, `node dialext/dev.mjs`, 30 September): app menu reads "Dialext
+Prototype" with an empty Help menu; web view title "Dialext"; Dock and menu-bar icons show the D
+(tray state block intact); Settings → General, Appearance, Intelligence (no hosted card), Privacy,
+Permissions and Developers ("The CLI is not included in this build of Dialext.") show no Anarlog.
+One existing note was opened, not edited. No provider call was made.

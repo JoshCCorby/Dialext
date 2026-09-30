@@ -50,7 +50,7 @@ pub(super) async fn split_batch_upload(
             error.type = "temp_dir_create_failed",
             "batch_audio_segment_temp_dir_failed"
         );
-        failure("Anarlog couldn't prepare this recording for transcription.")
+        failure("Dialext couldn't prepare this recording for transcription.")
     })?;
 
     let source = PathBuf::from(file_path);
@@ -64,14 +64,14 @@ pub(super) async fn split_batch_upload(
             error.type = "local_task_join_failed",
             "batch_audio_segment_task_failed"
         );
-        failure("Anarlog couldn't prepare this recording for transcription.")
+        failure("Dialext couldn't prepare this recording for transcription.")
     })?
     .map_err(|_error| {
         tracing::error!(
             error.type = "audio_encode_failed",
             "batch_audio_segment_failed"
         );
-        failure("Anarlog couldn't split this recording for transcription.")
+        failure("Dialext couldn't split this recording for transcription.")
     })?;
 
     if paths.is_empty() {

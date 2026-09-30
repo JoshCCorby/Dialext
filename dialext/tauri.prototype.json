@@ -8,5 +8,13 @@
     "deep-link": {
       "desktop": { "schemes": ["dialext-prototype"] }
     }
+  },
+  "bundle": {
+    "icon": [
+      "icons/dialext/32x32.png",
+      "icons/dialext/128x128.png",
+      "icons/dialext/128x128@2x.png",
+      "icons/dialext/icon.icns"
+    ]
   }
 }

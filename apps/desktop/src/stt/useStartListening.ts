@@ -136,7 +136,7 @@ export function useStartListeningState(
       }
       await releaseCloudsyncDeferral();
       sonnerToast.error(
-        "Anarlog could not safely start recording. Please try again.",
+        "Dialext could not safely start recording. Please try again.",
         { id: "capture-state-persist-failed" },
       );
       return;
@@ -179,7 +179,7 @@ export function useStartListeningState(
         await releaseCloudsyncDeferral();
       }
       sonnerToast.error(
-        "Anarlog could not safely start recording. Please try again.",
+        "Dialext could not safely start recording. Please try again.",
         { id: "capture-state-persist-failed" },
       );
       return;
@@ -195,7 +195,7 @@ export function useStartListeningState(
       } catch (error) {
         console.error("[listener] failed to clean up capture state", error);
         sonnerToast.error(
-          "Anarlog could not safely start recording. Please try again.",
+          "Dialext could not safely start recording. Please try again.",
           { id: "capture-state-persist-failed" },
         );
       } finally {
@@ -252,7 +252,7 @@ export function useStartListeningState(
         excludedTexts: [MEETING_DISCLOSURE_MESSAGE],
         onParticipantDeclined: () => {
           sonnerToast.warning(
-            "A participant declined recording. Anarlog stopped listening.",
+            "A participant declined recording. Dialext stopped listening.",
             { id: "meeting-consent-declined", duration: Infinity },
           );
           stop();

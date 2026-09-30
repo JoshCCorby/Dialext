@@ -211,7 +211,7 @@ function WorkflowStepConfig({
     return (
       <p className="text-muted-foreground text-xs">
         <Trans>
-          This saved Anarlog-hosted action is unavailable in the personal build.
+          This saved hosted action is unavailable in the personal build.
         </Trans>
       </p>
     );

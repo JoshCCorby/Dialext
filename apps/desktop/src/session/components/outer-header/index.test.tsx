@@ -910,7 +910,7 @@ describe("OuterHeader", () => {
 
     fireEvent.click(joinButton);
 
-    expect(logo?.getAttribute("src")).toBe("/assets/anarlog-icon.png");
+    expect(logo?.getAttribute("src")).toBe("/assets/dialext-icon.png");
     expect(logo?.getAttribute("alt")).toBe("");
     expect(logo?.className).toContain("size-3.5");
     expect(mocks.startListening).toHaveBeenCalledOnce();
@@ -994,7 +994,7 @@ describe("OuterHeader", () => {
       "This is a prerecorded demo, so your camera stays off.",
     );
     expect(prompt?.textContent).toContain(
-      "Click Join & record to see Anarlog in action.",
+      "Click Join & record to see Dialext in action.",
     );
     expect(
       prompt?.querySelector("[data-welcome-demo-prompt-tail]"),

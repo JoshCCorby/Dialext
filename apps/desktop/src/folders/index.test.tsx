@@ -80,7 +80,7 @@ vi.mock("~/resource-sharing/client", () => ({
   deleteSharedResource: mocks.deleteSharedResource,
   moveSharedResource: mocks.moveSharedResource,
   requireResourceSharingContext: () => {
-    throw new Error("No Anarlog account in the personal shell");
+    throw new Error("No Dialext account in the personal shell");
   },
 }));
 

@@ -284,7 +284,7 @@ function HeaderMeetingAction({
         title: t`Join meeting and record`,
         icon: isWelcomeDemo ? (
           <img
-            src="/assets/anarlog-icon.png"
+            src="/assets/dialext-icon.png"
             alt=""
             className="size-3.5 shrink-0"
           />
@@ -357,7 +357,7 @@ function HeaderMeetingAction({
             />
             <span className="relative block font-medium">{t`Try the demo`}</span>
             <span className="text-muted-foreground relative mt-0.5 block leading-snug">
-              {t`This is a prerecorded demo, so your camera stays off. Click Join & record to see Anarlog in action.`}
+              {t`This is a prerecorded demo, so your camera stays off. Click Join & record to see Dialext in action.`}
             </span>
           </PopoverContent>
         ) : showCountdown ? (
