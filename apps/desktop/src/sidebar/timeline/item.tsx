@@ -283,7 +283,7 @@ const ItemBase = memo(function ItemBase({
             {displayTime && (
               <div
                 className={cn([
-                  "font-mono text-xs",
+                  "text-xs tabular-nums",
                   isLive
                     ? "text-destructive-foreground/65"
                     : "text-muted-foreground",

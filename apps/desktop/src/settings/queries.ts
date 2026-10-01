@@ -115,7 +115,7 @@ export async function initializeApplicationSettings(): Promise<void> {
     !stored.hasValues.has("crash_reporting_consent") &&
     stored.hasValues.has("telemetry_consent")
   ) {
-    updates.crash_reporting_consent = stored.values.telemetry_consent ?? true;
+    updates.crash_reporting_consent = stored.values.telemetry_consent ?? false;
   }
 
   if (normalizedSttSelection.provider !== stored.values.current_stt_provider) {

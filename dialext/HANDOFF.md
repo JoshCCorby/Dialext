@@ -1074,8 +1074,8 @@ Fix:
 - Outlines now default to off even when opted in, and are toggled from the bar's Renders metric.
 
 Nothing was deleted. Analytics: debug builds compile no PostHog key, so nothing is sent today.
-Making analytics off by default for release builds is tracked in milestone 6's scope but not yet
-changed; there is no release build.
+Usage analytics and crash reporting now default to off (2 October 2026; see milestone 9's
+walkthrough below).
 
 Checks:
 
@@ -1500,3 +1500,27 @@ Validation: full desktop suite 488 files / 4,565 tests; desktop typecheck; share
 changed-file dprint; Oxlint 206 inherited warnings, 0 errors; frozen-lockfile install and licence
 boundary check passed. The relaunched prototype showed the dark palette with Instrument Sans and
 IBM Plex Mono rendering; light mode and Settings were not yet reviewed in the window.
+
+### Real-window walkthrough and follow-up (2 October 2026)
+
+Relaunched from `6d83929` with `node dialext/dev.mjs` in the primary checkout. Dark home and
+Appearance, then light General, Notifications, Transcription, Intelligence, Imports, Privacy, home
+and one sample note were reviewed. Nothing was edited; the theme was left on Light. Changes made
+afterwards on Joshua's choices:
+
+- **Note titles serif.** The large note title is the editor's first `h1`
+  (`packages/editor/src/styles/prosemirror/note-typography.css`), not `TitleInput`, whose only use
+  is the breadcrumb variant.
+- **Sidebar dates sans** (`tabular-nums`) instead of IBM Plex Mono.
+- **Startup splash.** `apps/desktop/index.html` still drew the Anarlog "a_" mark on the old warm
+  greys; it now draws the placeholder "D" on the Dialext paper/midnight palette.
+- **Privacy defaults off.** `telemetry_consent` and `crash_reporting_consent` defaulted to on in
+  the renderer while the native crash-reporting reader already treated a missing value as off;
+  both now default to off, with a regression test. The prototype database had no stored value.
+
+Seen again in the relaunched window: the "D" splash on paper, sans dates, serif note title and
+both Privacy switches off. Validation: full desktop suite 488 files / 4,566 tests; `@anlg/editor`
+27 files / 204 tests; desktop typecheck; changed-file dprint; Oxlint 206 inherited warnings, 0
+errors. Still open: the thin red "now" line at the top of the sidebar (inherited realtime
+indicator) was not discussed; the Privacy "Error" label and the "Cloud sync complete"
+notification row are unchanged. Milestone 9 still awaits Joshua's approval.

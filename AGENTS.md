@@ -86,7 +86,10 @@ Milestone 9 look (Joshua, 30 September 2026): adopt the Dialext design system in
 `dialext/design/_ds` — paper/peat/Deep Atlantic palette, Instrument Sans for the interface, Source
 Serif 4 for page titles, IBM Plex Mono for code — through the shared token file, with fonts from
 `@fontsource` packages bundled at build time. Flat colours only; grain and textures are a later,
-separate step.
+separate step. Note titles use the serif and sidebar dates the interface sans (2 October 2026).
+
+Usage analytics and crash reporting default to off; the person opts in under Privacy (Joshua,
+2 October 2026).
 
 Verify each slice with its focused regressions, affected package type/lint checks
 and a real desktop workflow. Run the full desktop suite at milestone boundaries.

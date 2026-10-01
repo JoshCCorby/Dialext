@@ -68,6 +68,7 @@
 
 /* First-line session title. */
 .note-typography.note-title-editor > h1:first-child {
+  font-family: var(--font-serif);
   font-size: 1.5rem;
   line-height: 1.875rem;
   margin-bottom: 1rem;
