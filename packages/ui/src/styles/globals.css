@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@anlg/design-system/tokens.css";
+@import "@anlg/design-system/palette.css";
 @import "./corners.css";
 
 @custom-variant dark (&:where(.dark, .dark *));

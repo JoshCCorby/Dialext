@@ -112,7 +112,7 @@ function PreviewCanvas({ dark }: { dark: boolean }) {
     <div
       className={cn([
         "absolute inset-0 flex flex-col p-3",
-        dark ? "bg-neutral-950 text-neutral-100" : "bg-white text-neutral-900",
+        dark ? "bg-[#141b21] text-[#e9e7e0]" : "bg-[#f4f2ec] text-[#28312f]",
       ])}
     >
       <div className="mb-3 flex gap-1">
@@ -124,32 +124,32 @@ function PreviewCanvas({ dark }: { dark: boolean }) {
         <div
           className={cn([
             "w-1/4 rounded-md",
-            dark ? "bg-neutral-800" : "bg-neutral-100",
+            dark ? "bg-[#232d34]" : "bg-[#eceae3]",
           ])}
         />
         <div className="flex flex-1 flex-col gap-2 py-1">
           <span
             className={cn([
               "h-1.5 w-10 rounded-full",
-              dark ? "bg-neutral-300" : "bg-neutral-700",
+              dark ? "bg-[#b4bbbb]" : "bg-[#48524e]",
             ])}
           />
           <span
             className={cn([
               "h-1 w-4/5 rounded-full",
-              dark ? "bg-neutral-700" : "bg-neutral-200",
+              dark ? "bg-[#3a464d]" : "bg-[#d7dad5]",
             ])}
           />
           <span
             className={cn([
               "h-1 w-3/5 rounded-full",
-              dark ? "bg-neutral-700" : "bg-neutral-200",
+              dark ? "bg-[#3a464d]" : "bg-[#d7dad5]",
             ])}
           />
           <span
             className={cn([
               "h-1 w-2/3 rounded-full",
-              dark ? "bg-neutral-700" : "bg-neutral-200",
+              dark ? "bg-[#3a464d]" : "bg-[#d7dad5]",
             ])}
           />
         </div>

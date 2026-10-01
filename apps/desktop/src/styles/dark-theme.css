@@ -26,11 +26,3 @@
   background-color: rgb(202 138 4) !important;
   border-radius: 2px;
 }
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #3a464d;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #56646b;
-}

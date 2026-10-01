@@ -26,6 +26,15 @@ import { useMountEffect } from "~/shared/hooks/useMountEffect";
 
 const TIME_UPDATE_STEP_SECONDS = 0.1;
 
+// WaveSurfer paints on a canvas, which cannot resolve CSS variables, so read
+// the theme token's value when the player is created.
+function themeColor(token: string, fallback: string): string {
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(`--${token}`)
+    .trim();
+  return value ? `hsl(${value})` : fallback;
+}
+
 type AudioPlayerState = "playing" | "paused" | "stopped";
 
 interface TimeSnapshot {
@@ -168,9 +177,9 @@ export function AudioPlayerProvider({
       url,
       backend: "WebAudio",
       height: 24,
-      waveColor: "#e5e5e5",
-      progressColor: "#a8a8a8",
-      cursorColor: "#737373",
+      waveColor: themeColor("border", "#e3e7e5"),
+      progressColor: themeColor("primary", "#163d54"),
+      cursorColor: themeColor("ring", "#397fa3"),
       cursorWidth: 2,
       barWidth: 3,
       barGap: 2,

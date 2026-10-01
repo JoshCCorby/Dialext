@@ -2,6 +2,7 @@
 @import "./scrollbar.utilities.css";
 
 @import "tailwindcss";
+@import "../../../../packages/design-system/src/palette.css";
 @import "./dark-theme.css";
 @import "../../../../packages/ui/src/styles/corners.css";
 @import "../../../../packages/ui/src/styles/scroll-fade.css";
