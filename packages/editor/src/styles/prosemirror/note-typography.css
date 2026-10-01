@@ -434,7 +434,7 @@
 /* Highlight backgrounds stay on the light -200 palette in dark mode, so the
  * inherited light foreground would wash out — pin dark text instead. */
 .dark .note-typography mark {
-  color: #1c1917;
+  color: #28312f;
 }
 
 .note-typography img {

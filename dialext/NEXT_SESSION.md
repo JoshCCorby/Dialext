@@ -14,7 +14,7 @@ old `/Users/joshuacorbett/Coding/Transcip` checkout.
 
 ## Where the milestones stand
 
-Baseline and milestones 1–7 are complete; milestone 8 (branding) is implemented and awaits Joshua's acceptance. Milestone 7's connectors and
+Baseline and milestones 1–7 are complete; milestone 8 (branding) and milestone 9 (Dialext design-system look) are implemented and await Joshua's acceptance. Milestone 7's connectors and
 service-seam work ([CONNECTORS_PLAN.md](CONNECTORS_PLAN.md)) is implemented. The live Granola
 check completed on 23 September: consent said Dialext; first and repeat sync each returned zero
 accessible meetings; Disconnect worked; the Dialext database rows were unchanged and integrity

@@ -138,10 +138,10 @@ export function ResourceView({ resource }: { resource: TaskResource }) {
                   style={{
                     backgroundColor: label.color
                       ? `#${label.color}20`
-                      : "#e5e5e5",
-                    color: label.color ? `#${label.color}` : "#525252",
+                      : "hsl(var(--muted))",
+                    color: label.color ? `#${label.color}` : "hsl(var(--muted-foreground))",
                     border: `1px solid ${
-                      label.color ? `#${label.color}40` : "#d4d4d4"
+                      label.color ? `#${label.color}40` : "hsl(var(--border))"
                     }`,
                   }}
                 >

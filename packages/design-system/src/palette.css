@@ -1,0 +1,29 @@
+/* Tailwind's stone and neutral scales remapped to the Dialext neutral ramp
+ * (dialext/design/_ds/tokens/colors.css), so hard-coded `*-stone-*` and
+ * `*-neutral-*` classes match the theme. Import after "tailwindcss" in every
+ * stylesheet that builds Tailwind utilities. */
+@theme {
+  --color-neutral-50: #f7f6f2;
+  --color-neutral-100: #f0f1ee;
+  --color-neutral-200: #e3e7e5;
+  --color-neutral-300: #cbd1ce;
+  --color-neutral-400: #a7aeaa;
+  --color-neutral-500: #7c8581;
+  --color-neutral-600: #626b67;
+  --color-neutral-700: #48524e;
+  --color-neutral-800: #28312f;
+  --color-neutral-900: #18201e;
+  --color-neutral-950: #10171c;
+
+  --color-stone-50: var(--color-neutral-50);
+  --color-stone-100: var(--color-neutral-100);
+  --color-stone-200: var(--color-neutral-200);
+  --color-stone-300: var(--color-neutral-300);
+  --color-stone-400: var(--color-neutral-400);
+  --color-stone-500: var(--color-neutral-500);
+  --color-stone-600: var(--color-neutral-600);
+  --color-stone-700: var(--color-neutral-700);
+  --color-stone-800: var(--color-neutral-800);
+  --color-stone-900: var(--color-neutral-900);
+  --color-stone-950: var(--color-neutral-950);
+}

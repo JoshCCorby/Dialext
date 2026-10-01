@@ -1472,3 +1472,31 @@ Prototype" with an empty Help menu; web view title "Dialext"; Dock and menu-bar 
 (tray state block intact); Settings → General, Appearance, Intelligence (no hosted card), Privacy,
 Permissions and Developers ("The CLI is not included in this build of Dialext.") show no Anarlog.
 One existing note was opened, not edited. No provider call was made.
+
+## Milestone 9 — personal look (implemented 30 September 2026; awaiting Joshua's approval in the real window)
+
+Joshua chose the Dialext design system in `dialext/design/_ds` (decision in `AGENTS.md`).
+
+- **Colour.** `packages/design-system/src/tokens.css` now carries the Dialext palette as the
+  existing HSL tokens, in light (paper `#F4F2EC`, peat text, Deep Atlantic primary, Signal Blue
+  focus ring) and dark (midnight `#141B21`, off-white text, `#2C6C8C` primary). About 1,900 token
+  uses in the renderer follow it. `packages/design-system/src/palette.css` remaps Tailwind's
+  `stone` and `neutral` scales to the Dialext neutral ramp, imported after `tailwindcss` in both the
+  shared UI and desktop stylesheets (each builds its own utilities; a built bundle was checked to
+  carry only Dialext values). Classes that meant a theme colour (secondary text, title text, card
+  text, a primary border) now use the token; the Appearance previews draw each mode's actual
+  palette; the scrollbar, editor placeholders, dark editor tables/caret, spinner, label fallbacks
+  and waveform (resolved from tokens when the player is created, since it paints on a canvas) no
+  longer use hard-coded stone/neutral hex. Other Tailwind hues (the blue chat bubble, red/amber/
+  green status colours) are unchanged.
+- **Type.** `@fontsource` packages (OFL, pinned 5.3.0) are bundled through `apps/desktop/src/main.tsx`:
+  Instrument Sans (`--font-sans`), Source Serif 4 (`--font-serif`) and IBM Plex Mono
+  (`--font-mono`). The Settings page title and onboarding welcome use the serif instead of the
+  handwriting font.
+- Flat colours only; grain and textures are a later step. `packages/design-system/src/index.ts`
+  `DesignColors` (used only by `apps/mobile`) still has the old values.
+
+Validation: full desktop suite 488 files / 4,565 tests; desktop typecheck; shared UI build;
+changed-file dprint; Oxlint 206 inherited warnings, 0 errors; frozen-lockfile install and licence
+boundary check passed. The relaunched prototype showed the dark palette with Instrument Sans and
+IBM Plex Mono rendering; light mode and Settings were not yet reviewed in the window.

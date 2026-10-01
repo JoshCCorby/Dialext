@@ -34,6 +34,7 @@ impl AppCategory {
                 "com.hyprnote.stable",
                 "com.hyprnote.nightly",
                 "com.hyprnote.staging",
+                "app.dialext.prototype",
             ],
             Self::Dictation => &[
                 "com.electron.wispr-flow",
@@ -317,6 +318,7 @@ mod tests {
     fn test_should_not_track_categorized_app() {
         let policy = MicNotificationPolicy::default();
         assert!(!policy.should_track_app("com.hyprnote.dev"));
+        assert!(!policy.should_track_app("app.dialext.prototype"));
         assert!(!policy.should_track_app("com.electron.aqua-voice"));
         assert!(!policy.should_track_app("com.microsoft.VSCode"));
     }
