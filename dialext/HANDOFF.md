@@ -1,6 +1,6 @@
 # Start here: Dialext handover
 
-Updated 30 September 2026. Native baseline and milestones 1–**7** are complete and verified in the isolated native app. **Milestone 8 (Dialext branding) is implemented and verified, awaiting Joshua's acceptance**; see the end of this file. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
+Updated 4 October 2026. Native baseline and milestones 1–**7** and **9** (personal look) are complete and accepted. **Milestone 8 (Dialext branding) is implemented and verified, awaiting Joshua's acceptance**; see the end of this file. No live or paid provider call was made; the separately assessed live sample still requires Joshua's explicit approval. The full personal product is not complete. Read this before inspecting the monorepo. A ready-to-use continuation prompt is in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Repository and authority
 
@@ -1074,8 +1074,7 @@ Fix:
 - Outlines now default to off even when opted in, and are toggled from the bar's Renders metric.
 
 Nothing was deleted. Analytics: debug builds compile no PostHog key, so nothing is sent today.
-Usage analytics and crash reporting now default to off (2 October 2026; see milestone 9's
-walkthrough below).
+Usage analytics and crash reporting now default to off (2 October 2026; see milestone 9 below).
 
 Checks:
 
@@ -1473,54 +1472,26 @@ Prototype" with an empty Help menu; web view title "Dialext"; Dock and menu-bar 
 Permissions and Developers ("The CLI is not included in this build of Dialext.") show no Anarlog.
 One existing note was opened, not edited. No provider call was made.
 
-## Milestone 9 — personal look (implemented 30 September 2026; awaiting Joshua's approval in the real window)
+## Milestone 9 — personal look (accepted by Joshua, 4 October 2026)
 
-Joshua chose the Dialext design system in `dialext/design/_ds` (decision in `AGENTS.md`).
+The Dialext design system from `dialext/design/_ds` (decisions in `AGENTS.md`), in flat colours:
 
-- **Colour.** `packages/design-system/src/tokens.css` now carries the Dialext palette as the
-  existing HSL tokens, in light (paper `#F4F2EC`, peat text, Deep Atlantic primary, Signal Blue
-  focus ring) and dark (midnight `#141B21`, off-white text, `#2C6C8C` primary). About 1,900 token
-  uses in the renderer follow it. `packages/design-system/src/palette.css` remaps Tailwind's
-  `stone` and `neutral` scales to the Dialext neutral ramp, imported after `tailwindcss` in both the
-  shared UI and desktop stylesheets (each builds its own utilities; a built bundle was checked to
-  carry only Dialext values). Classes that meant a theme colour (secondary text, title text, card
-  text, a primary border) now use the token; the Appearance previews draw each mode's actual
-  palette; the scrollbar, editor placeholders, dark editor tables/caret, spinner, label fallbacks
-  and waveform (resolved from tokens when the player is created, since it paints on a canvas) no
-  longer use hard-coded stone/neutral hex. Other Tailwind hues (the blue chat bubble, red/amber/
-  green status colours) are unchanged.
-- **Type.** `@fontsource` packages (OFL, pinned 5.3.0) are bundled through `apps/desktop/src/main.tsx`:
-  Instrument Sans (`--font-sans`), Source Serif 4 (`--font-serif`) and IBM Plex Mono
-  (`--font-mono`). The Settings page title and onboarding welcome use the serif instead of the
-  handwriting font.
-- Flat colours only; grain and textures are a later step. `packages/design-system/src/index.ts`
-  `DesignColors` (used only by `apps/mobile`) still has the old values.
+- **Colour.** The Dialext palette lives in `packages/design-system/src/tokens.css` (light paper,
+  dark midnight, Deep Atlantic primary). `palette.css` remaps Tailwind `stone`/`neutral` to the
+  Dialext neutrals in both the shared UI and desktop stylesheets. Other hues (status colours, the
+  blue chat bubble, the red "now" line) are unchanged.
+- **Type.** Bundled `@fontsource` fonts: Instrument Sans (interface, including sidebar dates),
+  Source Serif 4 (Settings page titles, onboarding welcome, and note titles through the editor's
+  first `h1` in `packages/editor/src/styles/prosemirror/note-typography.css`), IBM Plex Mono (code).
+- **Startup.** The splash in `apps/desktop/index.html` draws the placeholder "D" on the Dialext
+  palette.
+- **Privacy.** Usage analytics and crash reporting default to off.
 
-Validation: full desktop suite 488 files / 4,565 tests; desktop typecheck; shared UI build;
-changed-file dprint; Oxlint 206 inherited warnings, 0 errors; frozen-lockfile install and licence
-boundary check passed. The relaunched prototype showed the dark palette with Instrument Sans and
-IBM Plex Mono rendering; light mode and Settings were not yet reviewed in the window.
+Accepted after a real-window walkthrough of light and dark mode, Settings and a sample note
+(commits `f2fee3c`, `aca6aa1`, `7810879`). Last validation: full desktop suite 488 files / 4,566
+tests, `@anlg/editor` 27 / 204, desktop typecheck, dprint, Oxlint (206 inherited warnings, 0
+errors), licence checks. Detail is in git history.
 
-### Real-window walkthrough and follow-up (2 October 2026)
-
-Relaunched from `6d83929` with `node dialext/dev.mjs` in the primary checkout. Dark home and
-Appearance, then light General, Notifications, Transcription, Intelligence, Imports, Privacy, home
-and one sample note were reviewed. Nothing was edited; the theme was left on Light. Changes made
-afterwards on Joshua's choices:
-
-- **Note titles serif.** The large note title is the editor's first `h1`
-  (`packages/editor/src/styles/prosemirror/note-typography.css`), not `TitleInput`, whose only use
-  is the breadcrumb variant.
-- **Sidebar dates sans** (`tabular-nums`) instead of IBM Plex Mono.
-- **Startup splash.** `apps/desktop/index.html` still drew the Anarlog "a_" mark on the old warm
-  greys; it now draws the placeholder "D" on the Dialext paper/midnight palette.
-- **Privacy defaults off.** `telemetry_consent` and `crash_reporting_consent` defaulted to on in
-  the renderer while the native crash-reporting reader already treated a missing value as off;
-  both now default to off, with a regression test. The prototype database had no stored value.
-
-Seen again in the relaunched window: the "D" splash on paper, sans dates, serif note title and
-both Privacy switches off. Validation: full desktop suite 488 files / 4,566 tests; `@anlg/editor`
-27 files / 204 tests; desktop typecheck; changed-file dprint; Oxlint 206 inherited warnings, 0
-errors. Still open: the thin red "now" line at the top of the sidebar (inherited realtime
-indicator) was not discussed; the Privacy "Error" label and the "Cloud sync complete"
-notification row are unchanged. Milestone 9 still awaits Joshua's approval.
+Not part of milestone 9: the real app icon (the "D" is still a placeholder), grain/textures,
+`DesignColors` in `packages/design-system/src/index.ts` (mobile only, old values), the Privacy
+"Error" label and the hosted "Cloud sync complete" notification row.
