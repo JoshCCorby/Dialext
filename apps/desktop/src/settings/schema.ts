@@ -187,12 +187,12 @@ export const SETTING_DEFINITIONS = {
   telemetry_consent: {
     type: "boolean",
     path: ["general", "telemetry_consent"],
-    default: true as boolean,
+    default: false as boolean,
   },
   crash_reporting_consent: {
     type: "boolean",
     path: ["general", "crash_reporting_consent"],
-    default: true as boolean,
+    default: false as boolean,
   },
   lock_app: {
     type: "boolean",

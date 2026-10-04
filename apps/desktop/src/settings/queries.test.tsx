@@ -56,6 +56,8 @@ vi.mock("~/db/write-queue", () => ({
     operation(),
 }));
 
+import { resolveConfigValue } from "~/shared/config";
+
 import {
   initializeApplicationSettings,
   parseSettingRows,
@@ -227,6 +229,12 @@ describe("SQLite settings", () => {
     expect(mocks.setDisabled).toHaveBeenCalledWith(true);
 
     resolveDisabled({ status: "ok", data: null });
+  });
+
+  it("leaves analytics and crash reporting off until the person opts in", () => {
+    const fresh = parseSettingRows([]);
+    expect(resolveConfigValue("telemetry_consent", fresh)).toBe(false);
+    expect(resolveConfigValue("crash_reporting_consent", fresh)).toBe(false);
   });
 
   it("updates Sentry independently from PostHog", async () => {
