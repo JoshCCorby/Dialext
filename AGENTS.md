@@ -46,6 +46,11 @@ release build, which maps to the stable app's data directory.
   empty vault pointed at the primary checkout's database. Run native checks only
   from the checkout that owns the vault and the synthetic samples, and never run
   two instances against it at once.
+- `node dialext/install-launcher.mjs` puts `~/Applications/Dialext Prototype.app` in Spotlight and
+  Launchpad. It runs `dev.mjs` in the background (log in `.dialext-data/launcher.log`) or brings
+  the running instance forward. It hard-codes this checkout and the installing Node's path, so
+  re-run it after changing Node. Never open `.dialext-data/Dialext Prototype.app` directly: it
+  needs the Vite server and the launcher's environment.
 - `ONBOARDING` defaults to `false`; set it to `true` to see the first-run flow.
 - `pnpm` is not on the shell PATH; run it as `corepack pnpm …`. For `cargo`, `rustfmt`
   and dprint's Rust formatting, first export `CARGO_HOME` and `RUSTUP_HOME` to
