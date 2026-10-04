@@ -46,7 +46,6 @@ writeFileSync(
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleVersion</key><string>1</string>
-  <key>LSUIElement</key><true/>
 </dict>
 </plist>
 `,
@@ -72,18 +71,22 @@ if pgrep -f "^[^ ]*node [^ ]*dialext/dev\\.mjs" >/dev/null; then
   exit 0
 fi
 
-notify() {
-  osascript -e "display notification \\"$1\\" with title \\"Dialext Prototype\\""
-}
-
 mkdir -p "$ROOT/.dialext-data"
-notify "Building and starting. This can take a few minutes."
 cd "$ROOT" || exit 1
-(
-  PATH="$(dirname "$NODE"):/usr/bin:/bin:/usr/sbin:/sbin" \\
-    "$NODE" "$ROOT/dialext/dev.mjs" >"$LOG" 2>&1 \\
-    || notify "Startup failed. See .dialext-data/launcher.log."
-) </dev/null >/dev/null 2>&1 &
+PATH="$(dirname "$NODE"):/usr/bin:/bin:/usr/sbin:/sbin" \\
+  nohup "$NODE" "$ROOT/dialext/dev.mjs" </dev/null >"$LOG" 2>&1 &
+DEV=$!
+
+# Stay alive, keeping the Dock icon, until the prototype's window is up: the
+# build takes a minute or more and nothing else shows while it runs.
+while kill -0 "$DEV" 2>/dev/null; do
+  if pgrep -f "$BUNDLE/Contents/MacOS/desktop" >/dev/null; then
+    exec open "$BUNDLE"
+  fi
+  sleep 1
+done
+osascript -e 'display alert "Dialext Prototype could not start." message "See .dialext-data/launcher.log in the Dialext checkout." as critical'
+exit 1
 `,
 );
 chmodSync(launch, 0o755);
