@@ -14,7 +14,7 @@ old `/Users/joshuacorbett/Coding/Transcip` checkout.
 
 ## Where the milestones stand
 
-Baseline and milestones 1–7 are complete, and milestone 9 (Dialext design-system look) was accepted on 4 October 2026; milestone 8 (branding) is implemented and awaits Joshua's acceptance. Milestone 7's connectors and
+Baseline and milestones 1–9 are complete; milestones 8 (branding) and 9 (Dialext design-system look) were accepted on 4 October 2026. Milestone 7's connectors and
 service-seam work ([CONNECTORS_PLAN.md](CONNECTORS_PLAN.md)) is implemented. The live Granola
 check completed on 23 September: consent said Dialext; first and repeat sync each returned zero
 accessible meetings; Disconnect worked; the Dialext database rows were unchanged and integrity
@@ -43,8 +43,8 @@ process when it is open, and ask Joshua for browser steps.
   guard. The local template and calendar UI and ordinary note edit were exercised in the real
   window. A live model question was deliberately not submitted; see the exact limitation there.
   Do not call Anarlog services.
-- Milestone 8 (branding) is implemented; see the end of [HANDOFF.md](HANDOFF.md) for what was kept
-  on purpose. Milestone 9 (fonts, colours, theme tokens) is accepted. The real icon, replacing
+- Milestones 8 (branding) and 9 (fonts, colours, theme tokens) are accepted; see the end of
+  [HANDOFF.md](HANDOFF.md) for what branding kept on purpose. The real icon, replacing
   the placeholder from `dialext/design/icon/make-placeholder-icons.swift`, is still to come.
   Keep internal `@anlg`/`anlg_` identifiers and MIT attribution.
 - [ARCHITECTURE.md](ARCHITECTURE.md) and [product/product-vision.md](product/product-vision.md)
